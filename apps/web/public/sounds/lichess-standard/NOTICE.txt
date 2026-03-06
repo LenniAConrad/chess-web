@@ -1,0 +1,13 @@
+Lichess sound assets used by this app:
+- Move.ogg
+- Capture.ogg
+
+Source:
+- https://github.com/lichess-org/lila/tree/master/public/sound/standard
+
+Upstream licensing note:
+- Lichess COPYING.md lists "the other sounds in public/sound" as non-free exceptions.
+- See: https://github.com/lichess-org/lila/blob/master/COPYING.md
+
+Project attribution:
+- Source project: lichess-org/lila

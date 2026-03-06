@@ -1,0 +1,61 @@
+import type {
+  HintResponse,
+  MoveResponse,
+  NextResponse,
+  RevealResponse,
+  SkipVariationResponse,
+  StartSessionResponse,
+  VariationMode
+} from '../types/api.js';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001';
+
+async function requestJson<T>(path: string, body?: Record<string, unknown>): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: body ? JSON.stringify(body) : undefined
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `API request failed: ${response.status}`);
+  }
+
+  return (await response.json()) as T;
+}
+
+export function startSession(
+  mode: VariationMode,
+  autoNext: boolean,
+  puzzleId?: string
+): Promise<StartSessionResponse> {
+  return requestJson<StartSessionResponse>('/api/v1/session/start', { mode, autoNext, puzzleId });
+}
+
+export function playMove(sessionId: string, uciMove: string): Promise<MoveResponse> {
+  return requestJson<MoveResponse>('/api/v1/session/move', { sessionId, uciMove });
+}
+
+export function getHint(sessionId: string): Promise<HintResponse> {
+  return requestJson<HintResponse>('/api/v1/session/hint', { sessionId });
+}
+
+export function revealSolution(sessionId: string): Promise<RevealResponse> {
+  return requestJson<RevealResponse>('/api/v1/session/reveal', { sessionId });
+}
+
+export function skipVariation(sessionId: string): Promise<SkipVariationResponse> {
+  return requestJson<SkipVariationResponse>('/api/v1/session/skip-variation', { sessionId });
+}
+
+export function nextPuzzle(
+  sessionId: string,
+  mode: VariationMode,
+  autoNext: boolean
+): Promise<NextResponse> {
+  return requestJson<NextResponse>('/api/v1/session/next', { sessionId, mode, autoNext });
+}

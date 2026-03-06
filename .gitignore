@@ -1,0 +1,27 @@
+node_modules
+.env
+.env.*
+!.env.example
+dist
+build
+*.tsbuildinfo
+coverage
+.vite
+*.log
+.DS_Store
+
+# Local chess data / datasets
+*.pgn
+*.pgn.gz
+*.epd
+tmp-test-puzzles.pgn
+data/
+tmp/
+
+# Local database artifacts
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+*.db-journal

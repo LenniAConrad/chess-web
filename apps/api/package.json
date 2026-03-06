@@ -1,0 +1,37 @@
+{
+  "name": "@chess-web/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/server.js",
+  "types": "dist/server.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "migrate": "tsx src/cli/migrate.ts",
+    "import:pgn": "tsx src/cli/importPgn.ts",
+    "metrics:daily": "tsx src/cli/aggregateDailyMetrics.ts"
+  },
+  "dependencies": {
+    "@mliebelt/pgn-parser": "^1.4.19",
+    "@chess-web/chess-core": "workspace:*",
+    "@chess-web/config": "workspace:*",
+    "@chess-web/db": "workspace:*",
+    "@fastify/cookie": "^10.0.1",
+    "@fastify/cors": "^10.1.0",
+    "@fastify/helmet": "^13.0.1",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.1",
+    "pg": "^8.13.3",
+    "pino": "^9.6.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.11",
+    "tsx": "^4.19.3"
+  }
+}

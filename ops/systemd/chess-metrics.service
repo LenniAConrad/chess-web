@@ -1,0 +1,11 @@
+[Unit]
+Description=Aggregate Chess Daily Metrics
+After=network.target postgresql.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/chess-web
+EnvironmentFile=/opt/chess-web/.env
+ExecStart=/usr/bin/env pnpm --filter @chess-web/api metrics:daily
+User=www-data
+Group=www-data

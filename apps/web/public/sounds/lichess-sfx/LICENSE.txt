@@ -1,0 +1,21 @@
+Lichess sound assets bundled in this repository (not the active default in the app):
+- Move.ogg
+- Capture.ogg
+
+Source:
+- https://github.com/lichess-org/lila/tree/master/public/sound/sfx
+
+Attribution:
+- Author: Enigmahack
+- Project: lichess-org/lila
+
+License:
+- GNU Affero General Public License v3.0 or later (AGPLv3+)
+
+Reference:
+- https://github.com/lichess-org/lila/blob/master/COPYING.md
+- https://github.com/lichess-org/lila/blob/master/LICENSE
+
+Notes:
+- This project intentionally uses the free "sfx" pack only.
+- Lichess COPYING.md also marks other sound assets as non-free.

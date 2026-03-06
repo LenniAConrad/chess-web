@@ -1,0 +1,16 @@
+[Unit]
+Description=Chess Web API
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/chess-web
+EnvironmentFile=/opt/chess-web/.env
+ExecStart=/usr/bin/env pnpm --filter @chess-web/api start
+Restart=always
+RestartSec=5
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target

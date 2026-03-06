@@ -1,0 +1,14 @@
+Lichess cburnett piece assets used by this app (promotion chooser):
+- wQ.svg wR.svg wB.svg wN.svg
+- bQ.svg bR.svg bB.svg bN.svg
+
+Source:
+- https://github.com/lichess-org/lila/tree/master/public/piece/cburnett
+
+Attribution:
+- Colin M.L. Burnett
+- Included via lichess-org/lila
+
+License (as documented by Lichess):
+- GPLv2+
+- Reference: https://github.com/lichess-org/lila/blob/master/COPYING.md
