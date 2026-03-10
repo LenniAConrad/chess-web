@@ -1,8 +1,11 @@
 import type {
+  SessionHistoryClearResponse,
   HintResponse,
   MoveResponse,
   NextResponse,
   RevealResponse,
+  SessionHistoryResponse,
+  SessionTreeResponse,
   SkipVariationResponse,
   StartSessionResponse,
   VariationMode
@@ -31,9 +34,10 @@ async function requestJson<T>(path: string, body?: Record<string, unknown>): Pro
 export function startSession(
   mode: VariationMode,
   autoNext: boolean,
-  puzzleId?: string
+  puzzleId?: string,
+  source: 'normal' | 'history' = 'normal'
 ): Promise<StartSessionResponse> {
-  return requestJson<StartSessionResponse>('/api/v1/session/start', { mode, autoNext, puzzleId });
+  return requestJson<StartSessionResponse>('/api/v1/session/start', { mode, autoNext, puzzleId, source });
 }
 
 export function playMove(sessionId: string, uciMove: string): Promise<MoveResponse> {
@@ -44,8 +48,23 @@ export function getHint(sessionId: string): Promise<HintResponse> {
   return requestJson<HintResponse>('/api/v1/session/hint', { sessionId });
 }
 
-export function revealSolution(sessionId: string): Promise<RevealResponse> {
-  return requestJson<RevealResponse>('/api/v1/session/reveal', { sessionId });
+export function getSessionHistory(sessionId: string, limit = 20): Promise<SessionHistoryResponse> {
+  return requestJson<SessionHistoryResponse>('/api/v1/session/history', { sessionId, limit });
+}
+
+export function clearSessionHistory(sessionId: string): Promise<SessionHistoryClearResponse> {
+  return requestJson<SessionHistoryClearResponse>('/api/v1/session/history/clear', { sessionId });
+}
+
+export function getSessionTree(sessionId: string): Promise<SessionTreeResponse> {
+  return requestJson<SessionTreeResponse>('/api/v1/session/tree', { sessionId });
+}
+
+export function revealSolution(
+  sessionId: string,
+  source: 'manual' | 'auto' = 'manual'
+): Promise<RevealResponse> {
+  return requestJson<RevealResponse>('/api/v1/session/reveal', { sessionId, source });
 }
 
 export function skipVariation(sessionId: string): Promise<SkipVariationResponse> {

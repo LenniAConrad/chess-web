@@ -36,6 +36,7 @@ export interface MoveResponse {
 
 export interface HintResponse {
   pieceFromSquare: string | null;
+  bestMoveUci: string | null;
   state: SessionStatePayload;
 }
 
@@ -66,4 +67,49 @@ export interface NextResponse {
     title: string;
   };
   state: SessionStatePayload;
+}
+
+export type SessionHistoryStatus = 'correct' | 'half' | 'incorrect';
+
+export interface SessionHistoryItem {
+  sessionId: string;
+  puzzlePublicId: string;
+  puzzleTitle: string;
+  createdAt: string;
+  status: SessionHistoryStatus;
+  autoplayUsed: boolean;
+  wrongMoveCount: number;
+  hintCount: number;
+  solved: boolean;
+  revealed: boolean;
+}
+
+export interface SessionHistoryResponse {
+  items: SessionHistoryItem[];
+}
+
+export interface SessionHistoryClearResponse {
+  cleared: number;
+}
+
+export interface SessionTreeNode {
+  id: number;
+  parent_id: number | null;
+  ply: number;
+  san: string;
+  uci: string;
+  fen_after: string;
+  is_mainline: boolean;
+  sibling_order: number;
+  actor: 'user' | 'opponent';
+}
+
+export interface SessionTreeResponse {
+  puzzle: {
+    publicId: string;
+    title: string;
+    startFen: string;
+  };
+  currentNodeId: number;
+  nodes: SessionTreeNode[];
 }

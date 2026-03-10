@@ -3,9 +3,6 @@ import type { CSSProperties } from 'react';
 interface EvalBarProps {
   cp: number | null;
   mate: number | null;
-  depth: number;
-  error: string | null;
-  orientation: 'white' | 'black';
 }
 
 const GUIDE_CP_LEVELS = [600, 300, 0, -300, -600];
@@ -23,15 +20,14 @@ function normalizeScore(cp: number | null, mate: number | null): number {
   return (clamped + 800) / 1600;
 }
 
-export function EvalBar({ cp, mate, depth, error, orientation }: EvalBarProps) {
+export function EvalBar({ cp, mate }: EvalBarProps) {
   const value = normalizeScore(cp, mate);
   const fillPercent = value * 100;
   const fillStyle = { '--eval-fill': `${fillPercent}%` } as CSSProperties;
-  const barClassName = `eval-bar${orientation === 'black' ? ' is-flipped' : ''}`;
 
   return (
     <div className="eval-wrap">
-      <div className={barClassName}>
+      <div className="eval-bar">
         <div className="eval-fill" style={fillStyle} />
         <div className="eval-guides" aria-hidden="true">
           {GUIDE_CP_LEVELS.map((cpLevel) => {
@@ -44,10 +40,6 @@ export function EvalBar({ cp, mate, depth, error, orientation }: EvalBarProps) {
             return <span key={cpLevel} className={`eval-guide-line${cpLevel === 0 ? ' is-even' : ''}`} style={style} />;
           })}
         </div>
-      </div>
-      <div className="eval-meta">
-        <div>{error ? 'Engine unavailable' : mate !== null ? `M${mate}` : cp !== null ? (cp / 100).toFixed(2) : '--'}</div>
-        <div className="eval-depth">d{depth}</div>
       </div>
     </div>
   );

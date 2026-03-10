@@ -1,6 +1,7 @@
 Lichess sound assets used by this app:
 - Move.ogg
 - Capture.ogg
+- Check.ogg
 
 Source:
 - https://github.com/lichess-org/lila/tree/master/public/sound/standard

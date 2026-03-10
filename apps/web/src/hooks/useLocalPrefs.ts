@@ -8,13 +8,19 @@ export interface UserPreferences {
   variationMode: VariationMode;
   hintsEnabled: boolean;
   autoQueenPromotion: boolean;
+  darkMode: boolean;
+  autoPlay: boolean;
+  animations: boolean;
 }
 
 const DEFAULT_PREFS: UserPreferences = {
   autoNext: true,
   variationMode: 'explore',
   hintsEnabled: true,
-  autoQueenPromotion: true
+  autoQueenPromotion: true,
+  darkMode: false,
+  autoPlay: false,
+  animations: true
 };
 
 export function useLocalPrefs() {
@@ -30,7 +36,10 @@ export function useLocalPrefs() {
         autoNext: parsed.autoNext ?? DEFAULT_PREFS.autoNext,
         variationMode: parsed.variationMode ?? DEFAULT_PREFS.variationMode,
         hintsEnabled: parsed.hintsEnabled ?? DEFAULT_PREFS.hintsEnabled,
-        autoQueenPromotion: parsed.autoQueenPromotion ?? DEFAULT_PREFS.autoQueenPromotion
+        autoQueenPromotion: parsed.autoQueenPromotion ?? DEFAULT_PREFS.autoQueenPromotion,
+        darkMode: parsed.darkMode ?? DEFAULT_PREFS.darkMode,
+        autoPlay: parsed.autoPlay ?? DEFAULT_PREFS.autoPlay,
+        animations: parsed.animations ?? DEFAULT_PREFS.animations
       };
     } catch {
       return DEFAULT_PREFS;

@@ -4,13 +4,16 @@ import {
   type VariationMode
 } from '@chess-web/chess-core';
 import {
+  clearPuzzleSessionHistory,
   createPuzzleSession,
   getPuzzleById,
   getPuzzleByPublicId,
   getPuzzleNodes,
   getPuzzleSession,
   getRandomPuzzle,
+  listPuzzleSessionHistory,
   updatePuzzleSession,
+  type PuzzleSessionHistoryRecord,
   type PuzzleNodeRecord,
   type PuzzleRecord,
   type PuzzleSessionRecord
@@ -22,6 +25,33 @@ interface SessionContext {
   puzzle: PuzzleRecord;
   nodes: PuzzleNodeRecord[];
   engine: PuzzleSessionEngine;
+}
+
+export type SessionHistoryStatus = 'correct' | 'half' | 'incorrect';
+
+export interface SessionHistoryItem {
+  sessionId: string;
+  puzzlePublicId: string;
+  puzzleTitle: string;
+  createdAt: string;
+  status: SessionHistoryStatus;
+  autoplayUsed: boolean;
+  wrongMoveCount: number;
+  hintCount: number;
+  solved: boolean;
+  revealed: boolean;
+}
+
+function classifyHistoryStatus(item: PuzzleSessionHistoryRecord): SessionHistoryStatus {
+  if (item.revealed || !item.solved) {
+    return 'incorrect';
+  }
+
+  if (item.wrong_move_count > 0 || item.hint_count > 0) {
+    return 'half';
+  }
+
+  return 'correct';
 }
 
 function toCoreNodes(nodes: PuzzleNodeRecord[]): CorePuzzleNode[] {
@@ -88,6 +118,7 @@ export class SessionService {
     anonSessionId: string;
     mode: VariationMode;
     autoNext: boolean;
+    startedFromHistory?: boolean;
     puzzle: PuzzleRecord;
   }): Promise<{
     sessionId: string;
@@ -111,7 +142,8 @@ export class SessionService {
       puzzleId: input.puzzle.id,
       mode: input.mode,
       nodeId: snapshot.nodeId,
-      branchCursor: initialCursor as unknown as Record<string, unknown>
+      branchCursor: initialCursor as unknown as Record<string, unknown>,
+      startedFromHistory: input.startedFromHistory ?? false
     });
 
     await this.incrementDailyMetric('puzzles_started');
@@ -135,6 +167,7 @@ export class SessionService {
     mode: VariationMode;
     autoNext: boolean;
     excludePuzzleId?: number;
+    startedFromHistory?: boolean;
   }): Promise<{
     sessionId: string;
     puzzle: { publicId: string; startFen: string; title: string };
@@ -150,6 +183,7 @@ export class SessionService {
       anonSessionId: input.anonSessionId,
       mode: input.mode,
       autoNext: input.autoNext,
+      startedFromHistory: input.startedFromHistory,
       puzzle
     });
   }
@@ -159,6 +193,7 @@ export class SessionService {
     mode: VariationMode;
     autoNext: boolean;
     publicId: string;
+    startedFromHistory?: boolean;
   }): Promise<{
     sessionId: string;
     puzzle: { publicId: string; startFen: string; title: string };
@@ -170,6 +205,7 @@ export class SessionService {
       anonSessionId: input.anonSessionId,
       mode: input.mode,
       autoNext: input.autoNext,
+      startedFromHistory: input.startedFromHistory,
       puzzle
     });
   }
@@ -193,7 +229,10 @@ export class SessionService {
       nodeId: step.snapshot.nodeId,
       branchCursor: step.cursor as unknown as Record<string, unknown>,
       solved: step.solved,
-      revealed: context.dbSession.revealed
+      revealed: context.dbSession.revealed,
+      autoplayUsed: context.dbSession.autoplay_used,
+      wrongMoveCount: context.dbSession.wrong_move_count + (step.result === 'incorrect' ? 1 : 0),
+      hintCount: context.dbSession.hint_count
     });
 
     if (step.solved) {
@@ -214,6 +253,7 @@ export class SessionService {
 
   async hint(input: { sessionId: string }): Promise<{
     pieceFromSquare: string | null;
+    bestMoveUci: string | null;
     state: SessionStatePayload;
   }> {
     const context = await this.loadContext(input.sessionId);
@@ -225,7 +265,10 @@ export class SessionService {
       nodeId: result.snapshot.nodeId,
       branchCursor: cursor as unknown as Record<string, unknown>,
       solved: context.dbSession.solved,
-      revealed: context.dbSession.revealed
+      revealed: context.dbSession.revealed,
+      autoplayUsed: context.dbSession.autoplay_used,
+      wrongMoveCount: context.dbSession.wrong_move_count,
+      hintCount: context.dbSession.hint_count + (result.pieceFromSquare ? 1 : 0)
     });
 
     if (result.pieceFromSquare) {
@@ -234,11 +277,12 @@ export class SessionService {
 
     return {
       pieceFromSquare: result.pieceFromSquare,
+      bestMoveUci: result.bestMoveUci,
       state: toStatePayload(result.snapshot)
     };
   }
 
-  async reveal(input: { sessionId: string }): Promise<{
+  async reveal(input: { sessionId: string; source?: 'manual' | 'auto' }): Promise<{
     bestMoveUci: string | null;
     bestMoveSan: string | null;
     afterFen: string | null;
@@ -256,7 +300,10 @@ export class SessionService {
       nodeId: result.snapshot.nodeId,
       branchCursor: result.cursor as unknown as Record<string, unknown>,
       solved: result.solved,
-      revealed: true
+      revealed: true,
+      autoplayUsed: context.dbSession.autoplay_used || input.source === 'auto',
+      wrongMoveCount: context.dbSession.wrong_move_count,
+      hintCount: context.dbSession.hint_count
     });
 
     await this.incrementDailyMetric('reveal_used');
@@ -289,7 +336,10 @@ export class SessionService {
       nodeId: result.snapshot.nodeId,
       branchCursor: result.cursor as unknown as Record<string, unknown>,
       solved: result.solved,
-      revealed: context.dbSession.revealed
+      revealed: context.dbSession.revealed,
+      autoplayUsed: context.dbSession.autoplay_used,
+      wrongMoveCount: context.dbSession.wrong_move_count,
+      hintCount: context.dbSession.hint_count
     });
 
     return {
@@ -332,6 +382,71 @@ export class SessionService {
     };
   }
 
+  async getSessionHistory(input: {
+    sessionId: string;
+    anonSessionId: string;
+    limit: number;
+  }): Promise<{ items: SessionHistoryItem[] }> {
+    const session = await getPuzzleSession(this.pool, input.sessionId);
+    if (!session || session.anon_session_id !== input.anonSessionId) {
+      throw new Error('Session not found');
+    }
+
+    const normalizedLimit = Math.min(50, Math.max(1, Math.floor(input.limit)));
+    const history = await listPuzzleSessionHistory(
+      this.pool,
+      input.anonSessionId,
+      normalizedLimit,
+      input.sessionId
+    );
+    const items = history.map((item) => ({
+      sessionId: item.session_id,
+      puzzlePublicId: item.puzzle_public_id,
+      puzzleTitle: item.puzzle_title,
+      createdAt: item.created_at,
+      status: classifyHistoryStatus(item),
+      autoplayUsed: item.autoplay_used,
+      wrongMoveCount: item.wrong_move_count,
+      hintCount: item.hint_count,
+      solved: item.solved,
+      revealed: item.revealed
+    }));
+
+    return { items };
+  }
+
+  async clearSessionHistory(input: {
+    sessionId: string;
+    anonSessionId: string;
+  }): Promise<{ cleared: number }> {
+    const session = await getPuzzleSession(this.pool, input.sessionId);
+    if (!session || session.anon_session_id !== input.anonSessionId) {
+      throw new Error('Session not found');
+    }
+
+    const cleared = await clearPuzzleSessionHistory(this.pool, input.anonSessionId, input.sessionId);
+    return { cleared };
+  }
+
+  async getSessionTree(input: { sessionId: string; anonSessionId: string }): Promise<{
+    puzzle: { publicId: string; title: string; startFen: string };
+    currentNodeId: number;
+    nodes: PuzzleNodeRecord[];
+  }> {
+    const context = await this.loadContext(input.sessionId, input.anonSessionId);
+    const rootNodeId = rootNodeIdForPuzzle(context.puzzle, context.nodes);
+
+    return {
+      puzzle: {
+        publicId: context.puzzle.public_id,
+        title: context.puzzle.title,
+        startFen: context.puzzle.start_fen
+      },
+      currentNodeId: context.dbSession.node_id ?? rootNodeId,
+      nodes: context.nodes
+    };
+  }
+
   async getPuzzleTree(publicId: string): Promise<{
     puzzle: { publicId: string; title: string; startFen: string };
     nodes: PuzzleNodeRecord[];
@@ -349,9 +464,12 @@ export class SessionService {
     };
   }
 
-  private async loadContext(sessionId: string): Promise<SessionContext> {
+  private async loadContext(sessionId: string, anonSessionId?: string): Promise<SessionContext> {
     const dbSession = await getPuzzleSession(this.pool, sessionId);
     if (!dbSession) {
+      throw new Error('Session not found');
+    }
+    if (anonSessionId && dbSession.anon_session_id !== anonSessionId) {
       throw new Error('Session not found');
     }
 

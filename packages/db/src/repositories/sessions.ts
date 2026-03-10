@@ -1,6 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
-import type { PuzzleSessionRecord, VariationMode } from '../types.js';
+import type { PuzzleSessionHistoryRecord, PuzzleSessionRecord, VariationMode } from '../types.js';
+
+function toIsoTimestamp(value: unknown): string {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  return String(value);
+}
 
 function mapSession(row: Record<string, unknown>): PuzzleSessionRecord {
   return {
@@ -10,8 +17,28 @@ function mapSession(row: Record<string, unknown>): PuzzleSessionRecord {
     mode: row.mode as VariationMode,
     node_id: row.node_id === null ? null : Number(row.node_id),
     branch_cursor: (row.branch_cursor ?? {}) as Record<string, unknown>,
+    started_from_history: Boolean(row.started_from_history),
     solved: Boolean(row.solved),
-    revealed: Boolean(row.revealed)
+    revealed: Boolean(row.revealed),
+    autoplay_used: Boolean(row.autoplay_used),
+    wrong_move_count: Number(row.wrong_move_count ?? 0),
+    hint_count: Number(row.hint_count ?? 0),
+    created_at: toIsoTimestamp(row.created_at),
+    updated_at: toIsoTimestamp(row.updated_at)
+  };
+}
+
+function mapHistory(row: Record<string, unknown>): PuzzleSessionHistoryRecord {
+  return {
+    session_id: String(row.session_id),
+    puzzle_public_id: String(row.puzzle_public_id),
+    puzzle_title: String(row.puzzle_title),
+    created_at: toIsoTimestamp(row.created_at),
+    solved: Boolean(row.solved),
+    revealed: Boolean(row.revealed),
+    autoplay_used: Boolean(row.autoplay_used),
+    wrong_move_count: Number(row.wrong_move_count ?? 0),
+    hint_count: Number(row.hint_count ?? 0)
   };
 }
 
@@ -41,12 +68,15 @@ export async function createPuzzleSession(
     mode: VariationMode;
     nodeId: number;
     branchCursor: Record<string, unknown>;
+    startedFromHistory?: boolean;
   }
 ): Promise<PuzzleSessionRecord> {
   const sessionId = randomUUID();
   const result = await pool.query(
-    `INSERT INTO puzzle_sessions(id, anon_session_id, puzzle_id, mode, node_id, branch_cursor)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO puzzle_sessions(
+      id, anon_session_id, puzzle_id, mode, node_id, branch_cursor, started_from_history
+    )
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
     [
       sessionId,
@@ -54,7 +84,8 @@ export async function createPuzzleSession(
       input.puzzleId,
       input.mode,
       input.nodeId,
-      JSON.stringify(input.branchCursor)
+      JSON.stringify(input.branchCursor),
+      input.startedFromHistory ?? false
     ]
   );
 
@@ -74,6 +105,9 @@ export async function updatePuzzleSession(
     branchCursor: Record<string, unknown>;
     solved: boolean;
     revealed: boolean;
+    autoplayUsed: boolean;
+    wrongMoveCount: number;
+    hintCount: number;
   }
 ): Promise<PuzzleSessionRecord> {
   const result = await pool.query(
@@ -82,6 +116,9 @@ export async function updatePuzzleSession(
          branch_cursor = $3,
          solved = $4,
          revealed = $5,
+         autoplay_used = $6,
+         wrong_move_count = $7,
+         hint_count = $8,
          updated_at = now()
      WHERE id = $1
      RETURNING *`,
@@ -90,9 +127,64 @@ export async function updatePuzzleSession(
       input.nodeId,
       JSON.stringify(input.branchCursor),
       input.solved,
-      input.revealed
+      input.revealed,
+      input.autoplayUsed,
+      input.wrongMoveCount,
+      input.hintCount
     ]
   );
 
   return mapSession(result.rows[0] as Record<string, unknown>);
+}
+
+export async function listPuzzleSessionHistory(
+  pool: Pool,
+  anonSessionId: string,
+  limit: number,
+  excludeSessionId?: string
+): Promise<PuzzleSessionHistoryRecord[]> {
+  const result = await pool.query(
+    `SELECT
+      ps.id AS session_id,
+      p.public_id AS puzzle_public_id,
+      p.title AS puzzle_title,
+      ps.created_at AS created_at,
+      ps.solved AS solved,
+      ps.revealed AS revealed,
+      ps.autoplay_used AS autoplay_used,
+      ps.wrong_move_count AS wrong_move_count,
+      ps.hint_count AS hint_count
+     FROM puzzle_sessions ps
+     INNER JOIN puzzles p ON p.id = ps.puzzle_id
+     WHERE ps.anon_session_id = $1
+       AND (
+         ps.started_from_history = false
+         OR ps.solved = true
+         OR ps.revealed = true
+         OR ps.wrong_move_count > 0
+         OR ps.hint_count > 0
+         OR ps.autoplay_used = true
+       )
+       AND ($3::uuid IS NULL OR ps.id <> $3)
+     ORDER BY ps.created_at DESC
+     LIMIT $2`,
+    [anonSessionId, limit, excludeSessionId ?? null]
+  );
+
+  return result.rows.map((row) => mapHistory(row as Record<string, unknown>));
+}
+
+export async function clearPuzzleSessionHistory(
+  pool: Pool,
+  anonSessionId: string,
+  keepSessionId: string
+): Promise<number> {
+  const result = await pool.query(
+    `DELETE FROM puzzle_sessions
+     WHERE anon_session_id = $1
+       AND id <> $2`,
+    [anonSessionId, keepSessionId]
+  );
+
+  return result.rowCount ?? 0;
 }

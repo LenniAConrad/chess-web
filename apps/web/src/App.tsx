@@ -1,12 +1,28 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Chess, type PieceSymbol, type Square } from 'chess.js';
 import { ChessBoard } from './components/ChessBoard.js';
 import { EvalBar } from './components/EvalBar.js';
 import { useLocalPrefs } from './hooks/useLocalPrefs.js';
 import { useStockfishEval } from './hooks/useStockfishEval.js';
-import { getHint, nextPuzzle, playMove, revealSolution, skipVariation, startSession } from './lib/api.js';
+import {
+  clearSessionHistory,
+  getHint,
+  getSessionHistory,
+  getSessionTree,
+  nextPuzzle,
+  playMove,
+  revealSolution,
+  skipVariation,
+  startSession
+} from './lib/api.js';
 import { playMoveSound, type MoveSoundType } from './lib/moveSounds.js';
-import type { MoveResponse, SessionStatePayload } from './types/api.js';
+import type {
+  SessionHistoryItem,
+  SessionStatePayload,
+  SessionTreeNode,
+  SessionTreeResponse,
+  StartSessionResponse
+} from './types/api.js';
 
 interface PuzzleHeader {
   publicId: string;
@@ -19,11 +35,34 @@ const CORRECT_BREAK_MS = 750;
 const REWIND_STEP_DELAY_MS = 260;
 const REWIND_BREAK_MS = 700;
 const SHORT_STATUS_DELAY_MS = 700;
+const CHECK_SOUND_DELAY_MS = 100;
+const SESSION_HISTORY_LIMIT = 20;
+
+type PrimaryMoveSoundType = Exclude<MoveSoundType, 'check'>;
+
+interface MoveSoundDecision {
+  primary: PrimaryMoveSoundType | null;
+  isCheck: boolean;
+}
+
+interface AutoPlayAnimationPayload {
+  autoPlayedMoves: string[];
+  autoPlayStartFen: string | null;
+  rewindFens: string[];
+  nextState: SessionStatePayload;
+}
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function maybeWait(ms: number, enabled: boolean): Promise<void> {
+  if (!enabled || ms <= 0) {
+    return Promise.resolve();
+  }
+  return wait(ms);
 }
 
 function applyUciMove(chess: Chess, uciMove: string): boolean {
@@ -38,9 +77,9 @@ function applyUciMove(chess: Chess, uciMove: string): boolean {
   return Boolean(result);
 }
 
-function getMoveSoundType(fen: string, uciMove: string): MoveSoundType | null {
+function getMoveSoundDecision(fen: string, uciMove: string): MoveSoundDecision {
   if (uciMove.length < 4) {
-    return null;
+    return { primary: null, isCheck: false };
   }
 
   const chess = new Chess(fen);
@@ -50,18 +89,31 @@ function getMoveSoundType(fen: string, uciMove: string): MoveSoundType | null {
   const move = chess.move({ from, to, promotion });
 
   if (!move) {
-    return null;
+    return { primary: null, isCheck: false };
   }
 
+  const isCheck = chess.inCheck();
+
   if (move.isKingsideCastle() || move.isQueensideCastle()) {
-    return 'castle';
+    return { primary: 'castle', isCheck };
   }
 
   if (move.isCapture()) {
-    return 'capture';
+    return { primary: 'capture', isCheck };
   }
 
-  return 'move';
+  return { primary: 'move', isCheck };
+}
+
+function playMoveSoundDecision(decision: MoveSoundDecision): void {
+  if (decision.primary) {
+    playMoveSound(decision.primary);
+  }
+  if (decision.isCheck) {
+    setTimeout(() => {
+      playMoveSound('check');
+    }, CHECK_SOUND_DELAY_MS);
+  }
 }
 
 function getFenAfterUciMove(fen: string, uciMove: string): string | null {
@@ -101,6 +153,82 @@ function getMoveSquaresBetweenFens(beforeFen: string, afterFen: string): [Square
   return null;
 }
 
+function isPuzzleSolved(snapshot: SessionStatePayload): boolean {
+  return snapshot.completedBranches >= snapshot.totalLines;
+}
+
+function formatEngineEval(cp: number | null, mate: number | null, error: string | null): string {
+  if (error) {
+    return 'unavailable';
+  }
+
+  if (mate !== null) {
+    return `M${mate}`;
+  }
+
+  if (cp === null) {
+    return '--';
+  }
+
+  const pawns = cp / 100;
+  const sign = pawns > 0 ? '+' : '';
+  return `${sign}${pawns.toFixed(2)}`;
+}
+
+function formatEngineSide(cp: number | null, mate: number | null, error: string | null): string {
+  if (error) {
+    return 'Engine unavailable';
+  }
+
+  if (mate !== null) {
+    return mate > 0 ? 'White winning' : 'Black winning';
+  }
+
+  if (cp === null) {
+    return 'Neutral';
+  }
+
+  if (Math.abs(cp) <= 25) {
+    return 'Neutral';
+  }
+
+  return cp > 0 ? 'White better' : 'Black better';
+}
+
+function getHistoryTone(item: SessionHistoryItem): 'autoplay' | 'correct' | 'half' | 'incorrect' {
+  if (item.autoplayUsed) {
+    return 'autoplay';
+  }
+
+  return item.status;
+}
+
+function getHistoryLabel(item: SessionHistoryItem): string {
+  if (item.autoplayUsed) {
+    return 'Autoplay';
+  }
+  if (item.status === 'correct') {
+    return 'Correct';
+  }
+  if (item.status === 'half') {
+    return 'Incomplete';
+  }
+  return 'Wrong';
+}
+
+function getHistorySymbol(item: SessionHistoryItem): string {
+  if (item.autoplayUsed) {
+    return '\u21bb';
+  }
+  if (item.status === 'correct') {
+    return '\u2713';
+  }
+  if (item.status === 'half') {
+    return '\u2013';
+  }
+  return '\u2716';
+}
+
 export function App() {
   const { prefs, setPrefs } = useLocalPrefs();
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -112,27 +240,179 @@ export function App() {
   const [errorText, setErrorText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [hintSquare, setHintSquare] = useState<string | null>(null);
+  const [hintArrow, setHintArrow] = useState<[Square, Square] | null>(null);
+  const [hintLevel, setHintLevel] = useState(0);
   const [lastBestMove, setLastBestMove] = useState<string | null>(null);
   const [playerOrientation, setPlayerOrientation] = useState<'white' | 'black'>('white');
   const [lastMoveSquares, setLastMoveSquares] = useState<[Square, Square] | null>(null);
   const [puzzleIdInput, setPuzzleIdInput] = useState('');
+  const [historyItems, setHistoryItems] = useState<SessionHistoryItem[]>([]);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [sessionTree, setSessionTree] = useState<SessionTreeResponse | null>(null);
+  const [treeError, setTreeError] = useState<string | null>(null);
+  const [reviewPath, setReviewPath] = useState<number[] | null>(null);
 
-  const engineEval = useStockfishEval(displayFen ?? state?.fen ?? null);
+  const reviewNodeId = reviewPath?.at(-1) ?? null;
+  const treeNodeMap = useMemo(() => {
+    const map = new Map<number, SessionTreeNode>();
+    if (!sessionTree) {
+      return map;
+    }
+
+    for (const node of sessionTree.nodes) {
+      map.set(node.id, node);
+    }
+
+    return map;
+  }, [sessionTree]);
+
+  const treeChildrenMap = useMemo(() => {
+    const map = new Map<number, SessionTreeNode[]>();
+    if (!sessionTree) {
+      return map;
+    }
+
+    for (const node of sessionTree.nodes) {
+      if (node.parent_id === null) {
+        continue;
+      }
+
+      const siblings = map.get(node.parent_id) ?? [];
+      siblings.push(node);
+      map.set(node.parent_id, siblings);
+    }
+
+    for (const siblings of map.values()) {
+      siblings.sort((a, b) => a.sibling_order - b.sibling_order || a.id - b.id);
+    }
+
+    return map;
+  }, [sessionTree]);
+
+  const isReviewMode = Boolean(reviewPath && reviewPath.length > 1);
+  const reviewNode = reviewNodeId ? treeNodeMap.get(reviewNodeId) ?? null : null;
+  const reviewFen = reviewNode?.fen_after ?? null;
+  const liveFen = displayFen ?? state?.fen ?? null;
+  const boardFen = reviewFen ?? liveFen;
+  const reviewLastMoveSquares = useMemo(() => {
+    if (!isReviewMode || !reviewPath || reviewPath.length < 2) {
+      return null;
+    }
+
+    const nodeId = reviewPath[reviewPath.length - 1];
+    if (!nodeId) {
+      return null;
+    }
+
+    const node = treeNodeMap.get(nodeId);
+    if (!node?.uci) {
+      return null;
+    }
+
+    return getMoveSquares(node.uci);
+  }, [isReviewMode, reviewPath, treeNodeMap]);
+
+  const pgnCurrentNodeId = reviewNodeId ?? state?.nodeId ?? null;
+  const pgnNextMoves = pgnCurrentNodeId ? (treeChildrenMap.get(pgnCurrentNodeId) ?? []) : [];
+  const reviewMoves = useMemo(() => {
+    if (!reviewPath || reviewPath.length < 2) {
+      return [];
+    }
+
+    return reviewPath
+      .slice(1)
+      .map((nodeId) => treeNodeMap.get(nodeId)?.san ?? null)
+      .filter((san): san is string => Boolean(san));
+  }, [reviewPath, treeNodeMap]);
+
+  const engineEval = useStockfishEval(boardFen);
+  const checkColor = (() => {
+    if (!boardFen) {
+      return false;
+    }
+
+    const chess = new Chess(boardFen);
+    if (!chess.inCheck()) {
+      return false;
+    }
+
+    return chess.turn() === 'w' ? 'white' : 'black';
+  })();
+
+  const engineEvalText = formatEngineEval(engineEval.cp, engineEval.mate, engineEval.error);
+  const engineEvalSideText = formatEngineSide(engineEval.cp, engineEval.mate, engineEval.error);
+
+  const resetHints = useCallback(() => {
+    setHintSquare(null);
+    setHintArrow(null);
+    setHintLevel(0);
+  }, []);
+
+  const loadSessionArtifacts = useCallback(async (activeSessionId: string) => {
+    try {
+      const [history, tree] = await Promise.all([
+        getSessionHistory(activeSessionId, SESSION_HISTORY_LIMIT),
+        getSessionTree(activeSessionId)
+      ]);
+      setHistoryItems(history.items);
+      setHistoryError(null);
+      setSessionTree(tree);
+      setTreeError(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load puzzle metadata';
+      setTreeError(message);
+      setHistoryError(message);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = prefs.darkMode ? 'dark' : 'light';
+    return () => {
+      delete document.documentElement.dataset.theme;
+    };
+  }, [prefs.darkMode]);
+
+  useEffect(() => {
+    if (!sessionId) {
+      return;
+    }
+
+    void loadSessionArtifacts(sessionId);
+  }, [loadSessionArtifacts, sessionId]);
+
+  const applyStartedSession = useCallback(
+    (response: StartSessionResponse, status: string) => {
+      setSessionId(response.sessionId);
+      setPuzzle(response.puzzle);
+      setPuzzleIdInput(response.puzzle.publicId);
+      setState(response.state);
+      setDisplayFen(response.state.fen);
+      setPlayerOrientation(response.state.toMove === 'w' ? 'white' : 'black');
+      setLastMoveSquares(null);
+      resetHints();
+      setLastBestMove(null);
+      setCorrectText(null);
+      setReviewPath(null);
+      setSessionTree(null);
+      setStatusText(status);
+    },
+    [resetHints]
+  );
 
   const animateAutoPlay = useCallback(
-    async (response: MoveResponse, currentFen: string) => {
+    async (response: AutoPlayAnimationPayload, currentFen: string, animationsEnabled: boolean) => {
       const rewindFens = response.rewindFens ?? [];
       let rewindSourceFen = currentFen;
       if (rewindFens.length > 0) {
         setStatusText('Correct. Rewinding for next variation...');
-        await wait(CORRECT_BREAK_MS);
+        await maybeWait(CORRECT_BREAK_MS, animationsEnabled);
         for (const fen of rewindFens) {
           setLastMoveSquares(getMoveSquaresBetweenFens(fen, rewindSourceFen));
           setDisplayFen(fen);
           rewindSourceFen = fen;
-          await wait(REWIND_STEP_DELAY_MS);
+          await maybeWait(REWIND_STEP_DELAY_MS, animationsEnabled);
         }
-        await wait(REWIND_BREAK_MS);
+        await maybeWait(REWIND_BREAK_MS, animationsEnabled);
       }
 
       if (!response.autoPlayStartFen || response.autoPlayedMoves.length === 0) {
@@ -143,15 +423,15 @@ export function App() {
       const currentOrRewoundFen = rewindSourceFen;
       if (currentOrRewoundFen !== response.autoPlayStartFen) {
         setDisplayFen(response.autoPlayStartFen);
-        await wait(REWIND_STEP_DELAY_MS);
+        await maybeWait(REWIND_STEP_DELAY_MS, animationsEnabled);
       }
 
       setStatusText('Correct. Opponent response...');
       const chess = new Chess(response.autoPlayStartFen);
-      await wait(AUTO_PLAY_DELAY_MS);
+      await maybeWait(AUTO_PLAY_DELAY_MS, animationsEnabled);
 
       for (const move of response.autoPlayedMoves) {
-        const soundType = getMoveSoundType(chess.fen(), move);
+        const soundDecision = getMoveSoundDecision(chess.fen(), move);
         const ok = applyUciMove(chess, move);
         if (!ok) {
           break;
@@ -160,11 +440,9 @@ export function App() {
         if (moveSquares) {
           setLastMoveSquares(moveSquares);
         }
-        if (soundType) {
-          playMoveSound(soundType);
-        }
+        playMoveSoundDecision(soundDecision);
         setDisplayFen(chess.fen());
-        await wait(AUTO_PLAY_DELAY_MS);
+        await maybeWait(AUTO_PLAY_DELAY_MS, animationsEnabled);
       }
 
       setDisplayFen(response.nextState.fen);
@@ -175,27 +453,23 @@ export function App() {
   const loadInitial = useCallback(async () => {
     setLoading(true);
     setErrorText(null);
-    setHintSquare(null);
+    setHistoryError(null);
+    setTreeError(null);
+    resetHints();
     setLastBestMove(null);
     setLastMoveSquares(null);
+    setReviewPath(null);
 
     try {
       const response = await startSession(prefs.variationMode, prefs.autoNext);
-      setSessionId(response.sessionId);
-      setPuzzle(response.puzzle);
-      setPuzzleIdInput(response.puzzle.publicId);
-      setState(response.state);
-      setDisplayFen(response.state.fen);
-      setPlayerOrientation(response.state.toMove === 'w' ? 'white' : 'black');
-      setStatusText('Your move');
-      setCorrectText(null);
+      applyStartedSession(response, response.state.toMove === 'w' ? 'White to move' : 'Black to move');
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : 'Failed to load puzzle');
       setStatusText('Failed to load puzzle');
     } finally {
       setLoading(false);
     }
-  }, [prefs.autoNext, prefs.variationMode]);
+  }, [applyStartedSession, prefs.autoNext, prefs.variationMode, resetHints]);
 
   useEffect(() => {
     void loadInitial();
@@ -203,12 +477,12 @@ export function App() {
 
   const handleMove = useCallback(
     async (uciMove: string) => {
-      if (!sessionId || loading || !state) {
+      if (!sessionId || loading || !state || isReviewMode) {
         return;
       }
 
       const baseFen = displayFen ?? state.fen;
-      const moveSoundType = getMoveSoundType(baseFen, uciMove);
+      const moveSoundDecision = getMoveSoundDecision(baseFen, uciMove);
       const optimisticFen = getFenAfterUciMove(baseFen, uciMove);
       const optimisticLastMove = getMoveSquares(uciMove);
       if (optimisticFen) {
@@ -217,7 +491,7 @@ export function App() {
       }
 
       setLoading(true);
-      setHintSquare(null);
+      resetHints();
       setErrorText(null);
 
       try {
@@ -225,59 +499,70 @@ export function App() {
         setState(response.nextState);
         setLastBestMove(response.bestMoveUci ?? null);
         setCorrectText(null);
+        let artifactSessionId = sessionId;
 
         if (response.result === 'incorrect') {
-          if (moveSoundType) {
-            playMoveSound(moveSoundType);
-          }
+          playMoveSoundDecision(moveSoundDecision);
           setStatusText('Try again');
           setDisplayFen(response.nextState.fen);
           setLastMoveSquares(null);
         } else if (response.result === 'correct') {
-          if (moveSoundType) {
-            playMoveSound(moveSoundType);
-          }
+          playMoveSoundDecision(moveSoundDecision);
           setCorrectText('Correct');
           setStatusText('Correct move');
-          await wait(CORRECT_BREAK_MS);
-          await animateAutoPlay(response, optimisticFen ?? baseFen);
+          await maybeWait(CORRECT_BREAK_MS, prefs.animations);
+          await animateAutoPlay(response, optimisticFen ?? baseFen, prefs.animations);
           setStatusText(
             `Correct. Branch ${response.nextState.completedBranches + 1}/${response.nextState.totalLines}`
           );
         } else {
-          if (moveSoundType) {
-            playMoveSound(moveSoundType);
-          }
+          playMoveSoundDecision(moveSoundDecision);
           setCorrectText('Correct');
           setStatusText('Correct move');
-          await wait(CORRECT_BREAK_MS);
-          await animateAutoPlay(response, optimisticFen ?? baseFen);
+          await maybeWait(CORRECT_BREAK_MS, prefs.animations);
+          await animateAutoPlay(response, optimisticFen ?? baseFen, prefs.animations);
           setStatusText('Puzzle complete');
           if (prefs.autoNext) {
-            await wait(SHORT_STATUS_DELAY_MS);
+            await maybeWait(SHORT_STATUS_DELAY_MS, prefs.animations);
             const next = await nextPuzzle(sessionId, prefs.variationMode, prefs.autoNext);
-            setSessionId(next.newSessionId);
-            setPuzzle(next.puzzle);
-            setPuzzleIdInput(next.puzzle.publicId);
-            setState(next.state);
-            setDisplayFen(next.state.fen);
-            setPlayerOrientation(next.state.toMove === 'w' ? 'white' : 'black');
-            setLastMoveSquares(null);
-            setCorrectText(null);
-            setStatusText('Next puzzle loaded');
+            applyStartedSession(
+              {
+                sessionId: next.newSessionId,
+                puzzle: next.puzzle,
+                state: next.state,
+                ui: { autoNextDefault: prefs.autoNext }
+              },
+              'Next puzzle loaded'
+            );
+            artifactSessionId = next.newSessionId;
           }
         }
+
+        void loadSessionArtifacts(artifactSessionId);
       } catch (error) {
         setErrorText(error instanceof Error ? error.message : 'Move failed');
       } finally {
         setLoading(false);
       }
     },
-    [animateAutoPlay, displayFen, loading, prefs.autoNext, prefs.variationMode, sessionId, state]
+    [
+      animateAutoPlay,
+      applyStartedSession,
+      displayFen,
+      isReviewMode,
+      loadSessionArtifacts,
+      loading,
+      prefs.animations,
+      prefs.autoNext,
+      prefs.variationMode,
+      resetHints,
+      sessionId,
+      state
+    ]
   );
 
   const handleHint = useCallback(async () => {
-    if (!sessionId || loading) {
+    if (!sessionId || loading || isReviewMode) {
       return;
     }
 
@@ -285,60 +570,124 @@ export function App() {
     setErrorText(null);
     try {
       const response = await getHint(sessionId);
+      const nextHintLevel = response.pieceFromSquare ? Math.min(hintLevel + 1, 2) : 0;
+      setHintLevel(nextHintLevel);
       setHintSquare(response.pieceFromSquare);
+      setHintArrow(
+        nextHintLevel >= 2 && response.bestMoveUci
+          ? getMoveSquares(response.bestMoveUci)
+          : null
+      );
       setState(response.state);
       setDisplayFen(response.state.fen);
       setLastMoveSquares(null);
-      setStatusText(response.pieceFromSquare ? 'Hint shown' : 'No hint available');
+      setStatusText(
+        response.pieceFromSquare
+          ? nextHintLevel >= 2
+            ? 'Hint shown (piece + arrow)'
+            : 'Hint shown (piece)'
+          : 'No hint available'
+      );
+
+      await loadSessionArtifacts(sessionId);
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : 'Hint failed');
     } finally {
       setLoading(false);
     }
-  }, [loading, sessionId]);
+  }, [hintLevel, isReviewMode, loadSessionArtifacts, loading, sessionId]);
 
-  const handleReveal = useCallback(async () => {
-    if (!sessionId || loading) {
-      return;
-    }
+  const handleReveal = useCallback(
+    async (mode: 'manual' | 'auto' = 'manual') => {
+      if (!sessionId || loading || !state || isReviewMode) {
+        return;
+      }
 
-    setLoading(true);
-    setErrorText(null);
-    try {
-      const response = await revealSolution(sessionId);
-      setState(response.nextState);
-      setDisplayFen(response.nextState.fen);
-      setLastMoveSquares(null);
-      setHintSquare(null);
-      setLastBestMove(response.bestMoveUci);
-      setStatusText(response.bestMoveUci ? `Best move: ${response.bestMoveUci}` : 'No move to reveal');
-    } catch (error) {
-      setErrorText(error instanceof Error ? error.message : 'Reveal failed');
-    } finally {
-      setLoading(false);
-    }
-  }, [loading, sessionId]);
+      const baseFen = displayFen ?? state.fen;
+      setLoading(true);
+      setErrorText(null);
+      resetHints();
+      try {
+        const response = await revealSolution(sessionId, mode);
+        setState(response.nextState);
+        setLastBestMove(response.bestMoveUci);
+
+        if (!response.bestMoveUci || !response.afterFen) {
+          setDisplayFen(response.nextState.fen);
+          setLastMoveSquares(null);
+          setStatusText(isPuzzleSolved(response.nextState) ? 'Puzzle complete' : 'No move to reveal');
+          await loadSessionArtifacts(sessionId);
+          return;
+        }
+
+        const moveSquares = getMoveSquares(response.bestMoveUci);
+        if (moveSquares) {
+          setLastMoveSquares(moveSquares);
+        }
+
+        const moveSoundDecision = getMoveSoundDecision(baseFen, response.bestMoveUci);
+        playMoveSoundDecision(moveSoundDecision);
+
+        setDisplayFen(response.afterFen);
+        setStatusText(
+          mode === 'auto' ? `Autoplay: ${response.bestMoveUci}` : `Best move: ${response.bestMoveUci}`
+        );
+        await maybeWait(CORRECT_BREAK_MS, prefs.animations);
+
+        await animateAutoPlay(response, response.afterFen, prefs.animations);
+
+        if (isPuzzleSolved(response.nextState)) {
+          setStatusText('Puzzle complete');
+        } else {
+          setStatusText(
+            mode === 'auto'
+              ? `Autoplay. Branch ${response.nextState.completedBranches + 1}/${response.nextState.totalLines}`
+              : `Best line. Branch ${response.nextState.completedBranches + 1}/${response.nextState.totalLines}`
+          );
+        }
+
+        await loadSessionArtifacts(sessionId);
+      } catch (error) {
+        setErrorText(error instanceof Error ? error.message : 'Reveal failed');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [
+      animateAutoPlay,
+      displayFen,
+      isReviewMode,
+      loadSessionArtifacts,
+      loading,
+      prefs.animations,
+      resetHints,
+      sessionId,
+      state
+    ]
+  );
 
   const handleSkipVariation = useCallback(async () => {
-    if (!sessionId || loading) {
+    if (!sessionId || loading || isReviewMode) {
       return;
     }
 
     setLoading(true);
     setErrorText(null);
+    resetHints();
     try {
       const response = await skipVariation(sessionId);
       setState(response.nextState);
       setDisplayFen(response.nextState.fen);
       setLastMoveSquares(null);
-      setHintSquare(null);
       setStatusText(response.skipped ? 'Variation skipped' : 'Nothing to skip');
+
+      await loadSessionArtifacts(sessionId);
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : 'Skip variation failed');
     } finally {
       setLoading(false);
     }
-  }, [loading, sessionId]);
+  }, [isReviewMode, loadSessionArtifacts, loading, resetHints, sessionId]);
 
   const handleNextPuzzle = useCallback(async () => {
     if (!sessionId || loading) {
@@ -350,23 +699,54 @@ export function App() {
 
     try {
       const next = await nextPuzzle(sessionId, prefs.variationMode, prefs.autoNext);
-      setSessionId(next.newSessionId);
-      setPuzzle(next.puzzle);
-      setPuzzleIdInput(next.puzzle.publicId);
-      setState(next.state);
-      setDisplayFen(next.state.fen);
-      setPlayerOrientation(next.state.toMove === 'w' ? 'white' : 'black');
-      setLastMoveSquares(null);
-      setHintSquare(null);
-      setLastBestMove(null);
-      setCorrectText(null);
-      setStatusText('New puzzle loaded');
+      applyStartedSession(
+        {
+          sessionId: next.newSessionId,
+          puzzle: next.puzzle,
+          state: next.state,
+          ui: { autoNextDefault: prefs.autoNext }
+        },
+        'New puzzle loaded'
+      );
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : 'Failed to load next puzzle');
     } finally {
       setLoading(false);
     }
-  }, [loading, prefs.autoNext, prefs.variationMode, sessionId]);
+  }, [applyStartedSession, loading, prefs.autoNext, prefs.variationMode, sessionId]);
+
+  useEffect(() => {
+    if (!prefs.autoPlay || !sessionId || !state || loading || isReviewMode) {
+      return;
+    }
+
+    if (isPuzzleSolved(state)) {
+      if (prefs.autoNext) {
+        void handleNextPuzzle();
+      }
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void handleReveal('auto');
+    }, prefs.animations ? 450 : 0);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    handleNextPuzzle,
+    handleReveal,
+    isReviewMode,
+    loading,
+    prefs.animations,
+    prefs.autoNext,
+    prefs.autoPlay,
+    sessionId,
+    state
+  ]);
+
+  const boardCanInteract = !prefs.autoPlay && !isReviewMode && statusText !== 'Puzzle complete';
 
   const handleLoadById = useCallback(async () => {
     if (loading) {
@@ -381,27 +761,103 @@ export function App() {
 
     setLoading(true);
     setErrorText(null);
-    setHintSquare(null);
+    resetHints();
     setLastBestMove(null);
     setLastMoveSquares(null);
     setCorrectText(null);
+    setReviewPath(null);
 
     try {
       const response = await startSession(prefs.variationMode, prefs.autoNext, trimmedId);
-      setSessionId(response.sessionId);
-      setPuzzle(response.puzzle);
-      setPuzzleIdInput(response.puzzle.publicId);
-      setState(response.state);
-      setDisplayFen(response.state.fen);
-      setPlayerOrientation(response.state.toMove === 'w' ? 'white' : 'black');
-      setStatusText('Puzzle loaded by ID');
+      applyStartedSession(response, 'Puzzle loaded by ID');
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : 'Failed to load puzzle by ID');
       setStatusText('Failed to load puzzle');
     } finally {
       setLoading(false);
     }
-  }, [loading, prefs.autoNext, prefs.variationMode, puzzleIdInput]);
+  }, [applyStartedSession, loading, prefs.autoNext, prefs.variationMode, puzzleIdInput, resetHints]);
+
+  const handleLoadHistoryPuzzle = useCallback(
+    async (publicId: string) => {
+      if (loading) {
+        return;
+      }
+
+      setLoading(true);
+      setErrorText(null);
+      resetHints();
+      setLastBestMove(null);
+      setLastMoveSquares(null);
+      setCorrectText(null);
+      setReviewPath(null);
+
+      try {
+        const response = await startSession(prefs.variationMode, prefs.autoNext, publicId, 'history');
+        applyStartedSession(response, 'Loaded puzzle from history');
+      } catch (error) {
+        setErrorText(error instanceof Error ? error.message : 'Failed to load history puzzle');
+      } finally {
+        setLoading(false);
+      }
+    },
+    [applyStartedSession, loading, prefs.autoNext, prefs.variationMode, resetHints]
+  );
+
+  const handleClearHistory = useCallback(async () => {
+    if (!sessionId || loading) {
+      return;
+    }
+
+    setLoading(true);
+    setHistoryError(null);
+    try {
+      await clearSessionHistory(sessionId);
+      await loadSessionArtifacts(sessionId);
+    } catch (error) {
+      setHistoryError(error instanceof Error ? error.message : 'Failed to clear history');
+    } finally {
+      setLoading(false);
+    }
+  }, [loadSessionArtifacts, loading, sessionId]);
+
+  const handleReviewMove = useCallback(
+    (node: SessionTreeNode) => {
+      if (!state) {
+        return;
+      }
+
+      setReviewPath((previous) => {
+        if (previous && previous.length > 0) {
+          const currentNodeId = previous[previous.length - 1];
+          if (node.parent_id !== currentNodeId) {
+            return previous;
+          }
+          return [...previous, node.id];
+        }
+
+        if (node.parent_id !== state.nodeId) {
+          return previous;
+        }
+
+        return [state.nodeId, node.id];
+      });
+    },
+    [state]
+  );
+
+  const handleReviewBackOne = useCallback(() => {
+    setReviewPath((previous) => {
+      if (!previous || previous.length <= 2) {
+        return null;
+      }
+      return previous.slice(0, -1);
+    });
+  }, []);
+
+  const handleBackToLive = useCallback(() => {
+    setReviewPath(null);
+  }, []);
 
   const toggleVariationMode = (checked: boolean) => {
     setPrefs((previous) => ({
@@ -412,135 +868,70 @@ export function App() {
 
   if (!state || !puzzle) {
     return (
-      <main className="layout">
-        <section className="panel">
-          <h1>Chess Puzzle Trainer</h1>
-          <p>{statusText}</p>
-          {errorText ? <p className="error">{errorText}</p> : null}
-        </section>
+      <main className="loading-minimal">
+        <p>Loading...</p>
+        {errorText ? <p className="error">{errorText}</p> : null}
       </main>
     );
   }
 
-  const interactive = !loading && statusText !== 'Puzzle complete';
+  const interactive = boardCanInteract;
 
   return (
     <main className="layout split-layout">
       <section className="board-column">
-        <div className="board-stage">
-          <EvalBar
-            cp={engineEval.cp}
-            mate={engineEval.mate}
-            depth={engineEval.depth}
-            error={engineEval.error}
-            orientation={playerOrientation}
-          />
-          <div className="board-shell">
-            <ChessBoard
-              fen={displayFen ?? state.fen}
-              orientation={playerOrientation}
-              interactive={interactive && !loading}
-              autoQueenPromotion={prefs.autoQueenPromotion}
-              hintSquare={hintSquare}
-              lastMove={lastMoveSquares}
-              onMove={(uci) => void handleMove(uci)}
+        <div className="board-stack">
+          <div className="board-stage">
+            <EvalBar
+              cp={engineEval.cp}
+              mate={engineEval.mate}
             />
+            <div className="board-shell">
+              <ChessBoard
+                fen={boardFen ?? state.fen}
+                orientation={playerOrientation}
+                checkColor={checkColor}
+                interactive={interactive}
+                canMoveExecution={!loading}
+                autoQueenPromotion={prefs.autoQueenPromotion}
+                hintSquare={hintSquare}
+                hintArrow={hintArrow}
+                lastMove={isReviewMode ? reviewLastMoveSquares : lastMoveSquares}
+                onMove={(uciMove) => void handleMove(uciMove)}
+              />
+            </div>
           </div>
         </div>
       </section>
 
-      <aside className="side-column">
-        <section className="panel header">
+      <aside className="side-column panel">
+        <section className="rail-block header rail-status">
           <h1>Chess Puzzle Trainer</h1>
           <p className="subtitle">{puzzle.title || 'Puzzle'}</p>
           <p className="meta">ID: {puzzle.publicId}</p>
+          <p className="meta">
+            Engine: {engineEvalText} | d{engineEval.depth} | {engineEvalSideText}
+          </p>
           <p className="status status-line">{statusText}</p>
           <p className="correct correct-line">{correctText ?? '\u00A0'}</p>
           <p className="meta expected-line">{lastBestMove ? `Expected: ${lastBestMove}` : '\u00A0'}</p>
+          {isReviewMode ? <p className="meta">Review mode active</p> : null}
           {errorText ? <p className="error">{errorText}</p> : null}
         </section>
 
-        <section className="panel controls">
-          <label>
-            <input
-              type="checkbox"
-              checked={prefs.variationMode === 'explore'}
-              onChange={(event) => toggleVariationMode(event.target.checked)}
-            />
-            Explore variations
-          </label>
-
-          <label>
-            <input
-              type="checkbox"
-              checked={prefs.autoNext}
-              onChange={(event) =>
-                setPrefs((previous) => ({
-                  ...previous,
-                  autoNext: event.target.checked
-                }))
-              }
-            />
-            Auto-next puzzle
-          </label>
-
-          <label>
-            <input
-              type="checkbox"
-              checked={prefs.hintsEnabled}
-              onChange={(event) =>
-                setPrefs((previous) => ({
-                  ...previous,
-                  hintsEnabled: event.target.checked
-                }))
-              }
-            />
-            Enable hints
-          </label>
-
-          <div className="chip-row">
-            <span className="meta">Promotion</span>
+        <section className="rail-block rail-actions">
+          <div className="button-row">
             <button
               type="button"
-              className={`chip-toggle ${prefs.autoQueenPromotion ? 'chip-on' : 'chip-off'}`}
-              onClick={() =>
-                setPrefs((previous) => ({
-                  ...previous,
-                  autoQueenPromotion: !previous.autoQueenPromotion
-                }))
-              }
+              disabled={loading || prefs.autoPlay || isReviewMode || !prefs.hintsEnabled}
+              onClick={() => void handleHint()}
             >
-              Auto-queen: {prefs.autoQueenPromotion ? 'On' : 'Off'}
-            </button>
-          </div>
-
-          <div className="id-search-row">
-            <input
-              type="text"
-              value={puzzleIdInput}
-              onChange={(event) => setPuzzleIdInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  void handleLoadById();
-                }
-              }}
-              placeholder="Puzzle ID (UUID)"
-              spellCheck={false}
-            />
-            <button type="button" disabled={loading || puzzleIdInput.trim().length === 0} onClick={() => void handleLoadById()}>
-              Load ID
-            </button>
-          </div>
-
-          <div className="button-row">
-            <button type="button" disabled={loading || !prefs.hintsEnabled} onClick={() => void handleHint()}>
               Hint
             </button>
-            <button type="button" disabled={loading} onClick={() => void handleReveal()}>
+            <button type="button" disabled={loading || prefs.autoPlay || isReviewMode} onClick={() => void handleReveal()}>
               Show solution
             </button>
-            <button type="button" disabled={loading} onClick={() => void handleSkipVariation()}>
+            <button type="button" disabled={loading || prefs.autoPlay || isReviewMode} onClick={() => void handleSkipVariation()}>
               Skip variation
             </button>
             <button type="button" disabled={loading} onClick={() => void handleNextPuzzle()}>
@@ -548,10 +939,225 @@ export function App() {
             </button>
           </div>
 
-          <p className="meta">
+          <p className="meta rail-branch">
             Branch {state.lineIndex + 1}/{state.totalLines} | Completed {state.completedBranches}/{state.totalLines}
           </p>
         </section>
+
+        <section className="rail-block history-strip" aria-label="Recent puzzle history">
+          <div className="history-head">
+            <p className="history-title">Recent puzzles</p>
+            <button
+              type="button"
+              className="history-clear"
+              onClick={() => void handleClearHistory()}
+              disabled={loading || historyItems.length === 0}
+            >
+              Clear
+            </button>
+          </div>
+          <div className="history-list">
+            {historyItems.map((item) => {
+              const tone = getHistoryTone(item);
+              const label = getHistoryLabel(item);
+              return (
+                <button
+                  key={item.sessionId}
+                  type="button"
+                  className={`history-dot is-${tone}`}
+                  onClick={() => void handleLoadHistoryPuzzle(item.puzzlePublicId)}
+                  disabled={loading}
+                  aria-label={`${label} puzzle from history`}
+                  title={item.puzzleTitle || 'Puzzle'}
+                >
+                  {getHistorySymbol(item)}
+                </button>
+              );
+            })}
+          </div>
+          {historyError ? <p className="error">{historyError}</p> : null}
+        </section>
+
+        <section className="rail-block pgn-panel">
+          <div className="pgn-header-row">
+            <p className="pgn-title">PGN Explorer</p>
+            <div className="pgn-actions">
+              <button type="button" disabled={!isReviewMode} onClick={handleReviewBackOne}>
+                Back one move
+              </button>
+              <button type="button" disabled={!isReviewMode} onClick={handleBackToLive}>
+                Back to live puzzle
+              </button>
+            </div>
+          </div>
+
+          <p className="meta pgn-path">
+            {isReviewMode && reviewMoves.length > 0 ? `Path: ${reviewMoves.join(' ')}` : 'Path: Live position'}
+          </p>
+
+          {treeError ? <p className="error">{treeError}</p> : null}
+
+          <div className="pgn-move-list">
+            {pgnNextMoves.length === 0 ? (
+              <span className="meta">No legal continuation from this node</span>
+            ) : (
+              pgnNextMoves.map((node) => (
+                <button
+                  key={node.id}
+                  type="button"
+                  className={`pgn-move ${node.is_mainline ? 'is-mainline' : ''}`}
+                  onClick={() => handleReviewMove(node)}
+                >
+                  <span>{node.san || node.uci}</span>
+                  <span>{node.is_mainline ? 'Main' : 'Var'}</span>
+                </button>
+              ))
+            )}
+          </div>
+        </section>
+
+        <details className="rail-block settings-panel">
+          <summary className="settings-summary">Settings</summary>
+          <div className="settings-content">
+            <div className="toggle-chip-grid">
+              <button
+                type="button"
+                className={`toggle-chip ${prefs.variationMode === 'explore' ? 'is-on' : 'is-off'}`}
+                aria-pressed={prefs.variationMode === 'explore'}
+                onClick={() => toggleVariationMode(prefs.variationMode !== 'explore')}
+              >
+                <span className="toggle-chip-text">Explore variations</span>
+                <span className="toggle-chip-track" aria-hidden="true">
+                  <span className="toggle-chip-thumb" />
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={`toggle-chip ${prefs.autoNext ? 'is-on' : 'is-off'}`}
+                aria-pressed={prefs.autoNext}
+                onClick={() =>
+                  setPrefs((previous) => ({
+                    ...previous,
+                    autoNext: !previous.autoNext
+                  }))
+                }
+              >
+                <span className="toggle-chip-text">Auto-next puzzle</span>
+                <span className="toggle-chip-track" aria-hidden="true">
+                  <span className="toggle-chip-thumb" />
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={`toggle-chip ${prefs.hintsEnabled ? 'is-on' : 'is-off'}`}
+                aria-pressed={prefs.hintsEnabled}
+                onClick={() =>
+                  setPrefs((previous) => ({
+                    ...previous,
+                    hintsEnabled: !previous.hintsEnabled
+                  }))
+                }
+              >
+                <span className="toggle-chip-text">Enable hints</span>
+                <span className="toggle-chip-track" aria-hidden="true">
+                  <span className="toggle-chip-thumb" />
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={`toggle-chip ${prefs.darkMode ? 'is-on' : 'is-off'}`}
+                aria-pressed={prefs.darkMode}
+                onClick={() =>
+                  setPrefs((previous) => ({
+                    ...previous,
+                    darkMode: !previous.darkMode
+                  }))
+                }
+              >
+                <span className="toggle-chip-text">Dark mode</span>
+                <span className="toggle-chip-track" aria-hidden="true">
+                  <span className="toggle-chip-thumb" />
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={`toggle-chip autoplay-chip ${prefs.autoPlay ? 'is-on' : 'is-off'}`}
+                aria-pressed={prefs.autoPlay}
+                onClick={() =>
+                  setPrefs((previous) => ({
+                    ...previous,
+                    autoPlay: !previous.autoPlay
+                  }))
+                }
+              >
+                <span className="toggle-chip-text">Autoplay puzzles</span>
+                <span className="toggle-chip-track" aria-hidden="true">
+                  <span className="toggle-chip-thumb" />
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={`toggle-chip ${prefs.animations ? 'is-on' : 'is-off'}`}
+                aria-pressed={prefs.animations}
+                onClick={() =>
+                  setPrefs((previous) => ({
+                    ...previous,
+                    animations: !previous.animations
+                  }))
+                }
+              >
+                <span className="toggle-chip-text">Animations</span>
+                <span className="toggle-chip-track" aria-hidden="true">
+                  <span className="toggle-chip-thumb" />
+                </span>
+              </button>
+            </div>
+
+            <div className="chip-row">
+              <span className="meta">Promotion</span>
+              <button
+                type="button"
+                className={`chip-toggle ${prefs.autoQueenPromotion ? 'chip-on' : 'chip-off'}`}
+                onClick={() =>
+                  setPrefs((previous) => ({
+                    ...previous,
+                    autoQueenPromotion: !previous.autoQueenPromotion
+                  }))
+                }
+              >
+                Auto-queen: {prefs.autoQueenPromotion ? 'On' : 'Off'}
+              </button>
+            </div>
+
+            <div className="id-search-row">
+              <input
+                type="text"
+                value={puzzleIdInput}
+                onChange={(event) => setPuzzleIdInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    void handleLoadById();
+                  }
+                }}
+                placeholder="Puzzle ID (UUID)"
+                spellCheck={false}
+              />
+              <button
+                type="button"
+                disabled={loading || puzzleIdInput.trim().length === 0}
+                onClick={() => void handleLoadById()}
+              >
+                Load ID
+              </button>
+            </div>
+          </div>
+        </details>
       </aside>
     </main>
   );

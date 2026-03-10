@@ -32,6 +32,24 @@ export interface PuzzleSessionRecord {
   mode: VariationMode;
   node_id: number | null;
   branch_cursor: Record<string, unknown>;
+  started_from_history: boolean;
   solved: boolean;
   revealed: boolean;
+  autoplay_used: boolean;
+  wrong_move_count: number;
+  hint_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PuzzleSessionHistoryRecord {
+  session_id: string;
+  puzzle_public_id: string;
+  puzzle_title: string;
+  created_at: string;
+  solved: boolean;
+  revealed: boolean;
+  autoplay_used: boolean;
+  wrong_move_count: number;
+  hint_count: number;
 }

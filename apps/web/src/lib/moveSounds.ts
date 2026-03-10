@@ -1,6 +1,6 @@
-export type MoveSoundType = 'move' | 'capture' | 'castle';
+export type MoveSoundType = 'move' | 'capture' | 'castle' | 'check';
 
-type BaseSoundType = 'move' | 'capture';
+type BaseSoundType = 'move' | 'capture' | 'check';
 
 function withBasePath(relativePath: string): string {
   const base = import.meta.env.BASE_URL ?? '/';
@@ -10,7 +10,8 @@ function withBasePath(relativePath: string): string {
 
 const SOUND_URLS: Record<BaseSoundType, string> = {
   move: withBasePath('sounds/lichess-standard/Move.ogg'),
-  capture: withBasePath('sounds/lichess-standard/Capture.ogg')
+  capture: withBasePath('sounds/lichess-standard/Capture.ogg'),
+  check: withBasePath('sounds/lichess-standard/Check.ogg')
 };
 
 const BASE_VOLUME = 1;

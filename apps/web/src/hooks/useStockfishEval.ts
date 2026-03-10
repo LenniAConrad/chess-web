@@ -64,6 +64,9 @@ function toWhitePerspective(
 export function useStockfishEval(fen: string | null) {
   const workerRef = useRef<Worker | null>(null);
   const sideToMoveRef = useRef<SideToMove>('w');
+  const activeSearchIdRef = useRef(0);
+  const searchCounterRef = useRef(0);
+  const pendingSearchRef = useRef<{ id: number; fen: string; sideToMove: SideToMove } | null>(null);
   const [evalState, setEvalState] = useState<EvalState>(INITIAL_STATE);
 
   useEffect(() => {
@@ -85,12 +88,21 @@ export function useStockfishEval(fen: string | null) {
 
         const line = String(event.data);
         if (line.includes('readyok')) {
-          setEvalState((previous) => ({ ...previous, ready: true }));
+          setEvalState((previous) => (previous.ready ? previous : { ...previous, ready: true }));
+
+          const pendingSearch = pendingSearchRef.current;
+          if (pendingSearch && workerRef.current) {
+            activeSearchIdRef.current = pendingSearch.id;
+            sideToMoveRef.current = pendingSearch.sideToMove;
+            pendingSearchRef.current = null;
+            workerRef.current.postMessage(`position fen ${pendingSearch.fen}`);
+            workerRef.current.postMessage(`go depth ${MAX_SEARCH_DEPTH}`);
+          }
           return;
         }
 
         const parsed = parseInfoLine(line);
-        if (!parsed) {
+        if (!parsed || activeSearchIdRef.current === 0) {
           return;
         }
         const whitePerspective = toWhitePerspective(parsed, sideToMoveRef.current);
@@ -141,19 +153,33 @@ export function useStockfishEval(fen: string | null) {
       mate: null,
       depth: 0
     }));
-    sideToMoveRef.current = getSideToMoveFromFen(fen);
-
+    const requestId = searchCounterRef.current + 1;
+    searchCounterRef.current = requestId;
+    pendingSearchRef.current = {
+      id: requestId,
+      fen,
+      sideToMove: getSideToMoveFromFen(fen)
+    };
+    activeSearchIdRef.current = 0;
     workerRef.current.postMessage('stop');
-    workerRef.current.postMessage(`position fen ${fen}`);
-    workerRef.current.postMessage(`go depth ${MAX_SEARCH_DEPTH}`);
+    workerRef.current.postMessage('isready');
 
     const timeout = window.setTimeout(() => {
-      workerRef.current?.postMessage('stop');
+      if (pendingSearchRef.current?.id === requestId || activeSearchIdRef.current === requestId) {
+        workerRef.current?.postMessage('stop');
+        activeSearchIdRef.current = 0;
+      }
     }, SEARCH_TIMEOUT_MS);
 
     return () => {
       window.clearTimeout(timeout);
-      workerRef.current?.postMessage('stop');
+      if (pendingSearchRef.current?.id === requestId) {
+        pendingSearchRef.current = null;
+      }
+      if (activeSearchIdRef.current === requestId) {
+        workerRef.current?.postMessage('stop');
+        activeSearchIdRef.current = 0;
+      }
     };
   }, [fen, evalState.ready]);
 

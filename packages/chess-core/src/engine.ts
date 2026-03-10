@@ -104,11 +104,17 @@ export class PuzzleSessionEngine {
     };
   }
 
-  hint(cursorInput: SessionCursor): { pieceFromSquare: string | null; snapshot: SessionSnapshot; solved: boolean } {
+  hint(cursorInput: SessionCursor): {
+    pieceFromSquare: string | null;
+    bestMoveUci: string | null;
+    snapshot: SessionSnapshot;
+    solved: boolean;
+  } {
     const { cursor, solved } = this.sync(cursorInput);
     const nextMove = this.getNextUserMoveNode(cursor);
     return {
       pieceFromSquare: nextMove ? nextMove.uci.slice(0, 2) : null,
+      bestMoveUci: nextMove?.uci ?? null,
       snapshot: this.buildSnapshot(cursor, solved),
       solved
     };

@@ -9,7 +9,8 @@ import { SessionService } from '../services/sessionService.js';
 const startSchema = z.object({
   mode: z.enum(['explore', 'mainline']).optional().default('explore'),
   autoNext: z.boolean().optional().default(true),
-  puzzleId: z.string().uuid().optional()
+  puzzleId: z.string().uuid().optional(),
+  source: z.enum(['normal', 'history']).optional().default('normal')
 });
 
 const moveSchema = z.object({
@@ -21,6 +22,16 @@ const sessionSchema = z.object({
   sessionId: z.string().uuid()
 });
 
+const revealSchema = z.object({
+  sessionId: z.string().uuid(),
+  source: z.enum(['manual', 'auto']).optional().default('manual')
+});
+
+const historySchema = z.object({
+  sessionId: z.string().uuid(),
+  limit: z.coerce.number().int().positive().max(50).optional().default(20)
+});
+
 const nextSchema = z.object({
   sessionId: z.string().uuid(),
   mode: z.enum(['explore', 'mainline']).optional(),
@@ -28,9 +39,9 @@ const nextSchema = z.object({
 });
 
 const startPolicy = {
-  burstLimit: 3,
+  burstLimit: 100,
   burstWindowMs: 1000,
-  sustainedLimit: 60,
+  sustainedLimit: 6000,
   sustainedWindowMs: 60_000
 };
 
@@ -69,17 +80,20 @@ export async function registerSessionRoutes(
     }
 
     const anonSessionId = await ensureAnonSession(request, reply, pool);
+    const startedFromHistory = body.source === 'history';
     const started = body.puzzleId
       ? await sessionService.startSessionByPublicId({
           anonSessionId,
           mode: body.mode,
           autoNext: body.autoNext,
-          publicId: body.puzzleId
+          publicId: body.puzzleId,
+          startedFromHistory
         })
       : await sessionService.startRandomSession({
           anonSessionId,
           mode: body.mode,
-          autoNext: body.autoNext
+          autoNext: body.autoNext,
+          startedFromHistory: false
         });
 
     reply.send(started);
@@ -135,8 +149,87 @@ export async function registerSessionRoutes(
     reply.send(result);
   });
 
-  app.post('/api/v1/session/reveal', async (request, reply) => {
+  app.post('/api/v1/session/history', async (request, reply) => {
+    const body = historySchema.parse(request.body ?? {});
+    const anonSessionId = await ensureAnonSession(request, reply, pool);
+
+    const allowed = await enforceRateLimit({
+      request,
+      reply,
+      pool,
+      limiter,
+      key: `history:${body.sessionId}`,
+      policy: actionPolicy,
+      route: '/api/v1/session/history',
+      anonSessionId
+    });
+
+    if (!allowed) {
+      return;
+    }
+
+    const result = await sessionService.getSessionHistory({
+      sessionId: body.sessionId,
+      anonSessionId,
+      limit: body.limit
+    });
+    reply.send(result);
+  });
+
+  app.post('/api/v1/session/history/clear', async (request, reply) => {
     const body = sessionSchema.parse(request.body ?? {});
+    const anonSessionId = await ensureAnonSession(request, reply, pool);
+
+    const allowed = await enforceRateLimit({
+      request,
+      reply,
+      pool,
+      limiter,
+      key: `history-clear:${body.sessionId}`,
+      policy: actionPolicy,
+      route: '/api/v1/session/history/clear',
+      anonSessionId
+    });
+
+    if (!allowed) {
+      return;
+    }
+
+    const result = await sessionService.clearSessionHistory({
+      sessionId: body.sessionId,
+      anonSessionId
+    });
+    reply.send(result);
+  });
+
+  app.post('/api/v1/session/tree', async (request, reply) => {
+    const body = sessionSchema.parse(request.body ?? {});
+    const anonSessionId = await ensureAnonSession(request, reply, pool);
+
+    const allowed = await enforceRateLimit({
+      request,
+      reply,
+      pool,
+      limiter,
+      key: `tree:${body.sessionId}`,
+      policy: actionPolicy,
+      route: '/api/v1/session/tree',
+      anonSessionId
+    });
+
+    if (!allowed) {
+      return;
+    }
+
+    const result = await sessionService.getSessionTree({
+      sessionId: body.sessionId,
+      anonSessionId
+    });
+    reply.send(result);
+  });
+
+  app.post('/api/v1/session/reveal', async (request, reply) => {
+    const body = revealSchema.parse(request.body ?? {});
     const anonSessionId = await ensureAnonSession(request, reply, pool);
 
     const allowed = await enforceRateLimit({
@@ -154,7 +247,7 @@ export async function registerSessionRoutes(
       return;
     }
 
-    const result = await sessionService.reveal({ sessionId: body.sessionId });
+    const result = await sessionService.reveal({ sessionId: body.sessionId, source: body.source });
     reply.send(result);
   });
 

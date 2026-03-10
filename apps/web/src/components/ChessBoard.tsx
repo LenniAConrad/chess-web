@@ -2,16 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { Chessground } from 'chessground';
 import type { Api } from 'chessground/api';
-import type { Key } from 'chessground/types';
+import type { Key, MoveMetadata } from 'chessground/types';
 
 type PromotionPiece = 'q' | 'r' | 'b' | 'n';
 
 interface ChessBoardProps {
   fen: string;
   orientation: 'white' | 'black';
+  checkColor: 'white' | 'black' | false;
   interactive: boolean;
+  canMoveExecution: boolean;
   autoQueenPromotion: boolean;
   hintSquare: string | null;
+  hintArrow: [string, string] | null;
   lastMove: [string, string] | null;
   onMove: (uci: string) => void;
 }
@@ -63,6 +66,21 @@ function legalDestinations(fen: string): Map<Key, Key[]> {
   }
 
   return map;
+}
+
+function legalDestinationsForColor(fen: string, color: 'w' | 'b'): Map<Key, Key[]> {
+  const parts = fen.trim().split(/\s+/);
+  if (parts.length < 2) {
+    return legalDestinations(fen);
+  }
+
+  parts[1] = color;
+  return legalDestinations(parts.join(' '));
+}
+
+function turnColorFromFen(fen: string): 'white' | 'black' {
+  const parts = fen.trim().split(/\s+/);
+  return parts[1] === 'b' ? 'black' : 'white';
 }
 
 function isPromotionMove(fen: string, from: string, to: string): boolean {
@@ -122,9 +140,12 @@ function getPromotionLayout(square: string, orientation: 'white' | 'black'): Pro
 export function ChessBoard({
   fen,
   orientation,
+  checkColor,
   interactive,
+  canMoveExecution,
   autoQueenPromotion,
   hintSquare,
+  hintArrow,
   lastMove,
   onMove
 }: ChessBoardProps) {
@@ -132,7 +153,12 @@ export function ChessBoard({
   const apiRef = useRef<Api | null>(null);
   const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
 
+  const turnColor = useMemo(() => turnColorFromFen(fen), [fen]);
   const destinations = useMemo(() => legalDestinations(fen), [fen]);
+  const premoveDests = useMemo(
+    () => legalDestinationsForColor(fen, orientation === 'white' ? 'w' : 'b'),
+    [fen, orientation]
+  );
   const chessgroundLastMove = useMemo<Key[] | undefined>(
     () => (lastMove ? [lastMove[0] as Key, lastMove[1] as Key] : undefined),
     [lastMove]
@@ -143,8 +169,11 @@ export function ChessBoard({
   );
 
   const handleBoardMove = useCallback(
-    (from: string, to: string) => {
+    (from: string, to: string, metadata: MoveMetadata) => {
       if (!interactive) {
+        return;
+      }
+      if (!canMoveExecution && !metadata.premove) {
         return;
       }
 
@@ -162,7 +191,7 @@ export function ChessBoard({
 
       onMove(toUci(fen, from, to));
     },
-    [autoQueenPromotion, chessgroundLastMove, fen, interactive, onMove]
+    [autoQueenPromotion, canMoveExecution, chessgroundLastMove, fen, interactive, onMove]
   );
 
   useEffect(() => {
@@ -179,6 +208,8 @@ export function ChessBoard({
     apiRef.current = Chessground(containerRef.current, {
       fen,
       lastMove: chessgroundLastMove,
+      check: checkColor,
+      turnColor,
       orientation,
       coordinates: false,
       animation: {
@@ -187,19 +218,26 @@ export function ChessBoard({
       },
       movable: {
         free: false,
-        color: 'both',
+        color: interactive ? orientation : undefined,
         dests: destinations,
         events: {
           after: handleBoardMove
         }
+      },
+      premovable: {
+        enabled: interactive,
+        customDests: premoveDests,
+        showDests: true
       }
     });
-  }, [chessgroundLastMove, destinations, fen, handleBoardMove, orientation]);
+  }, [checkColor, chessgroundLastMove, destinations, fen, handleBoardMove, interactive, orientation, premoveDests, turnColor]);
 
   useEffect(() => {
     apiRef.current?.set({
       fen,
       lastMove: chessgroundLastMove,
+      check: checkColor,
+      turnColor,
       orientation,
       coordinates: false,
       animation: {
@@ -208,27 +246,63 @@ export function ChessBoard({
       },
       movable: {
         free: false,
-        color: interactive ? 'both' : undefined,
+        color: interactive ? orientation : undefined,
         dests: interactive ? destinations : new Map(),
         events: {
           after: handleBoardMove
         }
       },
+      premovable: {
+        enabled: interactive,
+        customDests: premoveDests,
+        showDests: true
+      },
       drawable: {
-        enabled: Boolean(hintSquare),
+        enabled: Boolean(hintSquare || hintArrow),
         visible: true,
-        autoShapes: hintSquare
-          ? [
-              {
-                orig: hintSquare as Key,
-                dest: hintSquare as Key,
-                brush: 'green'
-              }
-            ]
-          : []
+        autoShapes: [
+          ...(hintSquare
+            ? [
+                {
+                  orig: hintSquare as Key,
+                  dest: hintSquare as Key,
+                  brush: 'green' as const
+                }
+              ]
+            : []),
+          ...(hintArrow
+            ? [
+                {
+                  orig: hintArrow[0] as Key,
+                  dest: hintArrow[1] as Key,
+                  brush: 'green' as const
+                }
+              ]
+            : [])
+        ]
       }
     });
-  }, [chessgroundLastMove, destinations, fen, handleBoardMove, hintSquare, interactive, orientation]);
+  }, [
+    checkColor,
+    chessgroundLastMove,
+    destinations,
+    fen,
+    handleBoardMove,
+    hintArrow,
+    hintSquare,
+    interactive,
+    orientation,
+    premoveDests,
+    turnColor
+  ]);
+
+  useEffect(() => {
+    if (!interactive || !canMoveExecution) {
+      return;
+    }
+
+    apiRef.current?.playPremove();
+  }, [canMoveExecution, fen, interactive, turnColor]);
 
   const applyPromotion = useCallback(
     (piece: PromotionPiece) => {
