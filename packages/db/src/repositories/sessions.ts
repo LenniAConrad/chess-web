@@ -143,8 +143,7 @@ export async function listPuzzleSessionHistory(
   limit: number,
   excludeSessionId?: string
 ): Promise<PuzzleSessionHistoryRecord[]> {
-  const result = await pool.query(
-    `SELECT
+  const baseQuery = `SELECT
       ps.id AS session_id,
       p.public_id AS puzzle_public_id,
       p.title AS puzzle_title,
@@ -164,12 +163,20 @@ export async function listPuzzleSessionHistory(
          OR ps.wrong_move_count > 0
          OR ps.hint_count > 0
          OR ps.autoplay_used = true
-       )
-       AND ($3::uuid IS NULL OR ps.id <> $3)
+       )`;
+
+  const withExcludeQuery = `${baseQuery}
+       AND ps.id <> $3
      ORDER BY ps.created_at DESC
-     LIMIT $2`,
-    [anonSessionId, limit, excludeSessionId ?? null]
-  );
+     LIMIT $2`;
+
+  const withoutExcludeQuery = `${baseQuery}
+     ORDER BY ps.created_at DESC
+     LIMIT $2`;
+
+  const result = excludeSessionId
+    ? await pool.query(withExcludeQuery, [anonSessionId, limit, excludeSessionId])
+    : await pool.query(withoutExcludeQuery, [anonSessionId, limit]);
 
   return result.rows.map((row) => mapHistory(row as Record<string, unknown>));
 }

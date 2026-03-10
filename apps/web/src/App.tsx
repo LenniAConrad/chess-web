@@ -5,8 +5,13 @@ import { EvalBar } from './components/EvalBar.js';
 import { useLocalPrefs } from './hooks/useLocalPrefs.js';
 import { useStockfishEval } from './hooks/useStockfishEval.js';
 import {
-  clearSessionHistory,
+  getHistoryDotLabel,
+  getHistoryDotSymbol,
+  getHistoryDotTone
+} from './lib/historyDots.js';
+import {
   getHint,
+  loadSession,
   getSessionHistory,
   getSessionTree,
   nextPuzzle,
@@ -36,7 +41,10 @@ const REWIND_STEP_DELAY_MS = 260;
 const REWIND_BREAK_MS = 700;
 const SHORT_STATUS_DELAY_MS = 700;
 const CHECK_SOUND_DELAY_MS = 100;
-const SESSION_HISTORY_LIMIT = 20;
+const WRONG_MOVE_FEEDBACK_MS = 520;
+const SESSION_HISTORY_VISIBLE_LIMIT = 16;
+const SESSION_HISTORY_FETCH_LIMIT = SESSION_HISTORY_VISIBLE_LIMIT;
+const NO_ANIMATION_DELAY_MS = 180;
 
 type PrimaryMoveSoundType = Exclude<MoveSoundType, 'check'>;
 
@@ -59,10 +67,15 @@ function wait(ms: number): Promise<void> {
 }
 
 function maybeWait(ms: number, enabled: boolean): Promise<void> {
-  if (!enabled || ms <= 0) {
+  if (ms <= 0) {
     return Promise.resolve();
   }
-  return wait(ms);
+
+  if (enabled) {
+    return wait(ms);
+  }
+
+  return wait(Math.min(ms, NO_ANIMATION_DELAY_MS));
 }
 
 function applyUciMove(chess: Chess, uciMove: string): boolean {
@@ -195,40 +208,6 @@ function formatEngineSide(cp: number | null, mate: number | null, error: string 
   return cp > 0 ? 'White better' : 'Black better';
 }
 
-function getHistoryTone(item: SessionHistoryItem): 'autoplay' | 'correct' | 'half' | 'incorrect' {
-  if (item.autoplayUsed) {
-    return 'autoplay';
-  }
-
-  return item.status;
-}
-
-function getHistoryLabel(item: SessionHistoryItem): string {
-  if (item.autoplayUsed) {
-    return 'Autoplay';
-  }
-  if (item.status === 'correct') {
-    return 'Correct';
-  }
-  if (item.status === 'half') {
-    return 'Incomplete';
-  }
-  return 'Wrong';
-}
-
-function getHistorySymbol(item: SessionHistoryItem): string {
-  if (item.autoplayUsed) {
-    return '\u21bb';
-  }
-  if (item.status === 'correct') {
-    return '\u2713';
-  }
-  if (item.status === 'half') {
-    return '\u2013';
-  }
-  return '\u2716';
-}
-
 export function App() {
   const { prefs, setPrefs } = useLocalPrefs();
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -251,6 +230,12 @@ export function App() {
   const [sessionTree, setSessionTree] = useState<SessionTreeResponse | null>(null);
   const [treeError, setTreeError] = useState<string | null>(null);
   const [reviewPath, setReviewPath] = useState<number[] | null>(null);
+  const [wrongMoveSquare, setWrongMoveSquare] = useState<Square | null>(null);
+  const [wrongMoveFlashToken, setWrongMoveFlashToken] = useState(0);
+  const recentHistoryItems = useMemo(
+    () => historyItems.slice(0, SESSION_HISTORY_VISIBLE_LIMIT),
+    [historyItems]
+  );
 
   const reviewNodeId = reviewPath?.at(-1) ?? null;
   const treeNodeMap = useMemo(() => {
@@ -338,6 +323,13 @@ export function App() {
 
     return chess.turn() === 'w' ? 'white' : 'black';
   })();
+  const turnLabel = (() => {
+    if (!boardFen) {
+      return '\u00A0';
+    }
+    const turn = new Chess(boardFen).turn();
+    return turn === 'w' ? 'White to move' : 'Black to move';
+  })();
 
   const engineEvalText = formatEngineEval(engineEval.cp, engineEval.mate, engineEval.error);
   const engineEvalSideText = formatEngineSide(engineEval.cp, engineEval.mate, engineEval.error);
@@ -351,7 +343,7 @@ export function App() {
   const loadSessionArtifacts = useCallback(async (activeSessionId: string) => {
     try {
       const [history, tree] = await Promise.all([
-        getSessionHistory(activeSessionId, SESSION_HISTORY_LIMIT),
+        getSessionHistory(activeSessionId, SESSION_HISTORY_FETCH_LIMIT, true),
         getSessionTree(activeSessionId)
       ]);
       setHistoryItems(history.items);
@@ -394,6 +386,7 @@ export function App() {
       setCorrectText(null);
       setReviewPath(null);
       setSessionTree(null);
+      setWrongMoveSquare(null);
       setStatusText(status);
     },
     [resetHints]
@@ -477,10 +470,11 @@ export function App() {
 
   const handleMove = useCallback(
     async (uciMove: string) => {
-      if (!sessionId || loading || !state || isReviewMode) {
+      if (!sessionId || loading || !state || isReviewMode || isPuzzleSolved(state)) {
         return;
       }
 
+      setWrongMoveSquare(null);
       const baseFen = displayFen ?? state.fen;
       const moveSoundDecision = getMoveSoundDecision(baseFen, uciMove);
       const optimisticFen = getFenAfterUciMove(baseFen, uciMove);
@@ -503,9 +497,18 @@ export function App() {
 
         if (response.result === 'incorrect') {
           playMoveSoundDecision(moveSoundDecision);
-          setStatusText('Try again');
+          const fallbackWrongSquare = uciMove.length >= 4 ? (uciMove.slice(2, 4) as Square) : null;
+          const markerSquare = optimisticLastMove?.[1] ?? fallbackWrongSquare;
+          if (markerSquare) {
+            setWrongMoveSquare(markerSquare);
+            setWrongMoveFlashToken((previous) => previous + 1);
+          }
+          setStatusText('Incorrect');
+          await maybeWait(WRONG_MOVE_FEEDBACK_MS, prefs.animations);
           setDisplayFen(response.nextState.fen);
           setLastMoveSquares(null);
+          setWrongMoveSquare(null);
+          setStatusText('Try again');
         } else if (response.result === 'correct') {
           playMoveSoundDecision(moveSoundDecision);
           setCorrectText('Correct');
@@ -540,6 +543,7 @@ export function App() {
 
         void loadSessionArtifacts(artifactSessionId);
       } catch (error) {
+        setWrongMoveSquare(null);
         setErrorText(error instanceof Error ? error.message : 'Move failed');
       } finally {
         setLoading(false);
@@ -581,6 +585,7 @@ export function App() {
       setState(response.state);
       setDisplayFen(response.state.fen);
       setLastMoveSquares(null);
+      setWrongMoveSquare(null);
       setStatusText(
         response.pieceFromSquare
           ? nextHintLevel >= 2
@@ -611,6 +616,7 @@ export function App() {
         const response = await revealSolution(sessionId, mode);
         setState(response.nextState);
         setLastBestMove(response.bestMoveUci);
+        setWrongMoveSquare(null);
 
         if (!response.bestMoveUci || !response.afterFen) {
           setDisplayFen(response.nextState.fen);
@@ -679,6 +685,7 @@ export function App() {
       setState(response.nextState);
       setDisplayFen(response.nextState.fen);
       setLastMoveSquares(null);
+      setWrongMoveSquare(null);
       setStatusText(response.skipped ? 'Variation skipped' : 'Nothing to skip');
 
       await loadSessionArtifacts(sessionId);
@@ -729,7 +736,7 @@ export function App() {
 
     const timer = window.setTimeout(() => {
       void handleReveal('auto');
-    }, prefs.animations ? 450 : 0);
+    }, prefs.animations ? 450 : NO_ANIMATION_DELAY_MS);
 
     return () => {
       window.clearTimeout(timer);
@@ -746,7 +753,8 @@ export function App() {
     state
   ]);
 
-  const boardCanInteract = !prefs.autoPlay && !isReviewMode && statusText !== 'Puzzle complete';
+  const puzzleIsComplete = state ? isPuzzleSolved(state) : false;
+  const boardCanInteract = !prefs.autoPlay && !isReviewMode && !puzzleIsComplete;
 
   const handleLoadById = useCallback(async () => {
     if (loading) {
@@ -778,8 +786,8 @@ export function App() {
     }
   }, [applyStartedSession, loading, prefs.autoNext, prefs.variationMode, puzzleIdInput, resetHints]);
 
-  const handleLoadHistoryPuzzle = useCallback(
-    async (publicId: string) => {
+  const handleLoadHistorySession = useCallback(
+    async (targetSessionId: string) => {
       if (loading) {
         return;
       }
@@ -793,33 +801,16 @@ export function App() {
       setReviewPath(null);
 
       try {
-        const response = await startSession(prefs.variationMode, prefs.autoNext, publicId, 'history');
-        applyStartedSession(response, 'Loaded puzzle from history');
+        const response = await loadSession(targetSessionId);
+        applyStartedSession(response, 'Loaded game from history');
       } catch (error) {
-        setErrorText(error instanceof Error ? error.message : 'Failed to load history puzzle');
+        setErrorText(error instanceof Error ? error.message : 'Failed to load history game');
       } finally {
         setLoading(false);
       }
     },
-    [applyStartedSession, loading, prefs.autoNext, prefs.variationMode, resetHints]
+    [applyStartedSession, loading, resetHints]
   );
-
-  const handleClearHistory = useCallback(async () => {
-    if (!sessionId || loading) {
-      return;
-    }
-
-    setLoading(true);
-    setHistoryError(null);
-    try {
-      await clearSessionHistory(sessionId);
-      await loadSessionArtifacts(sessionId);
-    } catch (error) {
-      setHistoryError(error instanceof Error ? error.message : 'Failed to clear history');
-    } finally {
-      setLoading(false);
-    }
-  }, [loadSessionArtifacts, loading, sessionId]);
 
   const handleReviewMove = useCallback(
     (node: SessionTreeNode) => {
@@ -868,73 +859,95 @@ export function App() {
 
   if (!state || !puzzle) {
     return (
-      <main className="loading-minimal">
-        <p>Loading...</p>
-        {errorText ? <p className="error">{errorText}</p> : null}
-      </main>
+      <>
+        <main className="loading-minimal">
+          <p>Loading...</p>
+        </main>
+        {errorText ? (
+          <p className="global-error-toast" role="alert" aria-live="assertive">
+            {errorText}
+          </p>
+        ) : null}
+      </>
     );
   }
 
   const interactive = boardCanInteract;
 
   return (
-    <main className="layout split-layout">
-      <section className="board-column">
-        <div className="board-stack">
-          <div className="board-stage">
-            <EvalBar
-              cp={engineEval.cp}
-              mate={engineEval.mate}
-            />
-            <div className="board-shell">
-              <ChessBoard
-                fen={boardFen ?? state.fen}
-                orientation={playerOrientation}
-                checkColor={checkColor}
-                interactive={interactive}
-                canMoveExecution={!loading}
-                autoQueenPromotion={prefs.autoQueenPromotion}
-                hintSquare={hintSquare}
-                hintArrow={hintArrow}
-                lastMove={isReviewMode ? reviewLastMoveSquares : lastMoveSquares}
-                onMove={(uciMove) => void handleMove(uciMove)}
+    <>
+      <main className="layout split-layout">
+        <section className="board-column">
+          <div className="board-stack">
+            <div className="board-stage">
+              <EvalBar
+                cp={engineEval.cp}
+                mate={engineEval.mate}
               />
+              <div className="board-shell">
+                <ChessBoard
+                  fen={boardFen ?? state.fen}
+                  orientation={playerOrientation}
+                  checkColor={checkColor}
+                  interactive={interactive}
+                  canMoveExecution={!loading}
+                  animationsEnabled={prefs.animations}
+                  premoveResetToken={sessionId}
+                  autoQueenPromotion={prefs.autoQueenPromotion}
+                  hintSquare={hintSquare}
+                  hintArrow={hintArrow}
+                  lastMove={isReviewMode ? reviewLastMoveSquares : lastMoveSquares}
+                  wrongMoveSquare={isReviewMode ? null : wrongMoveSquare}
+                  wrongMoveFlashToken={wrongMoveFlashToken}
+                  onMove={(uciMove) => void handleMove(uciMove)}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      <aside className="side-column panel">
-        <section className="rail-block header rail-status">
-          <h1>Chess Puzzle Trainer</h1>
-          <p className="subtitle">{puzzle.title || 'Puzzle'}</p>
-          <p className="meta">ID: {puzzle.publicId}</p>
-          <p className="meta">
-            Engine: {engineEvalText} | d{engineEval.depth} | {engineEvalSideText}
-          </p>
-          <p className="status status-line">{statusText}</p>
-          <p className="correct correct-line">{correctText ?? '\u00A0'}</p>
-          <p className="meta expected-line">{lastBestMove ? `Expected: ${lastBestMove}` : '\u00A0'}</p>
-          {isReviewMode ? <p className="meta">Review mode active</p> : null}
-          {errorText ? <p className="error">{errorText}</p> : null}
         </section>
+
+        <aside className="side-column panel">
+          <section className="rail-block header rail-status">
+            <h1>Chess Puzzle Trainer</h1>
+            <p className="subtitle">{puzzle.title || 'Puzzle'}</p>
+            <p className="meta">ID: {puzzle.publicId}</p>
+            <p className="turn-indicator">{turnLabel}</p>
+            <p className="meta">
+              Engine: {engineEvalText} | d{engineEval.depth} | {engineEvalSideText}
+            </p>
+            <p className="status status-line">{statusText}</p>
+            <p className="correct correct-line">{correctText ?? '\u00A0'}</p>
+            <p className="meta expected-line">{lastBestMove ? `Expected: ${lastBestMove}` : '\u00A0'}</p>
+            {isReviewMode ? <p className="meta">Review mode active</p> : null}
+          </section>
 
         <section className="rail-block rail-actions">
           <div className="button-row">
             <button
               type="button"
+              className="btn-secondary"
               disabled={loading || prefs.autoPlay || isReviewMode || !prefs.hintsEnabled}
               onClick={() => void handleHint()}
             >
               Hint
             </button>
-            <button type="button" disabled={loading || prefs.autoPlay || isReviewMode} onClick={() => void handleReveal()}>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={loading || prefs.autoPlay || isReviewMode}
+              onClick={() => void handleReveal()}
+            >
               Show solution
             </button>
-            <button type="button" disabled={loading || prefs.autoPlay || isReviewMode} onClick={() => void handleSkipVariation()}>
+            <button
+              type="button"
+              className="btn-secondary"
+              disabled={loading || prefs.autoPlay || isReviewMode}
+              onClick={() => void handleSkipVariation()}
+            >
               Skip variation
             </button>
-            <button type="button" disabled={loading} onClick={() => void handleNextPuzzle()}>
+            <button type="button" className="btn-primary" disabled={loading} onClick={() => void handleNextPuzzle()}>
               Next puzzle
             </button>
           </div>
@@ -944,33 +957,27 @@ export function App() {
           </p>
         </section>
 
-        <section className="rail-block history-strip" aria-label="Recent puzzle history">
+        <section className="rail-block history-strip" aria-label="Recent game history">
           <div className="history-head">
-            <p className="history-title">Recent puzzles</p>
-            <button
-              type="button"
-              className="history-clear"
-              onClick={() => void handleClearHistory()}
-              disabled={loading || historyItems.length === 0}
-            >
-              Clear
-            </button>
+            <p className="history-title">Recent games</p>
           </div>
           <div className="history-list">
-            {historyItems.map((item) => {
-              const tone = getHistoryTone(item);
-              const label = getHistoryLabel(item);
+            {recentHistoryItems.map((item) => {
+              const tone = getHistoryDotTone(item);
+              const label = getHistoryDotLabel(tone);
+              const symbol = getHistoryDotSymbol(tone);
+              const selected = item.sessionId === sessionId;
               return (
                 <button
                   key={item.sessionId}
                   type="button"
-                  className={`history-dot is-${tone}`}
-                  onClick={() => void handleLoadHistoryPuzzle(item.puzzlePublicId)}
+                  className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
+                  onClick={() => void handleLoadHistorySession(item.sessionId)}
                   disabled={loading}
-                  aria-label={`${label} puzzle from history`}
-                  title={item.puzzleTitle || 'Puzzle'}
+                  aria-label={`${selected ? 'Current' : label} puzzle ${item.puzzlePublicId} from history`}
+                  title={`${selected ? 'Current' : label} · ${item.puzzlePublicId} · ${item.puzzleTitle || 'Puzzle'} · ${new Date(item.createdAt).toLocaleString()}`}
                 >
-                  {getHistorySymbol(item)}
+                  {symbol}
                 </button>
               );
             })}
@@ -1158,7 +1165,13 @@ export function App() {
             </div>
           </div>
         </details>
-      </aside>
-    </main>
+        </aside>
+      </main>
+      {errorText ? (
+        <p className="global-error-toast" role="alert" aria-live="assertive">
+          {errorText}
+        </p>
+      ) : null}
+    </>
   );
 }

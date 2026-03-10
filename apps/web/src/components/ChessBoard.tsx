@@ -3,6 +3,7 @@ import { Chess, type Square } from 'chess.js';
 import { Chessground } from 'chessground';
 import type { Api } from 'chessground/api';
 import type { Key, MoveMetadata } from 'chessground/types';
+import { lichessStylePremoveDests } from '../lib/lichessPremove';
 
 type PromotionPiece = 'q' | 'r' | 'b' | 'n';
 
@@ -12,10 +13,14 @@ interface ChessBoardProps {
   checkColor: 'white' | 'black' | false;
   interactive: boolean;
   canMoveExecution: boolean;
+  animationsEnabled: boolean;
+  premoveResetToken: string | null;
   autoQueenPromotion: boolean;
   hintSquare: string | null;
   hintArrow: [string, string] | null;
   lastMove: [string, string] | null;
+  wrongMoveSquare: string | null;
+  wrongMoveFlashToken: number;
   onMove: (uci: string) => void;
 }
 
@@ -29,6 +34,11 @@ interface PromotionLayout {
   leftPct: number;
   topPct: number;
   fromTop: boolean;
+}
+
+interface SquareLayout {
+  leftPct: number;
+  topPct: number;
 }
 
 const PROMOTION_PIECES: PromotionPiece[] = ['q', 'n', 'r', 'b'];
@@ -66,16 +76,6 @@ function legalDestinations(fen: string): Map<Key, Key[]> {
   }
 
   return map;
-}
-
-function legalDestinationsForColor(fen: string, color: 'w' | 'b'): Map<Key, Key[]> {
-  const parts = fen.trim().split(/\s+/);
-  if (parts.length < 2) {
-    return legalDestinations(fen);
-  }
-
-  parts[1] = color;
-  return legalDestinations(parts.join(' '));
 }
 
 function turnColorFromFen(fen: string): 'white' | 'black' {
@@ -137,16 +137,40 @@ function getPromotionLayout(square: string, orientation: 'white' | 'black'): Pro
   };
 }
 
+function getSquareLayout(square: string, orientation: 'white' | 'black'): SquareLayout | null {
+  if (square.length !== 2) {
+    return null;
+  }
+
+  const file = square.charCodeAt(0) - 97;
+  const rank = Number(square[1]);
+  if (Number.isNaN(rank) || file < 0 || file > 7 || rank < 1 || rank > 8) {
+    return null;
+  }
+
+  const displayFile = orientation === 'white' ? file : 7 - file;
+  const displayRank = orientation === 'white' ? 8 - rank : rank - 1;
+
+  return {
+    leftPct: displayFile * 12.5,
+    topPct: displayRank * 12.5
+  };
+}
+
 export function ChessBoard({
   fen,
   orientation,
   checkColor,
   interactive,
   canMoveExecution,
+  animationsEnabled,
+  premoveResetToken,
   autoQueenPromotion,
   hintSquare,
   hintArrow,
   lastMove,
+  wrongMoveSquare,
+  wrongMoveFlashToken,
   onMove
 }: ChessBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -155,17 +179,22 @@ export function ChessBoard({
 
   const turnColor = useMemo(() => turnColorFromFen(fen), [fen]);
   const destinations = useMemo(() => legalDestinations(fen), [fen]);
-  const premoveDests = useMemo(
-    () => legalDestinationsForColor(fen, orientation === 'white' ? 'w' : 'b'),
-    [fen, orientation]
-  );
-  const chessgroundLastMove = useMemo<Key[] | undefined>(
+  const isPlayersTurn = turnColor === orientation;
+  const chessgroundLastMove = useMemo<[Key, Key] | undefined>(
     () => (lastMove ? [lastMove[0] as Key, lastMove[1] as Key] : undefined),
     [lastMove]
+  );
+  const premoveDests = useMemo(
+    () => (isPlayersTurn ? undefined : lichessStylePremoveDests(fen, orientation, chessgroundLastMove ?? null)),
+    [chessgroundLastMove, fen, isPlayersTurn, orientation]
   );
   const promotionLayout = useMemo(
     () => (pendingPromotion ? getPromotionLayout(pendingPromotion.to, orientation) : null),
     [orientation, pendingPromotion]
+  );
+  const wrongMoveLayout = useMemo(
+    () => (wrongMoveSquare ? getSquareLayout(wrongMoveSquare, orientation) : null),
+    [orientation, wrongMoveSquare]
   );
 
   const handleBoardMove = useCallback(
@@ -213,8 +242,8 @@ export function ChessBoard({
       orientation,
       coordinates: false,
       animation: {
-        enabled: true,
-        duration: 200
+        enabled: animationsEnabled,
+        duration: animationsEnabled ? 200 : 0
       },
       movable: {
         free: false,
@@ -227,10 +256,22 @@ export function ChessBoard({
       premovable: {
         enabled: interactive,
         customDests: premoveDests,
-        showDests: true
+        showDests: !isPlayersTurn
       }
     });
-  }, [checkColor, chessgroundLastMove, destinations, fen, handleBoardMove, interactive, orientation, premoveDests, turnColor]);
+  }, [
+    animationsEnabled,
+    checkColor,
+    chessgroundLastMove,
+    destinations,
+    fen,
+    handleBoardMove,
+    interactive,
+    isPlayersTurn,
+    orientation,
+    premoveDests,
+    turnColor
+  ]);
 
   useEffect(() => {
     apiRef.current?.set({
@@ -241,8 +282,8 @@ export function ChessBoard({
       orientation,
       coordinates: false,
       animation: {
-        enabled: true,
-        duration: 200
+        enabled: animationsEnabled,
+        duration: animationsEnabled ? 200 : 0
       },
       movable: {
         free: false,
@@ -255,7 +296,7 @@ export function ChessBoard({
       premovable: {
         enabled: interactive,
         customDests: premoveDests,
-        showDests: true
+        showDests: !isPlayersTurn
       },
       drawable: {
         enabled: Boolean(hintSquare || hintArrow),
@@ -283,6 +324,7 @@ export function ChessBoard({
       }
     });
   }, [
+    animationsEnabled,
     checkColor,
     chessgroundLastMove,
     destinations,
@@ -291,6 +333,7 @@ export function ChessBoard({
     hintArrow,
     hintSquare,
     interactive,
+    isPlayersTurn,
     orientation,
     premoveDests,
     turnColor
@@ -303,6 +346,11 @@ export function ChessBoard({
 
     apiRef.current?.playPremove();
   }, [canMoveExecution, fen, interactive, turnColor]);
+
+  useEffect(() => {
+    apiRef.current?.cancelPremove();
+    setPendingPromotion(null);
+  }, [premoveResetToken]);
 
   const applyPromotion = useCallback(
     (piece: PromotionPiece) => {
@@ -326,6 +374,19 @@ export function ChessBoard({
   return (
     <div className="board-wrap">
       <div ref={containerRef} className="board" />
+      {wrongMoveLayout ? (
+        <div
+          key={wrongMoveFlashToken}
+          className="wrong-move-marker-anchor"
+          style={{
+            left: `${wrongMoveLayout.leftPct}%`,
+            top: `${wrongMoveLayout.topPct}%`
+          }}
+          aria-hidden="true"
+        >
+          <span className="wrong-move-marker" />
+        </div>
+      ) : null}
       {pendingPromotion && promotionLayout ? (
         <div role="dialog" aria-label="Choose promotion piece">
           <button type="button" className="promotion-backdrop" aria-label="Cancel promotion" onClick={cancelPromotion} />

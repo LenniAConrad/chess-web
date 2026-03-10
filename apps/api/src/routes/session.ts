@@ -29,7 +29,8 @@ const revealSchema = z.object({
 
 const historySchema = z.object({
   sessionId: z.string().uuid(),
-  limit: z.coerce.number().int().positive().max(50).optional().default(20)
+  limit: z.coerce.number().int().positive().max(24).optional().default(24),
+  includeCurrent: z.boolean().optional().default(false)
 });
 
 const nextSchema = z.object({
@@ -126,6 +127,32 @@ export async function registerSessionRoutes(
     reply.send(result);
   });
 
+  app.post('/api/v1/session/load', async (request, reply) => {
+    const body = sessionSchema.parse(request.body ?? {});
+    const anonSessionId = await ensureAnonSession(request, reply, pool);
+
+    const allowed = await enforceRateLimit({
+      request,
+      reply,
+      pool,
+      limiter,
+      key: `load:${body.sessionId}`,
+      policy: actionPolicy,
+      route: '/api/v1/session/load',
+      anonSessionId
+    });
+
+    if (!allowed) {
+      return;
+    }
+
+    const result = await sessionService.loadSession({
+      sessionId: body.sessionId,
+      anonSessionId
+    });
+    reply.send(result);
+  });
+
   app.post('/api/v1/session/hint', async (request, reply) => {
     const body = sessionSchema.parse(request.body ?? {});
     const anonSessionId = await ensureAnonSession(request, reply, pool);
@@ -171,7 +198,8 @@ export async function registerSessionRoutes(
     const result = await sessionService.getSessionHistory({
       sessionId: body.sessionId,
       anonSessionId,
-      limit: body.limit
+      limit: body.limit,
+      includeCurrent: body.includeCurrent
     });
     reply.send(result);
   });

@@ -382,22 +382,50 @@ export class SessionService {
     };
   }
 
+  async loadSession(input: {
+    sessionId: string;
+    anonSessionId: string;
+  }): Promise<{
+    sessionId: string;
+    puzzle: { publicId: string; startFen: string; title: string };
+    state: SessionStatePayload;
+    ui: { autoNextDefault: boolean };
+  }> {
+    const context = await this.loadContext(input.sessionId, input.anonSessionId);
+    const cursor = context.engine.normalizeCursor(context.dbSession.branch_cursor);
+    const snapshot = context.engine.buildSnapshot(cursor, context.dbSession.solved);
+
+    return {
+      sessionId: context.dbSession.id,
+      puzzle: {
+        publicId: context.puzzle.public_id,
+        startFen: context.puzzle.start_fen,
+        title: context.puzzle.title
+      },
+      state: toStatePayload(snapshot),
+      ui: {
+        autoNextDefault: true
+      }
+    };
+  }
+
   async getSessionHistory(input: {
     sessionId: string;
     anonSessionId: string;
     limit: number;
+    includeCurrent?: boolean;
   }): Promise<{ items: SessionHistoryItem[] }> {
     const session = await getPuzzleSession(this.pool, input.sessionId);
     if (!session || session.anon_session_id !== input.anonSessionId) {
       throw new Error('Session not found');
     }
 
-    const normalizedLimit = Math.min(50, Math.max(1, Math.floor(input.limit)));
+    const normalizedLimit = Math.min(24, Math.max(1, Math.floor(input.limit)));
     const history = await listPuzzleSessionHistory(
       this.pool,
       input.anonSessionId,
       normalizedLimit,
-      input.sessionId
+      input.includeCurrent ? undefined : input.sessionId
     );
     const items = history.map((item) => ({
       sessionId: item.session_id,

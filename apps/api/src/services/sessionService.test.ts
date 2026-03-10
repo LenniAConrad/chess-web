@@ -117,6 +117,43 @@ describe('SessionService', () => {
     }
   });
 
+  it('loads an existing history session by sessionId without cloning', async () => {
+    const ctx = await createServiceContext();
+    try {
+      const started = await ctx.service.startRandomSession({
+        anonSessionId: ctx.anonSessionId,
+        mode: 'explore',
+        autoNext: true
+      });
+
+      const move = await ctx.service.playMove({
+        sessionId: started.sessionId,
+        uciMove: 'e4d6'
+      });
+
+      const loaded = await ctx.service.loadSession({
+        sessionId: started.sessionId,
+        anonSessionId: ctx.anonSessionId
+      });
+
+      expect(loaded.sessionId).toBe(started.sessionId);
+      expect(loaded.puzzle.publicId).toBe(started.puzzle.publicId);
+      expect(loaded.state.nodeId).toBe(move.nextState.nodeId);
+      expect(loaded.state.fen).toBe(move.nextState.fen);
+      expect(loaded.state.lineIndex).toBe(move.nextState.lineIndex);
+      expect(loaded.state.completedBranches).toBe(move.nextState.completedBranches);
+
+      await expect(
+        ctx.service.loadSession({
+          sessionId: started.sessionId,
+          anonSessionId: randomUUID()
+        })
+      ).rejects.toThrow('Session not found');
+    } finally {
+      await ctx.pool.end();
+    }
+  });
+
   it('classifies history statuses and applies limit', async () => {
     const ctx = await createServiceContext();
     try {
@@ -195,6 +232,14 @@ describe('SessionService', () => {
       expect(autoplayBySessionId.get(incorrect.sessionId)).toBe(false);
       expect(autoplayBySessionId.get(autoplay.sessionId)).toBe(true);
       expect(statusBySessionId.has(current.sessionId)).toBe(false);
+
+      const historyWithCurrent = await ctx.service.getSessionHistory({
+        sessionId: current.sessionId,
+        anonSessionId: ctx.anonSessionId,
+        limit: 20,
+        includeCurrent: true
+      });
+      expect(historyWithCurrent.items.some((item) => item.sessionId === current.sessionId)).toBe(true);
 
       const limited = await ctx.service.getSessionHistory({
         sessionId: current.sessionId,

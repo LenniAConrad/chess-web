@@ -44,12 +44,24 @@ export function playMove(sessionId: string, uciMove: string): Promise<MoveRespon
   return requestJson<MoveResponse>('/api/v1/session/move', { sessionId, uciMove });
 }
 
+export function loadSession(sessionId: string): Promise<StartSessionResponse> {
+  return requestJson<StartSessionResponse>('/api/v1/session/load', { sessionId });
+}
+
 export function getHint(sessionId: string): Promise<HintResponse> {
   return requestJson<HintResponse>('/api/v1/session/hint', { sessionId });
 }
 
-export function getSessionHistory(sessionId: string, limit = 20): Promise<SessionHistoryResponse> {
-  return requestJson<SessionHistoryResponse>('/api/v1/session/history', { sessionId, limit });
+export function getSessionHistory(
+  sessionId: string,
+  limit = 24,
+  includeCurrent = false
+): Promise<SessionHistoryResponse> {
+  return requestJson<SessionHistoryResponse>('/api/v1/session/history', {
+    sessionId,
+    limit,
+    includeCurrent
+  });
 }
 
 export function clearSessionHistory(sessionId: string): Promise<SessionHistoryClearResponse> {
