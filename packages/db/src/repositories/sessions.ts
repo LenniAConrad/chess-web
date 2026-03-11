@@ -2,6 +2,9 @@ import { randomUUID } from 'node:crypto';
 import type { Pool } from 'pg';
 import type { PuzzleSessionHistoryRecord, PuzzleSessionRecord, VariationMode } from '../types.js';
 
+/**
+ * Session repository for anon user state, history projection, and counters.
+ */
 function toIsoTimestamp(value: unknown): string {
   if (value instanceof Date) {
     return value.toISOString();
@@ -102,6 +105,7 @@ export async function getOldestUntouchedPuzzleSession(
   anonSessionId: string,
   excludeSessionId?: string
 ): Promise<PuzzleSessionRecord | null> {
+  // "Untouched" means no solves, hints, wrong moves, reveals, autoplay, or updates beyond creation time.
   const baseQuery = `SELECT *
      FROM puzzle_sessions ps
      WHERE ps.anon_session_id = $1
@@ -174,6 +178,7 @@ export async function listPuzzleSessionHistory(
   limit: number,
   excludeSessionId?: string
 ): Promise<PuzzleSessionHistoryRecord[]> {
+  // Excludes synthetic "started from history" rows unless there is user activity worth surfacing.
   const baseQuery = `SELECT
       ps.id AS session_id,
       p.public_id AS puzzle_public_id,

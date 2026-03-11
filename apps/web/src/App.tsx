@@ -44,6 +44,7 @@ const CHECK_SOUND_DELAY_MS = 100;
 const WRONG_MOVE_FEEDBACK_MS = 520;
 const SESSION_HISTORY_FETCH_LIMIT = 200;
 const NO_ANIMATION_DELAY_MS = 180;
+const REPO_URL = 'https://github.com/LenniAConrad/chess-web';
 
 type PrimaryMoveSoundType = Exclude<MoveSoundType, 'check'>;
 
@@ -211,6 +212,12 @@ function formatEngineSide(cp: number | null, mate: number | null, error: string 
 }
 
 export function App() {
+  /**
+   * `App` is the session orchestrator for the full UI:
+   * - manages API-driven puzzle/session state
+   * - drives board/status animations and sound decisions
+   * - coordinates history + PGN explorer + settings persistence
+   */
   const { prefs, setPrefs } = useLocalPrefs();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [puzzle, setPuzzle] = useState<PuzzleHeader | null>(null);
@@ -1259,6 +1266,11 @@ export function App() {
             </div>
           </div>
         </details>
+        <footer className="repo-link-footer">
+          <a href={REPO_URL} target="_blank" rel="noreferrer">
+            View on GitHub
+          </a>
+        </footer>
         </aside>
       </main>
       {errorText ? (

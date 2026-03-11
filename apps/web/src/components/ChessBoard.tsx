@@ -41,7 +41,20 @@ interface SquareLayout {
   topPct: number;
 }
 
+type CoordinateTone = 'on-light' | 'on-dark';
+
+interface CoordinateLabel {
+  key: string;
+  text: string;
+  leftPct: number;
+  topPct: number;
+  tone: CoordinateTone;
+  variant: 'file' | 'rank';
+}
+
 const PROMOTION_PIECES: PromotionPiece[] = ['q', 'n', 'r', 'b'];
+const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;
+const RANKS_ASC = ['1', '2', '3', '4', '5', '6', '7', '8'] as const;
 
 const PIECE_LABELS: Record<PromotionPiece, string> = {
   q: 'queen',
@@ -170,6 +183,19 @@ function getSquareLayout(square: string, orientation: 'white' | 'black'): Square
   };
 }
 
+function isLightSquare(file: string, rank: string): boolean {
+  const fileIndex = file.charCodeAt(0) - 97;
+  const rankNumber = Number(rank);
+  if (Number.isNaN(rankNumber) || fileIndex < 0 || fileIndex > 7 || rankNumber < 1 || rankNumber > 8) {
+    return false;
+  }
+  return (fileIndex + rankNumber) % 2 === 0;
+}
+
+function getCoordinateTone(file: string, rank: string): CoordinateTone {
+  return isLightSquare(file, rank) ? 'on-light' : 'on-dark';
+}
+
 export function ChessBoard({
   fen,
   orientation,
@@ -209,6 +235,45 @@ export function ChessBoard({
     () => (wrongMoveSquare ? getSquareLayout(wrongMoveSquare, orientation) : null),
     [orientation, wrongMoveSquare]
   );
+  const coordinateLabels = useMemo<CoordinateLabel[]>(() => {
+    const displayFiles = orientation === 'white' ? [...FILES] : [...FILES].reverse();
+    const displayRanks = orientation === 'white' ? [...RANKS_ASC].reverse() : [...RANKS_ASC];
+    const labels: CoordinateLabel[] = [];
+    const bottomRank = displayRanks[7] ?? '1';
+    const leftFile = displayFiles[0] ?? 'a';
+
+    for (let index = 0; index < displayFiles.length; index += 1) {
+      const file = displayFiles[index];
+      if (!file) {
+        continue;
+      }
+      labels.push({
+        key: `file-${file}`,
+        text: file,
+        leftPct: index * 12.5,
+        topPct: 87.5,
+        tone: getCoordinateTone(file, bottomRank),
+        variant: 'file'
+      });
+    }
+
+    for (let index = 0; index < displayRanks.length; index += 1) {
+      const rank = displayRanks[index];
+      if (!rank) {
+        continue;
+      }
+      labels.push({
+        key: `rank-${rank}`,
+        text: rank,
+        leftPct: 0,
+        topPct: index * 12.5,
+        tone: getCoordinateTone(leftFile, rank),
+        variant: 'rank'
+      });
+    }
+
+    return labels;
+  }, [orientation]);
 
   const handleBoardMove = useCallback(
     (from: string, to: string, metadata: MoveMetadata) => {
@@ -387,6 +452,20 @@ export function ChessBoard({
   return (
     <div className="board-wrap">
       <div ref={containerRef} className="board" />
+      <div className="board-coordinates" aria-hidden="true">
+        {coordinateLabels.map((label) => (
+          <span
+            key={label.key}
+            className={`board-coordinate board-coordinate-${label.variant} ${label.tone}`}
+            style={{
+              left: `${label.leftPct}%`,
+              top: `${label.topPct}%`
+            }}
+          >
+            {label.text}
+          </span>
+        ))}
+      </div>
       {wrongMoveLayout ? (
         <div
           key={wrongMoveFlashToken}

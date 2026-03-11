@@ -1,5 +1,8 @@
 import type { MoveResponse, PuzzleNode, SessionCursor, SessionSnapshot, VariationMode } from './types.js';
 
+/**
+ * Lightweight FEN helper used to decide whose turn it is at a node.
+ */
 function sideToMove(fen: string): 'w' | 'b' {
   return (fen.split(' ')[1] === 'b' ? 'b' : 'w') as 'w' | 'b';
 }
@@ -14,11 +17,28 @@ function commonPrefixLength(a: number[], b: number[]): number {
 }
 
 export interface PuzzleSessionEngineOptions {
+  /** Full puzzle move tree (all nodes) for one puzzle. */
   nodes: PuzzleNode[];
+  /** Root node id in `nodes`. */
   rootNodeId: number;
+  /** Variation traversal strategy. */
   mode: VariationMode;
 }
 
+/**
+ * Deterministic puzzle session engine.
+ *
+ * Responsibilities:
+ * - Build candidate lines from the move tree.
+ * - Validate user input against the expected continuation.
+ * - Advance cursor and auto-play opponent moves.
+ * - Emit rewind information when switching between variation branches.
+ *
+ * Non-responsibilities:
+ * - Persistence
+ * - HTTP transport
+ * - UI rendering concerns
+ */
 export class PuzzleSessionEngine {
   private readonly mode: VariationMode;
   private readonly rootNodeId: number;
@@ -69,6 +89,9 @@ export class PuzzleSessionEngine {
     return { lineIndex: 0, cursorIndex: 0 };
   }
 
+  /**
+   * Defensive cursor normalization for persisted/untrusted cursor payloads.
+   */
   normalizeCursor(input: unknown): SessionCursor {
     const asRecord = (input ?? {}) as Record<string, unknown>;
     const lineIndexRaw = Number(asRecord.lineIndex ?? 0);
@@ -301,6 +324,10 @@ export class PuzzleSessionEngine {
   }
 
   private buildLines(): number[][] {
+    /**
+     * DFS over the tree where user turns contribute decision points and
+     * opponent turns are auto-played later in `sync`.
+     */
     const lines: number[][] = [];
 
     const walk = (nodeId: number, path: number[]): void => {
@@ -372,6 +399,12 @@ export class PuzzleSessionEngine {
     autoPlayStartFen: string | null;
     rewindFens: string[];
   } {
+    /**
+     * Sync cursor to the next user decision:
+     * - Auto-play opponent-only steps.
+     * - If line ends, advance to next branch and provide rewind FENs.
+     * - Mark solved when no remaining branches exist.
+     */
     const cursor = this.normalizeCursor(inputCursor);
     const autoPlayedMoves: string[] = [];
     let autoPlayStartFen: string | null = null;

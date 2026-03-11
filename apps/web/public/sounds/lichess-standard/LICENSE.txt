@@ -1,0 +1,17 @@
+Lichess standard sound assets bundled in this repository:
+- Move.ogg
+- Capture.ogg
+- Check.ogg
+
+Source:
+- https://github.com/lichess-org/lila/tree/master/public/sound/standard
+
+Attribution:
+- Project: lichess-org/lila
+
+Licensing note:
+- See upstream COPYING and LICENSE files for terms:
+  - https://github.com/lichess-org/lila/blob/master/COPYING.md
+  - https://github.com/lichess-org/lila/blob/master/LICENSE
+- In upstream COPYING.md, sounds outside the explicitly listed free packs
+  are marked as non-free.

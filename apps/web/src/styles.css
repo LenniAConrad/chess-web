@@ -5,9 +5,9 @@
   --page-vertical-space: 10vh;
   --color-text: #121212;
   --color-bg: #f0f0ee;
-  --color-bg-grad-top: rgba(255, 255, 255, 0.86);
-  --color-bg-grad-bottom: rgba(225, 225, 225, 0.56);
-  --color-bg-glow: rgba(255, 255, 255, 0.42);
+  --color-bg-grad-top: rgba(255, 255, 255, 0.74);
+  --color-bg-grad-bottom: rgba(231, 231, 231, 0.44);
+  --color-bg-glow: rgba(255, 255, 255, 0.28);
   --color-panel-bg: rgba(255, 255, 255, 0.66);
   --color-panel-border: rgba(80, 80, 80, 0.22);
   --color-panel-shadow: rgba(0, 0, 0, 0.14);
@@ -89,9 +89,9 @@
 :root[data-theme='dark'] {
   --color-text: #ededed;
   --color-bg: #171717;
-  --color-bg-grad-top: rgba(130, 130, 130, 0.11);
-  --color-bg-grad-bottom: rgba(0, 0, 0, 0.26);
-  --color-bg-glow: rgba(200, 200, 200, 0.1);
+  --color-bg-grad-top: rgba(130, 130, 130, 0.08);
+  --color-bg-grad-bottom: rgba(0, 0, 0, 0.18);
+  --color-bg-glow: rgba(200, 200, 200, 0.06);
   --color-panel-bg: rgba(34, 34, 34, 0.72);
   --color-panel-border: rgba(255, 255, 255, 0.12);
   --color-panel-shadow: rgba(0, 0, 0, 0.4);
@@ -176,8 +176,8 @@ body {
   color: var(--color-text);
   background-color: var(--color-bg);
   background-image:
-    radial-gradient(1000px 440px at 12% -14%, var(--color-bg-glow), transparent 72%),
-    radial-gradient(860px 360px at 88% 116%, var(--color-bg-glow), transparent 74%),
+    radial-gradient(1080px 500px at 12% -14%, var(--color-bg-glow), transparent 78%),
+    radial-gradient(920px 420px at 88% 116%, var(--color-bg-glow), transparent 80%),
     linear-gradient(180deg, var(--color-bg-grad-top), var(--color-bg-grad-bottom));
   background-attachment: fixed;
   transition: background-color 180ms ease, color 180ms ease, background-image 180ms ease;
@@ -263,6 +263,23 @@ body {
 
 .side-column > .rail-block {
   flex: 0 0 auto;
+}
+
+.repo-link-footer {
+  margin-top: auto;
+  text-align: center;
+  padding: 0.3rem 0.2rem 0;
+}
+
+.repo-link-footer a {
+  color: var(--color-meta);
+  font-size: 0.82rem;
+  text-decoration-color: rgba(255, 255, 255, 0.35);
+  text-underline-offset: 0.12em;
+}
+
+.repo-link-footer a:hover {
+  color: var(--color-status);
 }
 
 .rail-block {
@@ -494,6 +511,46 @@ body {
 .board .cg-custom-svgs {
   clip-path: inset(0 round 4px);
   border-radius: 4px;
+}
+
+.board-coordinates {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 13;
+}
+
+.board-coordinate {
+  position: absolute;
+  width: 12.5%;
+  height: 12.5%;
+  display: flex;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+
+.board-coordinate-file {
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 0.26rem 0.18rem 0;
+  box-sizing: border-box;
+}
+
+.board-coordinate-rank {
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 0.16rem 0 0 0.24rem;
+  box-sizing: border-box;
+}
+
+.board-coordinate.on-light {
+  color: rgba(95, 65, 38, 0.84);
+}
+
+.board-coordinate.on-dark {
+  color: rgba(245, 228, 198, 0.86);
 }
 
 .board piece.dragging {

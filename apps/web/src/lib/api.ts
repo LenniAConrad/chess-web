@@ -11,6 +11,10 @@ import type {
   VariationMode
 } from '../types/api.js';
 
+/**
+ * Thin API client used by the React app.
+ * All requests include credentials so the anon-session cookie stays consistent.
+ */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001';
 
 async function requestJson<T>(path: string, body?: Record<string, unknown>): Promise<T> {

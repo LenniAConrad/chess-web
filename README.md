@@ -4,7 +4,16 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
 
 ## Screenshot
 
-<img src="assets/chess-puzzle-trainer.png" alt="Chess Puzzle Trainer UI" width="100%" />
+<img
+  src="assets/chess-puzzle-trainer.png"
+  alt="Composite Chess Puzzle Trainer desktop screenshot with the board on the left and the control rail on the right; top-left area from the light UI and bottom-right area from the dark UI"
+  width="100%"
+/>
+
+Composite desktop UI preview of the split layout:
+- Left: interactive chessboard (with optional eval bar).
+- Right: puzzle header/status, hint/solution controls, recent games strip, PGN Explorer, and Settings.
+- Composition: top-left section from the light screenshot + bottom-right section from the dark screenshot.
 
 ## Stack
 
@@ -22,6 +31,14 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
 - Optional autoplay, auto-next, sound, animation, and auto-queen
 - PGN explorer panel for reviewing continuation nodes
 - Browser Stockfish analysis and eval bar (toggleable in Settings)
+
+## Docs
+
+- Technical docs index: [docs/README.md](docs/README.md)
+- Architecture: [docs/architecture.md](docs/architecture.md)
+- API/session lifecycle: [docs/api-and-session-flow.md](docs/api-and-session-flow.md)
+- Frontend behavior: [docs/frontend-flow.md](docs/frontend-flow.md)
+- Database model: [docs/database-model.md](docs/database-model.md)
 
 ## Quick Start
 
@@ -101,11 +118,12 @@ One-shot build script:
 - See [LICENSE](LICENSE) and [LICENSE.txt](LICENSE.txt) for repository licensing terms and third-party requirements.
 - Bundled asset notices:
   - `apps/web/public/pieces/cburnett/NOTICE.txt`
+  - `apps/web/public/sounds/lichess-standard/LICENSE.txt`
   - `apps/web/public/sounds/lichess-sfx/LICENSE.txt`
 - Machine-readable dependency license inventory:
   - `THIRD_PARTY_LICENSES.json`
   - Regenerate with: `node scripts/generateThirdPartyLicenses.mjs`
-- The app intentionally uses the free `lichess-sfx` sound pack for runtime audio.
+- The app uses the default `lichess-standard` sound pack for runtime audio.
 
 ## Notes
 

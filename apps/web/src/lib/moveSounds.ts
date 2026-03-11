@@ -9,9 +9,9 @@ function withBasePath(relativePath: string): string {
 }
 
 const SOUND_URLS: Record<BaseSoundType, string> = {
-  move: withBasePath('sounds/lichess-sfx/Move.ogg'),
-  capture: withBasePath('sounds/lichess-sfx/Capture.ogg'),
-  check: withBasePath('sounds/lichess-sfx/Check.ogg')
+  move: withBasePath('sounds/lichess-standard/Move.ogg'),
+  capture: withBasePath('sounds/lichess-standard/Capture.ogg'),
+  check: withBasePath('sounds/lichess-standard/Check.ogg')
 };
 
 const BASE_VOLUME = 1;

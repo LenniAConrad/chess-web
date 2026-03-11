@@ -1,7 +1,13 @@
+/**
+ * Branch traversal mode:
+ * - `explore`: include variation branches for user-side decisions.
+ * - `mainline`: follow mainline-only continuation.
+ */
 export type VariationMode = 'explore' | 'mainline';
 export type MoveActor = 'user' | 'opponent';
 export type SessionStepResult = 'correct' | 'incorrect' | 'completed';
 
+/** Normalized puzzle tree node used by the session engine. */
 export interface PuzzleNode {
   id: number;
   parentId: number | null;
@@ -14,6 +20,7 @@ export interface PuzzleNode {
   fenAfter: string;
 }
 
+/** Parsed PGN payload prepared for persistence/import. */
 export interface ParsedPuzzle {
   title: string;
   source: string;
@@ -22,11 +29,16 @@ export interface ParsedPuzzle {
   nodes: PuzzleNode[];
 }
 
+/** Cursor pointing to the active line and index inside that line. */
 export interface SessionCursor {
   lineIndex: number;
   cursorIndex: number;
 }
 
+/**
+ * Legacy persisted session shape used by older storage code paths.
+ * (Current API payload uses SessionSnapshot/SessionStatePayload).
+ */
 export interface SessionState {
   puzzleId: number;
   currentNodeId: number;
@@ -37,6 +49,7 @@ export interface SessionState {
   revealed: boolean;
 }
 
+/** UI-ready immutable snapshot of the current engine state. */
 export interface SessionSnapshot {
   nodeId: number;
   fen: string;
@@ -47,6 +60,7 @@ export interface SessionSnapshot {
   completedBranches: number;
 }
 
+/** Move execution outcome including autoplay/rewind metadata. */
 export interface MoveResponse {
   result: SessionStepResult;
   expectedBestMoveUci?: string;

@@ -21,6 +21,15 @@ import {
 } from '@chess-web/db';
 import type { Pool } from 'pg';
 
+/**
+ * Service layer for puzzle sessions.
+ *
+ * It composes:
+ * - repository operations from `@chess-web/db`
+ * - deterministic branch/session logic from `PuzzleSessionEngine`
+ *
+ * Routes call this service; this file is intentionally transport-agnostic.
+ */
 interface SessionContext {
   dbSession: PuzzleSessionRecord;
   puzzle: PuzzleRecord;
@@ -115,6 +124,9 @@ function toStatePayload(snapshot: {
 export class SessionService {
   constructor(private readonly pool: Pool) {}
 
+  /**
+   * Shared session bootstrap used by random and explicit puzzle starts.
+   */
   private async startSessionForPuzzle(input: {
     anonSessionId: string;
     mode: VariationMode;
@@ -211,6 +223,9 @@ export class SessionService {
     });
   }
 
+  /**
+   * Validate and apply a user move for an existing session.
+   */
   async playMove(input: { sessionId: string; uciMove: string }): Promise<{
     result: 'correct' | 'incorrect' | 'completed';
     bestMoveUci?: string;
@@ -252,6 +267,9 @@ export class SessionService {
     };
   }
 
+  /**
+   * Return hint metadata for the next expected user decision.
+   */
   async hint(input: { sessionId: string }): Promise<{
     pieceFromSquare: string | null;
     bestMoveUci: string | null;
@@ -283,6 +301,9 @@ export class SessionService {
     };
   }
 
+  /**
+   * Force-apply the best move and return autoplay continuation metadata.
+   */
   async reveal(input: { sessionId: string; source?: 'manual' | 'auto' }): Promise<{
     bestMoveUci: string | null;
     bestMoveSan: string | null;
@@ -320,6 +341,9 @@ export class SessionService {
     };
   }
 
+  /**
+   * Skip current explore-variation branch and continue from next branch.
+   */
   async skipVariation(input: { sessionId: string }): Promise<{
     skipped: boolean;
     autoPlayedMoves: string[];
@@ -353,6 +377,11 @@ export class SessionService {
     };
   }
 
+  /**
+   * Transition from one puzzle to the next:
+   * - optionally resume oldest untouched puzzle when auto-next is active
+   * - otherwise create a fresh random session
+   */
   async startNext(input: {
     sessionId: string;
     anonSessionId: string;
@@ -398,6 +427,7 @@ export class SessionService {
     };
   }
 
+  /** Load an existing session owned by the calling anon session id. */
   async loadSession(input: {
     sessionId: string;
     anonSessionId: string;
@@ -425,6 +455,7 @@ export class SessionService {
     };
   }
 
+  /** Read recent puzzle history for one anon session. */
   async getSessionHistory(input: {
     sessionId: string;
     anonSessionId: string;
@@ -459,6 +490,7 @@ export class SessionService {
     return { items };
   }
 
+  /** Remove history rows while keeping the currently active session. */
   async clearSessionHistory(input: {
     sessionId: string;
     anonSessionId: string;
@@ -472,6 +504,7 @@ export class SessionService {
     return { cleared };
   }
 
+  /** Return tree nodes for PGN explorer/review UI. */
   async getSessionTree(input: { sessionId: string; anonSessionId: string }): Promise<{
     puzzle: { publicId: string; title: string; startFen: string };
     currentNodeId: number;
@@ -491,6 +524,7 @@ export class SessionService {
     };
   }
 
+  /** Return puzzle tree by public id (debug/admin style use-cases). */
   async getPuzzleTree(publicId: string): Promise<{
     puzzle: { publicId: string; title: string; startFen: string };
     nodes: PuzzleNodeRecord[];
@@ -508,6 +542,10 @@ export class SessionService {
     };
   }
 
+  /**
+   * Hydrate DB session + puzzle + nodes and construct engine.
+   * Optionally enforces anon-session ownership.
+   */
   private async loadContext(sessionId: string, anonSessionId?: string): Promise<SessionContext> {
     const dbSession = await getPuzzleSession(this.pool, sessionId);
     if (!dbSession) {
@@ -543,6 +581,7 @@ export class SessionService {
     return puzzle;
   }
 
+  /** Increment one daily metrics counter atomically. */
   private async incrementDailyMetric(field: 'puzzles_started' | 'puzzles_solved' | 'hint_used' | 'reveal_used') {
     await this.pool.query(
       `INSERT INTO daily_metrics(day, ${field}) VALUES (CURRENT_DATE, 1)

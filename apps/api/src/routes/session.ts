@@ -6,6 +6,10 @@ import { enforceRateLimit } from '../middleware/rateLimit.js';
 import type { InMemoryRateLimiter } from '../services/rateLimiter.js';
 import { SessionService } from '../services/sessionService.js';
 
+/**
+ * Route payload schemas. These are the single source of truth for request
+ * contract validation at the HTTP boundary.
+ */
 const startSchema = z.object({
   mode: z.enum(['explore', 'mainline']).optional().default('explore'),
   autoNext: z.boolean().optional().default(true),
@@ -53,6 +57,16 @@ const actionPolicy = {
   sustainedWindowMs: 60_000
 };
 
+/**
+ * Register all puzzle session routes.
+ *
+ * Route pattern:
+ * 1) validate body
+ * 2) ensure anon session identity
+ * 3) enforce rate limit policy
+ * 4) call SessionService
+ * 5) return normalized response payload
+ */
 export async function registerSessionRoutes(
   app: FastifyInstance,
   options: {

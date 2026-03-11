@@ -18,5 +18,5 @@ Reference:
 - https://github.com/lichess-org/lila/blob/master/LICENSE
 
 Notes:
-- This project intentionally uses the free "sfx" pack only.
+- This pack is bundled for compatibility but is not the active default.
 - Lichess COPYING.md also marks other sound assets as non-free.

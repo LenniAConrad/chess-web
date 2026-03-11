@@ -2,6 +2,12 @@ import { randomUUID } from 'node:crypto';
 import type { Pool, PoolClient } from 'pg';
 import type { MoveActor, PuzzleNodeRecord, PuzzleRecord } from '../types.js';
 
+/**
+ * Puzzle persistence/retrieval repository.
+ *
+ * Includes an indexed random selection strategy that avoids
+ * `ORDER BY random()` for better scalability.
+ */
 export interface InsertPuzzleInput {
   title: string;
   startFen: string;
@@ -118,6 +124,7 @@ export async function getPuzzleNodes(pool: Pool, puzzleId: number): Promise<Puzz
 }
 
 export async function getRandomPuzzle(pool: Pool, excludePuzzleId?: number): Promise<PuzzleRecord | null> {
+  // Two-stage random key lookup within pre-bucketed rows for index-friendly random fetch.
   const bucket = Math.floor(Math.random() * 1024);
   const randomKey = Math.random();
   const excluded = excludePuzzleId ?? null;

@@ -36,10 +36,10 @@ This repository bundles third-party chess assets from lichess-org/lila.
 Asset-level attribution/license notices are included in:
 
 - apps/web/public/pieces/cburnett/NOTICE.txt
+- apps/web/public/sounds/lichess-standard/LICENSE.txt
 - apps/web/public/sounds/lichess-sfx/LICENSE.txt
 
-Runtime sound usage is restricted to the free `lichess-sfx` pack.
-The `lichess-standard` sound pack is intentionally not distributed in this repository.
+Runtime sound usage defaults to the `lichess-standard` pack.
 
 Upstream references:
 

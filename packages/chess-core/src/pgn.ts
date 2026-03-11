@@ -2,6 +2,15 @@ import { Chess } from 'chess.js';
 import { parseGame } from '@mliebelt/pgn-parser';
 import type { MoveActor, ParsedPuzzle, PuzzleNode } from './types.js';
 
+/**
+ * Parse a PGN puzzle (including variations) into a normalized node tree.
+ *
+ * Parsing rules:
+ * - Root FEN comes from PGN `FEN` tag or standard initial chess position.
+ * - User side is inferred from root side-to-move.
+ * - Mainline path is flagged with `isMainline = true`.
+ * - Side variations are expanded from parent nodes with sibling ordering.
+ */
 const DEFAULT_START_FEN = new Chess().fen();
 
 interface ParsedMove {
@@ -77,6 +86,7 @@ export function parsePuzzlePgn(pgnText: string, source = 'import'): ParsedPuzzle
     chess: Chess,
     isMainlinePath: boolean
   ): void {
+    // Walk one linear move list, recursively branching for side variations.
     let currentParentId = parentId;
     let currentPly = startPly;
 
