@@ -86,19 +86,32 @@ function turnColorFromFen(fen: string): 'white' | 'black' {
 function isPromotionMove(fen: string, from: string, to: string): boolean {
   const chess = new Chess(fen);
   const piece = chess.get(from as Square);
-  if (piece?.type !== 'p' || (!to.endsWith('1') && !to.endsWith('8'))) {
+  if (piece?.type !== 'p' || to.length !== 2) {
     return false;
   }
 
-  return chess
-    .moves({ verbose: true })
-    .some((move) => move.from === from && move.to === to && Boolean(move.promotion));
+  const toRank = Number(to[1]);
+  const fromRank = Number(from[1]);
+  if (Number.isNaN(toRank) || Number.isNaN(fromRank)) {
+    return false;
+  }
+
+  const rankDelta = toRank - fromRank;
+  const expectedRankDelta = piece.color === 'w' ? 1 : -1;
+  if (rankDelta !== expectedRankDelta) {
+    return false;
+  }
+
+  const fileDelta = Math.abs(to.charCodeAt(0) - from.charCodeAt(0));
+  if (fileDelta > 1) {
+    return false;
+  }
+
+  return toRank === 1 || toRank === 8;
 }
 
 function toUci(fen: string, from: string, to: string, promotionPiece: PromotionPiece = 'q'): string {
-  const chess = new Chess(fen);
-  const piece = chess.get(from as Square);
-  const isPromotion = piece?.type === 'p' && (to.endsWith('1') || to.endsWith('8'));
+  const isPromotion = isPromotionMove(fen, from, to);
   return isPromotion ? `${from}${to}${promotionPiece}` : `${from}${to}`;
 }
 

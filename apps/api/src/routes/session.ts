@@ -29,7 +29,7 @@ const revealSchema = z.object({
 
 const historySchema = z.object({
   sessionId: z.string().uuid(),
-  limit: z.coerce.number().int().positive().max(24).optional().default(24),
+  limit: z.coerce.number().int().positive().max(200).optional().default(24),
   includeCurrent: z.boolean().optional().default(false)
 });
 

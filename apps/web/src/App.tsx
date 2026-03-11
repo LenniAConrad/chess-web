@@ -42,8 +42,7 @@ const REWIND_BREAK_MS = 700;
 const SHORT_STATUS_DELAY_MS = 700;
 const CHECK_SOUND_DELAY_MS = 100;
 const WRONG_MOVE_FEEDBACK_MS = 520;
-const SESSION_HISTORY_VISIBLE_LIMIT = 16;
-const SESSION_HISTORY_FETCH_LIMIT = SESSION_HISTORY_VISIBLE_LIMIT;
+const SESSION_HISTORY_FETCH_LIMIT = 200;
 const NO_ANIMATION_DELAY_MS = 180;
 
 type PrimaryMoveSoundType = Exclude<MoveSoundType, 'check'>;
@@ -118,7 +117,10 @@ function getMoveSoundDecision(fen: string, uciMove: string): MoveSoundDecision {
   return { primary: 'move', isCheck };
 }
 
-function playMoveSoundDecision(decision: MoveSoundDecision): void {
+function playMoveSoundDecision(decision: MoveSoundDecision, enabled: boolean): void {
+  if (!enabled) {
+    return;
+  }
   if (decision.primary) {
     playMoveSound(decision.primary);
   }
@@ -218,6 +220,7 @@ export function App() {
   const [correctText, setCorrectText] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [hintSquare, setHintSquare] = useState<string | null>(null);
   const [hintArrow, setHintArrow] = useState<[Square, Square] | null>(null);
   const [hintLevel, setHintLevel] = useState(0);
@@ -232,10 +235,7 @@ export function App() {
   const [reviewPath, setReviewPath] = useState<number[] | null>(null);
   const [wrongMoveSquare, setWrongMoveSquare] = useState<Square | null>(null);
   const [wrongMoveFlashToken, setWrongMoveFlashToken] = useState(0);
-  const recentHistoryItems = useMemo(
-    () => historyItems.slice(0, SESSION_HISTORY_VISIBLE_LIMIT),
-    [historyItems]
-  );
+  const recentHistoryItems = historyItems;
 
   const reviewNodeId = reviewPath?.at(-1) ?? null;
   const treeNodeMap = useMemo(() => {
@@ -310,7 +310,7 @@ export function App() {
       .filter((san): san is string => Boolean(san));
   }, [reviewPath, treeNodeMap]);
 
-  const engineEval = useStockfishEval(boardFen);
+  const engineEval = useStockfishEval(boardFen, prefs.showEngineEval);
   const checkColor = (() => {
     if (!boardFen) {
       return false;
@@ -393,7 +393,12 @@ export function App() {
   );
 
   const animateAutoPlay = useCallback(
-    async (response: AutoPlayAnimationPayload, currentFen: string, animationsEnabled: boolean) => {
+    async (
+      response: AutoPlayAnimationPayload,
+      currentFen: string,
+      animationsEnabled: boolean,
+      soundEnabled: boolean
+    ) => {
       const rewindFens = response.rewindFens ?? [];
       let rewindSourceFen = currentFen;
       if (rewindFens.length > 0) {
@@ -433,7 +438,7 @@ export function App() {
         if (moveSquares) {
           setLastMoveSquares(moveSquares);
         }
-        playMoveSoundDecision(soundDecision);
+        playMoveSoundDecision(soundDecision, soundEnabled);
         setDisplayFen(chess.fen());
         await maybeWait(AUTO_PLAY_DELAY_MS, animationsEnabled);
       }
@@ -470,7 +475,7 @@ export function App() {
 
   const handleMove = useCallback(
     async (uciMove: string) => {
-      if (!sessionId || loading || !state || isReviewMode || isPuzzleSolved(state)) {
+      if (!sessionId || loading || historyLoading || !state || isReviewMode || isPuzzleSolved(state)) {
         return;
       }
 
@@ -496,7 +501,7 @@ export function App() {
         let artifactSessionId = sessionId;
 
         if (response.result === 'incorrect') {
-          playMoveSoundDecision(moveSoundDecision);
+          playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
           const fallbackWrongSquare = uciMove.length >= 4 ? (uciMove.slice(2, 4) as Square) : null;
           const markerSquare = optimisticLastMove?.[1] ?? fallbackWrongSquare;
           if (markerSquare) {
@@ -510,20 +515,20 @@ export function App() {
           setWrongMoveSquare(null);
           setStatusText('Try again');
         } else if (response.result === 'correct') {
-          playMoveSoundDecision(moveSoundDecision);
+          playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
           setCorrectText('Correct');
           setStatusText('Correct move');
           await maybeWait(CORRECT_BREAK_MS, prefs.animations);
-          await animateAutoPlay(response, optimisticFen ?? baseFen, prefs.animations);
+          await animateAutoPlay(response, optimisticFen ?? baseFen, prefs.animations, prefs.soundEnabled);
           setStatusText(
             `Correct. Branch ${response.nextState.completedBranches + 1}/${response.nextState.totalLines}`
           );
         } else {
-          playMoveSoundDecision(moveSoundDecision);
+          playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
           setCorrectText('Correct');
           setStatusText('Correct move');
           await maybeWait(CORRECT_BREAK_MS, prefs.animations);
-          await animateAutoPlay(response, optimisticFen ?? baseFen, prefs.animations);
+          await animateAutoPlay(response, optimisticFen ?? baseFen, prefs.animations, prefs.soundEnabled);
           setStatusText('Puzzle complete');
           if (prefs.autoNext) {
             await maybeWait(SHORT_STATUS_DELAY_MS, prefs.animations);
@@ -556,8 +561,10 @@ export function App() {
       isReviewMode,
       loadSessionArtifacts,
       loading,
+      historyLoading,
       prefs.animations,
       prefs.autoNext,
+      prefs.soundEnabled,
       prefs.variationMode,
       resetHints,
       sessionId,
@@ -566,7 +573,7 @@ export function App() {
   );
 
   const handleHint = useCallback(async () => {
-    if (!sessionId || loading || isReviewMode) {
+    if (!sessionId || loading || historyLoading || isReviewMode) {
       return;
     }
 
@@ -600,11 +607,11 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [hintLevel, isReviewMode, loadSessionArtifacts, loading, sessionId]);
+  }, [hintLevel, isReviewMode, loadSessionArtifacts, loading, historyLoading, sessionId]);
 
   const handleReveal = useCallback(
     async (mode: 'manual' | 'auto' = 'manual') => {
-      if (!sessionId || loading || !state || isReviewMode) {
+      if (!sessionId || loading || historyLoading || !state || isReviewMode) {
         return;
       }
 
@@ -632,7 +639,7 @@ export function App() {
         }
 
         const moveSoundDecision = getMoveSoundDecision(baseFen, response.bestMoveUci);
-        playMoveSoundDecision(moveSoundDecision);
+        playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
 
         setDisplayFen(response.afterFen);
         setStatusText(
@@ -640,7 +647,7 @@ export function App() {
         );
         await maybeWait(CORRECT_BREAK_MS, prefs.animations);
 
-        await animateAutoPlay(response, response.afterFen, prefs.animations);
+        await animateAutoPlay(response, response.afterFen, prefs.animations, prefs.soundEnabled);
 
         if (isPuzzleSolved(response.nextState)) {
           setStatusText('Puzzle complete');
@@ -665,7 +672,9 @@ export function App() {
       isReviewMode,
       loadSessionArtifacts,
       loading,
+      historyLoading,
       prefs.animations,
+      prefs.soundEnabled,
       resetHints,
       sessionId,
       state
@@ -673,7 +682,7 @@ export function App() {
   );
 
   const handleSkipVariation = useCallback(async () => {
-    if (!sessionId || loading || isReviewMode) {
+    if (!sessionId || loading || historyLoading || isReviewMode) {
       return;
     }
 
@@ -694,10 +703,10 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [isReviewMode, loadSessionArtifacts, loading, resetHints, sessionId]);
+  }, [isReviewMode, loadSessionArtifacts, loading, historyLoading, resetHints, sessionId]);
 
   const handleNextPuzzle = useCallback(async () => {
-    if (!sessionId || loading) {
+    if (!sessionId || loading || historyLoading) {
       return;
     }
 
@@ -720,10 +729,37 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [applyStartedSession, loading, prefs.autoNext, prefs.variationMode, sessionId]);
+  }, [applyStartedSession, loading, historyLoading, prefs.autoNext, prefs.variationMode, sessionId]);
+
+  const handleRestartPuzzle = useCallback(async () => {
+    if (!puzzle || !state || loading || historyLoading || isReviewMode || !isPuzzleSolved(state)) {
+      return;
+    }
+
+    setLoading(true);
+    setErrorText(null);
+
+    try {
+      const response = await startSession(prefs.variationMode, prefs.autoNext, puzzle.publicId);
+      applyStartedSession(response, 'Puzzle restarted');
+    } catch (error) {
+      setErrorText(error instanceof Error ? error.message : 'Failed to restart puzzle');
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    applyStartedSession,
+    historyLoading,
+    isReviewMode,
+    loading,
+    prefs.autoNext,
+    prefs.variationMode,
+    puzzle,
+    state
+  ]);
 
   useEffect(() => {
-    if (!prefs.autoPlay || !sessionId || !state || loading || isReviewMode) {
+    if (!prefs.autoPlay || !sessionId || !state || loading || historyLoading || isReviewMode) {
       return;
     }
 
@@ -744,6 +780,7 @@ export function App() {
   }, [
     handleNextPuzzle,
     handleReveal,
+    historyLoading,
     isReviewMode,
     loading,
     prefs.animations,
@@ -754,10 +791,11 @@ export function App() {
   ]);
 
   const puzzleIsComplete = state ? isPuzzleSolved(state) : false;
-  const boardCanInteract = !prefs.autoPlay && !isReviewMode && !puzzleIsComplete;
+  const panelControlsDisabled = loading || historyLoading || prefs.autoPlay;
+  const boardCanInteract = !prefs.autoPlay && !historyLoading && !isReviewMode && !puzzleIsComplete;
 
   const handleLoadById = useCallback(async () => {
-    if (loading) {
+    if (loading || historyLoading) {
       return;
     }
 
@@ -784,15 +822,15 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [applyStartedSession, loading, prefs.autoNext, prefs.variationMode, puzzleIdInput, resetHints]);
+  }, [applyStartedSession, loading, historyLoading, prefs.autoNext, prefs.variationMode, puzzleIdInput, resetHints]);
 
   const handleLoadHistorySession = useCallback(
     async (targetSessionId: string) => {
-      if (loading) {
+      if (loading || historyLoading) {
         return;
       }
 
-      setLoading(true);
+      setHistoryLoading(true);
       setErrorText(null);
       resetHints();
       setLastBestMove(null);
@@ -806,10 +844,10 @@ export function App() {
       } catch (error) {
         setErrorText(error instanceof Error ? error.message : 'Failed to load history game');
       } finally {
-        setLoading(false);
+        setHistoryLoading(false);
       }
     },
-    [applyStartedSession, loading, resetHints]
+    [applyStartedSession, loading, historyLoading, resetHints]
   );
 
   const handleReviewMove = useCallback(
@@ -878,19 +916,21 @@ export function App() {
     <>
       <main className="layout split-layout">
         <section className="board-column">
-          <div className="board-stack">
+          <div className={`board-stack ${prefs.showEngineEval ? '' : 'no-eval'}`}>
             <div className="board-stage">
-              <EvalBar
-                cp={engineEval.cp}
-                mate={engineEval.mate}
-              />
+              {prefs.showEngineEval ? (
+                <EvalBar
+                  cp={engineEval.cp}
+                  mate={engineEval.mate}
+                />
+              ) : null}
               <div className="board-shell">
                 <ChessBoard
                   fen={boardFen ?? state.fen}
                   orientation={playerOrientation}
                   checkColor={checkColor}
                   interactive={interactive}
-                  canMoveExecution={!loading}
+                  canMoveExecution={!loading && !historyLoading}
                   animationsEnabled={prefs.animations}
                   premoveResetToken={sessionId}
                   autoQueenPromotion={prefs.autoQueenPromotion}
@@ -912,9 +952,11 @@ export function App() {
             <p className="subtitle">{puzzle.title || 'Puzzle'}</p>
             <p className="meta">ID: {puzzle.publicId}</p>
             <p className="turn-indicator">{turnLabel}</p>
-            <p className="meta">
-              Engine: {engineEvalText} | d{engineEval.depth} | {engineEvalSideText}
-            </p>
+            {prefs.showEngineEval ? (
+              <p className="meta">
+                Engine: {engineEvalText} | d{engineEval.depth} | {engineEvalSideText}
+              </p>
+            ) : null}
             <p className="status status-line">{statusText}</p>
             <p className="correct correct-line">{correctText ?? '\u00A0'}</p>
             <p className="meta expected-line">{lastBestMove ? `Expected: ${lastBestMove}` : '\u00A0'}</p>
@@ -926,7 +968,7 @@ export function App() {
             <button
               type="button"
               className="btn-secondary"
-              disabled={loading || prefs.autoPlay || isReviewMode || !prefs.hintsEnabled}
+              disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled}
               onClick={() => void handleHint()}
             >
               Hint
@@ -934,20 +976,36 @@ export function App() {
             <button
               type="button"
               className="btn-secondary"
-              disabled={loading || prefs.autoPlay || isReviewMode}
+              disabled={panelControlsDisabled || isReviewMode}
               onClick={() => void handleReveal()}
             >
               Show solution
             </button>
+            {puzzleIsComplete ? (
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={panelControlsDisabled || isReviewMode}
+                onClick={() => void handleRestartPuzzle()}
+              >
+                Restart puzzle
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="btn-secondary"
+                disabled={panelControlsDisabled || isReviewMode}
+                onClick={() => void handleSkipVariation()}
+              >
+                Skip variation
+              </button>
+            )}
             <button
               type="button"
-              className="btn-secondary"
-              disabled={loading || prefs.autoPlay || isReviewMode}
-              onClick={() => void handleSkipVariation()}
+              className="btn-primary"
+              disabled={panelControlsDisabled}
+              onClick={() => void handleNextPuzzle()}
             >
-              Skip variation
-            </button>
-            <button type="button" className="btn-primary" disabled={loading} onClick={() => void handleNextPuzzle()}>
               Next puzzle
             </button>
           </div>
@@ -973,7 +1031,7 @@ export function App() {
                   type="button"
                   className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
                   onClick={() => void handleLoadHistorySession(item.sessionId)}
-                  disabled={loading}
+                  disabled={panelControlsDisabled}
                   aria-label={`${selected ? 'Current' : label} puzzle ${item.puzzlePublicId} from history`}
                   title={`${selected ? 'Current' : label} · ${item.puzzlePublicId} · ${item.puzzleTitle || 'Puzzle'} · ${new Date(item.createdAt).toLocaleString()}`}
                 >
@@ -989,10 +1047,10 @@ export function App() {
           <div className="pgn-header-row">
             <p className="pgn-title">PGN Explorer</p>
             <div className="pgn-actions">
-              <button type="button" disabled={!isReviewMode} onClick={handleReviewBackOne}>
+              <button type="button" disabled={panelControlsDisabled || !isReviewMode} onClick={handleReviewBackOne}>
                 Back one move
               </button>
-              <button type="button" disabled={!isReviewMode} onClick={handleBackToLive}>
+              <button type="button" disabled={panelControlsDisabled || !isReviewMode} onClick={handleBackToLive}>
                 Back to live puzzle
               </button>
             </div>
@@ -1013,6 +1071,7 @@ export function App() {
                   key={node.id}
                   type="button"
                   className={`pgn-move ${node.is_mainline ? 'is-mainline' : ''}`}
+                  disabled={panelControlsDisabled}
                   onClick={() => handleReviewMove(node)}
                 >
                   <span>{node.san || node.uci}</span>
@@ -1092,7 +1151,7 @@ export function App() {
 
               <button
                 type="button"
-                className={`toggle-chip autoplay-chip ${prefs.autoPlay ? 'is-on' : 'is-off'}`}
+                className={`toggle-chip ${prefs.autoPlay ? 'is-on' : 'is-off'}`}
                 aria-pressed={prefs.autoPlay}
                 onClick={() =>
                   setPrefs((previous) => ({
@@ -1123,13 +1182,11 @@ export function App() {
                   <span className="toggle-chip-thumb" />
                 </span>
               </button>
-            </div>
 
-            <div className="chip-row">
-              <span className="meta">Promotion</span>
               <button
                 type="button"
-                className={`chip-toggle ${prefs.autoQueenPromotion ? 'chip-on' : 'chip-off'}`}
+                className={`toggle-chip ${prefs.autoQueenPromotion ? 'is-on' : 'is-off'}`}
+                aria-pressed={prefs.autoQueenPromotion}
                 onClick={() =>
                   setPrefs((previous) => ({
                     ...previous,
@@ -1137,7 +1194,44 @@ export function App() {
                   }))
                 }
               >
-                Auto-queen: {prefs.autoQueenPromotion ? 'On' : 'Off'}
+                <span className="toggle-chip-text">Auto-queen</span>
+                <span className="toggle-chip-track" aria-hidden="true">
+                  <span className="toggle-chip-thumb" />
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={`toggle-chip ${prefs.soundEnabled ? 'is-on' : 'is-off'}`}
+                aria-pressed={prefs.soundEnabled}
+                onClick={() =>
+                  setPrefs((previous) => ({
+                    ...previous,
+                    soundEnabled: !previous.soundEnabled
+                  }))
+                }
+              >
+                <span className="toggle-chip-text">Sound</span>
+                <span className="toggle-chip-track" aria-hidden="true">
+                  <span className="toggle-chip-thumb" />
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className={`toggle-chip ${prefs.showEngineEval ? 'is-on' : 'is-off'}`}
+                aria-pressed={prefs.showEngineEval}
+                onClick={() =>
+                  setPrefs((previous) => ({
+                    ...previous,
+                    showEngineEval: !previous.showEngineEval
+                  }))
+                }
+              >
+                <span className="toggle-chip-text">Engine + eval</span>
+                <span className="toggle-chip-track" aria-hidden="true">
+                  <span className="toggle-chip-thumb" />
+                </span>
               </button>
             </div>
 
@@ -1157,7 +1251,7 @@ export function App() {
               />
               <button
                 type="button"
-                disabled={loading || puzzleIdInput.trim().length === 0}
+                disabled={loading || historyLoading || puzzleIdInput.trim().length === 0}
                 onClick={() => void handleLoadById()}
               >
                 Load ID

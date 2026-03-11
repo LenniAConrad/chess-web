@@ -61,7 +61,7 @@ function toWhitePerspective(
   };
 }
 
-export function useStockfishEval(fen: string | null) {
+export function useStockfishEval(fen: string | null, enabled = true) {
   const workerRef = useRef<Worker | null>(null);
   const sideToMoveRef = useRef<SideToMove>('w');
   const activeSearchIdRef = useRef(0);
@@ -71,6 +71,17 @@ export function useStockfishEval(fen: string | null) {
 
   useEffect(() => {
     let canceled = false;
+
+    if (!enabled) {
+      pendingSearchRef.current = null;
+      activeSearchIdRef.current = 0;
+      workerRef.current?.terminate();
+      workerRef.current = null;
+      setEvalState(INITIAL_STATE);
+      return () => {
+        canceled = true;
+      };
+    }
 
     try {
       const worker = new Worker(new URL('stockfish/src/stockfish-nnue-16-single.js', import.meta.url), {
@@ -140,10 +151,10 @@ export function useStockfishEval(fen: string | null) {
       workerRef.current?.terminate();
       workerRef.current = null;
     };
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
-    if (!fen || !workerRef.current || !evalState.ready) {
+    if (!enabled || !fen || !workerRef.current || !evalState.ready) {
       return;
     }
 
@@ -181,7 +192,7 @@ export function useStockfishEval(fen: string | null) {
         activeSearchIdRef.current = 0;
       }
     };
-  }, [fen, evalState.ready]);
+  }, [enabled, fen, evalState.ready]);
 
   return evalState;
 }

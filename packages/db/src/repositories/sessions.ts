@@ -97,6 +97,37 @@ export async function getPuzzleSession(pool: Pool, sessionId: string): Promise<P
   return result.rowCount ? mapSession(result.rows[0] as Record<string, unknown>) : null;
 }
 
+export async function getOldestUntouchedPuzzleSession(
+  pool: Pool,
+  anonSessionId: string,
+  excludeSessionId?: string
+): Promise<PuzzleSessionRecord | null> {
+  const baseQuery = `SELECT *
+     FROM puzzle_sessions ps
+     WHERE ps.anon_session_id = $1
+       AND ps.solved = false
+       AND ps.revealed = false
+       AND ps.autoplay_used = false
+       AND ps.wrong_move_count = 0
+       AND ps.hint_count = 0
+       AND ps.updated_at = ps.created_at`;
+
+  const withExcludeQuery = `${baseQuery}
+       AND ps.id <> $2
+     ORDER BY ps.created_at ASC
+     LIMIT 1`;
+
+  const withoutExcludeQuery = `${baseQuery}
+     ORDER BY ps.created_at ASC
+     LIMIT 1`;
+
+  const result = excludeSessionId
+    ? await pool.query(withExcludeQuery, [anonSessionId, excludeSessionId])
+    : await pool.query(withoutExcludeQuery, [anonSessionId]);
+
+  return result.rowCount ? mapSession(result.rows[0] as Record<string, unknown>) : null;
+}
+
 export async function updatePuzzleSession(
   pool: Pool,
   input: {

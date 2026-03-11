@@ -13,7 +13,7 @@
   --color-panel-shadow: rgba(0, 0, 0, 0.14);
   --color-meta: #2c2c2c;
   --color-status: #121212;
-  --color-correct: #1f7a1f;
+  --color-correct: #4a3927;
   --color-error: #9d1c1c;
   --color-board-shadow: rgba(0, 0, 0, 0.12);
   --color-eval-depth: #444;
@@ -24,10 +24,10 @@
   --color-input-border: #b6b6b6;
   --color-input-text: #121212;
   --color-input-placeholder: #6a6a6a;
-  --color-button-bg: #4c83f0;
-  --color-button-bg-hover: #5a8dfa;
-  --color-button-border: #3f6fd0;
-  --color-button-text: #ffffff;
+  --color-button-bg: #f2dbb7;
+  --color-button-bg-hover: #f2dbb7;
+  --color-button-border: #b78964;
+  --color-button-text: #2b2218;
   --color-button-secondary-bg: rgba(91, 91, 91, 0.92);
   --color-button-secondary-bg-hover: rgba(103, 103, 103, 0.95);
   --color-button-secondary-border: #6f6f6f;
@@ -38,51 +38,52 @@
   --color-toggle-bg: #f1f3f6;
   --color-toggle-border: #b8bec8;
   --color-toggle-text: #1a2330;
-  --color-toggle-focus: #285d9a;
+  --color-toggle-on-text: #2b2218;
+  --color-toggle-focus: #b78964;
   --color-toggle-track: #a8afbb;
   --color-toggle-track-border: #949ca8;
-  --color-toggle-on-bg: #e8f4ec;
-  --color-toggle-on-border: #2e7f52;
-  --color-toggle-on-track: #2e7f52;
-  --color-toggle-on-track-border: #24643f;
-  --color-autoplay-chip-off-bg: #e8eefb;
-  --color-autoplay-chip-off-border: #90a9df;
-  --color-autoplay-chip-off-text: #1f3563;
-  --color-autoplay-chip-off-track: #b6c6ea;
-  --color-autoplay-chip-off-track-border: #95acd8;
-  --color-autoplay-chip-on-bg: #4c83f0;
-  --color-autoplay-chip-on-border: #3f6fd0;
-  --color-autoplay-chip-on-text: #ffffff;
-  --color-autoplay-chip-on-track: #6b9cff;
-  --color-autoplay-chip-on-track-border: #5b86db;
-  --color-chip-on-bg: #2d7d50;
-  --color-chip-on-border: #24633f;
+  --color-toggle-on-bg: #f2dbb7;
+  --color-toggle-on-border: #b78964;
+  --color-toggle-on-track: #b78964;
+  --color-toggle-on-track-border: #9f734f;
+  --color-autoplay-chip-off-bg: #f2dbb7;
+  --color-autoplay-chip-off-border: #b78964;
+  --color-autoplay-chip-off-text: #2b2218;
+  --color-autoplay-chip-off-track: #b78964;
+  --color-autoplay-chip-off-track-border: #9f734f;
+  --color-autoplay-chip-on-bg: #f2dbb7;
+  --color-autoplay-chip-on-border: #b78964;
+  --color-autoplay-chip-on-text: #2b2218;
+  --color-autoplay-chip-on-track: #b78964;
+  --color-autoplay-chip-on-track-border: #9f734f;
+  --color-chip-on-bg: #f2dbb7;
+  --color-chip-on-border: #b78964;
   --color-chip-off-bg: #b38324;
   --color-chip-off-border: #7f5b15;
-  --color-history-correct-bg: #6da126;
-  --color-history-correct-border: #7fb83a;
-  --color-history-correct-text: #f7f7f7;
-  --color-history-half-bg: #c79a33;
-  --color-history-half-border: #d7ad4a;
-  --color-history-half-text: #f7f7f7;
-  --color-history-orange-bg: #da7f2b;
-  --color-history-orange-border: #e99549;
-  --color-history-orange-text: #ffffff;
-  --color-history-incorrect-bg: #be3a36;
-  --color-history-incorrect-border: #cf514d;
-  --color-history-incorrect-text: #ffffff;
-  --color-history-gray-bg: #848484;
-  --color-history-gray-border: #9a9a9a;
-  --color-history-gray-text: #f7f7f7;
-  --color-history-autoplay-blue-bg: #b02a86;
-  --color-history-autoplay-blue-border: #c7429b;
-  --color-history-autoplay-blue-text: #ffffff;
-  --color-history-autoplay-bg: #3f76b1;
-  --color-history-autoplay-border: #5389c4;
-  --color-history-autoplay-text: #ffffff;
-  --color-history-current-bg: #3277d8;
-  --color-history-current-border: #3f85e8;
-  --color-history-current-text: #ffffff;
+  --color-history-correct-bg: #b9d9a9;
+  --color-history-correct-border: #9fc48e;
+  --color-history-correct-text: #243520;
+  --color-history-half-bg: #e8d8a7;
+  --color-history-half-border: #d6c28f;
+  --color-history-half-text: #3f3425;
+  --color-history-orange-bg: #e9c3a1;
+  --color-history-orange-border: #d9ae89;
+  --color-history-orange-text: #4a3020;
+  --color-history-incorrect-bg: #e3aaa7;
+  --color-history-incorrect-border: #d18e8a;
+  --color-history-incorrect-text: #4a2322;
+  --color-history-gray-bg: #c8c5bf;
+  --color-history-gray-border: #b2aea6;
+  --color-history-gray-text: #383632;
+  --color-history-autoplay-blue-bg: #b8cde8;
+  --color-history-autoplay-blue-border: #9db8d8;
+  --color-history-autoplay-blue-text: #213046;
+  --color-history-autoplay-bg: #b8cde8;
+  --color-history-autoplay-border: #9db8d8;
+  --color-history-autoplay-text: #213046;
+  --color-history-current-bg: #b7a9d9;
+  --color-history-current-border: #c8bce4;
+  --color-history-current-text: #1f1830;
 }
 
 :root[data-theme='dark'] {
@@ -96,7 +97,7 @@
   --color-panel-shadow: rgba(0, 0, 0, 0.4);
   --color-meta: #c6c6c6;
   --color-status: #f3f3f3;
-  --color-correct: #a8d5a8;
+  --color-correct: #f2dbb7;
   --color-error: #f0b7b7;
   --color-board-shadow: rgba(0, 0, 0, 0.4);
   --color-eval-depth: #c2c2c2;
@@ -107,10 +108,10 @@
   --color-input-border: #4a4a4a;
   --color-input-text: #ededed;
   --color-input-placeholder: #9b9b9b;
-  --color-button-bg: #4b4b4b;
-  --color-button-bg-hover: #5a5a5a;
-  --color-button-border: #6a6a6a;
-  --color-button-text: #f5f5f5;
+  --color-button-bg: #f2dbb7;
+  --color-button-bg-hover: #f2dbb7;
+  --color-button-border: #b78964;
+  --color-button-text: #2b2218;
   --color-button-secondary-bg: rgba(76, 76, 76, 0.92);
   --color-button-secondary-bg-hover: rgba(90, 90, 90, 0.95);
   --color-button-secondary-border: #707070;
@@ -121,51 +122,52 @@
   --color-toggle-bg: #2d2d2d;
   --color-toggle-border: #4a4a4a;
   --color-toggle-text: #efefef;
-  --color-toggle-focus: #b9b9b9;
+  --color-toggle-on-text: #2b2218;
+  --color-toggle-focus: #f2dbb7;
   --color-toggle-track: #5e5e5e;
   --color-toggle-track-border: #6f6f6f;
-  --color-toggle-on-bg: #393939;
-  --color-toggle-on-border: #626262;
-  --color-toggle-on-track: #767676;
-  --color-toggle-on-track-border: #8a8a8a;
-  --color-autoplay-chip-off-bg: #2d3850;
-  --color-autoplay-chip-off-border: #4e628a;
-  --color-autoplay-chip-off-text: #dfe8ff;
-  --color-autoplay-chip-off-track: #556891;
-  --color-autoplay-chip-off-track-border: #6c7ea5;
-  --color-autoplay-chip-on-bg: #3f6fd0;
-  --color-autoplay-chip-on-border: #5a87e3;
-  --color-autoplay-chip-on-text: #f4f8ff;
-  --color-autoplay-chip-on-track: #5a89e8;
-  --color-autoplay-chip-on-track-border: #6b97ee;
-  --color-chip-on-bg: #595959;
-  --color-chip-on-border: #777777;
+  --color-toggle-on-bg: #f2dbb7;
+  --color-toggle-on-border: #b78964;
+  --color-toggle-on-track: #b78964;
+  --color-toggle-on-track-border: #9f734f;
+  --color-autoplay-chip-off-bg: #f2dbb7;
+  --color-autoplay-chip-off-border: #b78964;
+  --color-autoplay-chip-off-text: #2b2218;
+  --color-autoplay-chip-off-track: #b78964;
+  --color-autoplay-chip-off-track-border: #9f734f;
+  --color-autoplay-chip-on-bg: #f2dbb7;
+  --color-autoplay-chip-on-border: #b78964;
+  --color-autoplay-chip-on-text: #2b2218;
+  --color-autoplay-chip-on-track: #b78964;
+  --color-autoplay-chip-on-track-border: #9f734f;
+  --color-chip-on-bg: #f2dbb7;
+  --color-chip-on-border: #b78964;
   --color-chip-off-bg: #3f3f3f;
   --color-chip-off-border: #595959;
-  --color-history-correct-bg: #5f8f20;
-  --color-history-correct-border: #74aa31;
-  --color-history-correct-text: #f7f7f7;
-  --color-history-half-bg: #b88f2f;
-  --color-history-half-border: #cca646;
-  --color-history-half-text: #f7f7f7;
-  --color-history-orange-bg: #bd7128;
-  --color-history-orange-border: #d48a43;
-  --color-history-orange-text: #ffffff;
-  --color-history-incorrect-bg: #b63430;
-  --color-history-incorrect-border: #ca4a45;
-  --color-history-incorrect-text: #ffffff;
-  --color-history-gray-bg: #676767;
-  --color-history-gray-border: #7f7f7f;
-  --color-history-gray-text: #f3f3f3;
-  --color-history-autoplay-blue-bg: #8f236b;
-  --color-history-autoplay-blue-border: #aa3785;
-  --color-history-autoplay-blue-text: #f6f8ff;
-  --color-history-autoplay-bg: #3a6fa7;
-  --color-history-autoplay-border: #4f87c3;
-  --color-history-autoplay-text: #ffffff;
-  --color-history-current-bg: #4d7bc8;
-  --color-history-current-border: #6392de;
-  --color-history-current-text: #ffffff;
+  --color-history-correct-bg: #7fa36f;
+  --color-history-correct-border: #95b885;
+  --color-history-correct-text: #f4f8ef;
+  --color-history-half-bg: #bca16d;
+  --color-history-half-border: #d0b680;
+  --color-history-half-text: #fff8e8;
+  --color-history-orange-bg: #be8b67;
+  --color-history-orange-border: #d2a07c;
+  --color-history-orange-text: #fff5ed;
+  --color-history-incorrect-bg: #bc7471;
+  --color-history-incorrect-border: #d48c89;
+  --color-history-incorrect-text: #fff1f1;
+  --color-history-gray-bg: #8b8985;
+  --color-history-gray-border: #a29f9a;
+  --color-history-gray-text: #f5f5f4;
+  --color-history-autoplay-blue-bg: #7693b8;
+  --color-history-autoplay-blue-border: #8eaad0;
+  --color-history-autoplay-blue-text: #f2f6ff;
+  --color-history-autoplay-bg: #7693b8;
+  --color-history-autoplay-border: #8eaad0;
+  --color-history-autoplay-text: #f2f6ff;
+  --color-history-current-bg: #8c79b8;
+  --color-history-current-border: #a08bc8;
+  --color-history-current-text: #f5f1ff;
 }
 
 body {
@@ -189,7 +191,7 @@ body {
 }
 
 .split-layout {
-  --info-width: 360px;
+  --info-width: 720px;
   --split-gap: 2rem;
   --board-size: max(
     0px,
@@ -216,6 +218,10 @@ body {
   display: grid;
   gap: 0.8rem;
   width: calc(var(--board-size) + 80px + 0.8rem);
+}
+
+.board-stack.no-eval {
+  width: var(--board-size);
 }
 
 .board-stage {
@@ -260,6 +266,7 @@ body {
 }
 
 .rail-block {
+  box-sizing: border-box;
   border: 1px solid var(--color-panel-border);
   border-radius: 10px;
   padding: 0.72rem;
@@ -368,6 +375,7 @@ body {
 
 .rail-status h1 {
   font-size: 1.78rem;
+  text-align: center;
 }
 
 .rail-status .subtitle {
@@ -470,6 +478,7 @@ body {
 .board cg-container {
   width: 100% !important;
   height: 100% !important;
+  overflow: visible;
 }
 
 /* Restored custom brown board texture */
@@ -478,7 +487,6 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cdefs%3E%3Cpattern id='p' width='2' height='2' patternUnits='userSpaceOnUse'%3E%3Crect width='2' height='2' fill='%23f2dbb7'/%3E%3Crect x='1' y='0' width='1' height='1' fill='%23b78964'/%3E%3Crect x='0' y='1' width='1' height='1' fill='%23b78964'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='8' height='8' fill='url(%23p)'/%3E%3C/svg%3E");
   background-size: 100% 100%;
   background-repeat: no-repeat;
-  clip-path: inset(0 round 4px);
   border-radius: 4px;
 }
 
@@ -698,8 +706,8 @@ body {
   display: flex;
   flex-flow: row wrap;
   gap: 0.38rem 0.48rem;
-  max-height: 100px;
-  overflow: auto;
+  max-height: none;
+  overflow: visible;
   align-content: flex-start;
 }
 
@@ -855,6 +863,7 @@ button.toggle-chip:focus-visible {
 button.toggle-chip.is-on {
   background: var(--color-toggle-on-bg);
   border-color: var(--color-toggle-on-border);
+  color: var(--color-toggle-on-text);
 }
 
 button.toggle-chip.is-on .toggle-chip-track {
@@ -919,14 +928,11 @@ button.toggle-chip.autoplay-chip.is-on .toggle-chip-track {
 }
 
 .pgn-panel {
-  border: 0;
-  border-radius: 0;
-  padding: 0;
   display: grid;
   gap: 0.5rem;
-  grid-template-rows: auto auto auto minmax(120px, 1fr);
+  grid-template-rows: auto auto auto auto;
   min-height: 0;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
 }
 
 .settings-panel {
@@ -995,7 +1001,7 @@ button.toggle-chip.autoplay-chip.is-on .toggle-chip-track {
   gap: 0.35rem;
   max-height: none;
   min-height: 0;
-  overflow: auto;
+  overflow: visible;
 }
 
 button.pgn-move {
@@ -1113,15 +1119,16 @@ button:disabled {
     flex-direction: row;
     justify-content: flex-start;
     height: auto;
-    width: auto;
+    width: 100%;
     flex: none;
     position: static;
   }
 
   .eval-bar {
-    width: min(90vw, 280px);
+    width: 100%;
     min-height: 16px;
     height: 16px;
+    box-sizing: border-box;
   }
 
   .eval-fill {
@@ -1153,7 +1160,8 @@ button:disabled {
     min-height: auto;
     justify-content: flex-start;
     overflow: visible;
-    padding-right: 0;
+    padding-inline: 0.2rem;
+    scrollbar-gutter: auto;
   }
 
   .pgn-move-list {

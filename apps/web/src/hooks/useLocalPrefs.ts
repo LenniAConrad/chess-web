@@ -11,6 +11,8 @@ export interface UserPreferences {
   darkMode: boolean;
   autoPlay: boolean;
   animations: boolean;
+  soundEnabled: boolean;
+  showEngineEval: boolean;
 }
 
 const DEFAULT_PREFS: UserPreferences = {
@@ -20,7 +22,9 @@ const DEFAULT_PREFS: UserPreferences = {
   autoQueenPromotion: true,
   darkMode: false,
   autoPlay: false,
-  animations: true
+  animations: true,
+  soundEnabled: true,
+  showEngineEval: true
 };
 
 export function useLocalPrefs() {
@@ -39,7 +43,9 @@ export function useLocalPrefs() {
         autoQueenPromotion: parsed.autoQueenPromotion ?? DEFAULT_PREFS.autoQueenPromotion,
         darkMode: parsed.darkMode ?? DEFAULT_PREFS.darkMode,
         autoPlay: parsed.autoPlay ?? DEFAULT_PREFS.autoPlay,
-        animations: parsed.animations ?? DEFAULT_PREFS.animations
+        animations: parsed.animations ?? DEFAULT_PREFS.animations,
+        soundEnabled: parsed.soundEnabled ?? DEFAULT_PREFS.soundEnabled,
+        showEngineEval: parsed.showEngineEval ?? DEFAULT_PREFS.showEngineEval
       };
     } catch {
       return DEFAULT_PREFS;

@@ -264,4 +264,49 @@ describe('SessionService', () => {
       await ctx.pool.end();
     }
   });
+
+  it('reuses the oldest untouched session for auto-next before creating a new one', async () => {
+    const ctx = await createServiceContext();
+    try {
+      const firstUntouched = await ctx.service.startRandomSession({
+        anonSessionId: ctx.anonSessionId,
+        mode: 'explore',
+        autoNext: true
+      });
+
+      await new Promise((resolve) => {
+        setTimeout(resolve, 5);
+      });
+
+      const secondUntouched = await ctx.service.startRandomSession({
+        anonSessionId: ctx.anonSessionId,
+        mode: 'explore',
+        autoNext: true
+      });
+
+      const current = await ctx.service.startRandomSession({
+        anonSessionId: ctx.anonSessionId,
+        mode: 'explore',
+        autoNext: true
+      });
+
+      const nextFromQueue = await ctx.service.startNext({
+        sessionId: current.sessionId,
+        anonSessionId: ctx.anonSessionId,
+        autoNext: true
+      });
+
+      expect(nextFromQueue.newSessionId).toBe(firstUntouched.sessionId);
+
+      const nextFromQueueAgain = await ctx.service.startNext({
+        sessionId: nextFromQueue.newSessionId,
+        anonSessionId: ctx.anonSessionId,
+        autoNext: true
+      });
+
+      expect(nextFromQueueAgain.newSessionId).toBe(secondUntouched.sessionId);
+    } finally {
+      await ctx.pool.end();
+    }
+  });
 });

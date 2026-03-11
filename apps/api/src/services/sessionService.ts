@@ -9,6 +9,7 @@ import {
   getPuzzleById,
   getPuzzleByPublicId,
   getPuzzleNodes,
+  getOldestUntouchedPuzzleSession,
   getPuzzleSession,
   getRandomPuzzle,
   listPuzzleSessionHistory,
@@ -367,6 +368,21 @@ export class SessionService {
       throw new Error('Session not found');
     }
 
+    if (input.autoNext) {
+      const pending = await getOldestUntouchedPuzzleSession(this.pool, input.anonSessionId, input.sessionId);
+      if (pending) {
+        const loaded = await this.loadSession({
+          sessionId: pending.id,
+          anonSessionId: input.anonSessionId
+        });
+        return {
+          newSessionId: loaded.sessionId,
+          puzzle: loaded.puzzle,
+          state: loaded.state
+        };
+      }
+    }
+
     const mode = input.mode ?? existing.mode;
     const next = await this.startRandomSession({
       anonSessionId: input.anonSessionId,
@@ -420,7 +436,7 @@ export class SessionService {
       throw new Error('Session not found');
     }
 
-    const normalizedLimit = Math.min(24, Math.max(1, Math.floor(input.limit)));
+    const normalizedLimit = Math.min(200, Math.max(1, Math.floor(input.limit)));
     const history = await listPuzzleSessionHistory(
       this.pool,
       input.anonSessionId,
