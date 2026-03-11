@@ -15,7 +15,6 @@ const SOUND_URLS: Record<BaseSoundType, string> = {
 };
 
 const BASE_VOLUME = 1;
-const CASTLE_SECOND_SOUND_DELAY_MS = 65;
 const SOUND_POOL_SIZE = 4;
 
 let cachedPools: Partial<Record<BaseSoundType, HTMLAudioElement[]>> = {};
@@ -61,9 +60,6 @@ function playBaseSound(type: BaseSoundType): void {
 export function playMoveSound(type: MoveSoundType): void {
   if (type === 'castle') {
     playBaseSound('move');
-    setTimeout(() => {
-      playBaseSound('move');
-    }, CASTLE_SECOND_SOUND_DELAY_MS);
     return;
   }
 
