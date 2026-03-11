@@ -17,7 +17,6 @@ chess-web/
     db/             # SQLite schema, migrations, query layer
     config/         # shared tsconfig/eslint/prettier/zod/env helpers
     ui/             # optional shared UI components
-  TODO.md
   ARCHITECTURE.md
 ```
 

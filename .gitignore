@@ -8,7 +8,20 @@ build
 coverage
 .vite
 *.log
+logs/
+*.pid
+*.pid.lock
+*.seed
+.tmp/
 .DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Local chess data / datasets
 *.pgn

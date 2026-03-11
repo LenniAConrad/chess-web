@@ -1,0 +1,52 @@
+Chess Puzzle Web - Licensing and Third-Party Notices
+=====================================================
+
+Copyright (c) 2026 Lennart Conrad
+
+Project License
+---------------
+Unless otherwise noted below, source code in this repository is licensed under:
+
+- GNU General Public License v3.0 or later (GPL-3.0-or-later)
+
+The full license text is available in:
+
+- LICENSE
+
+Third-Party Runtime Dependencies
+--------------------------------
+This project includes third-party open-source dependencies with their own licenses.
+
+A machine-readable dependency license inventory is provided at:
+
+- THIRD_PARTY_LICENSES.json
+
+Regenerate that file with:
+
+- node scripts/generateThirdPartyLicenses.mjs
+
+Important copyleft dependencies used in the web app include:
+
+- chessground (GPL-3.0-or-later)
+- stockfish (GPL)
+
+Bundled Third-Party Assets
+--------------------------
+This repository bundles third-party chess assets from lichess-org/lila.
+Asset-level attribution/license notices are included in:
+
+- apps/web/public/pieces/cburnett/NOTICE.txt
+- apps/web/public/sounds/lichess-sfx/LICENSE.txt
+
+Runtime sound usage is restricted to the free `lichess-sfx` pack.
+The `lichess-standard` sound pack is intentionally not distributed in this repository.
+
+Upstream references:
+
+- https://github.com/lichess-org/lila/blob/master/COPYING.md
+- https://github.com/lichess-org/lila/blob/master/LICENSE
+
+No Additional Warranty
+----------------------
+This software is provided "as is", without warranty of any kind, express or implied.
+This notice is informational and does not constitute legal advice.

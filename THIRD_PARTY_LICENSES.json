@@ -1,0 +1,3966 @@
+{
+  "MIT": [
+    {
+      "name": "@babel/code-frame",
+      "versions": [
+        "7.29.0"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-code-frame",
+      "description": "Generate errors that contain a code frame that point to source locations."
+    },
+    {
+      "name": "@babel/compat-data",
+      "versions": [
+        "7.29.0"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://github.com/babel/babel#readme",
+      "description": "The compat-data to determine required Babel plugins"
+    },
+    {
+      "name": "@babel/core",
+      "versions": [
+        "7.29.0"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-core",
+      "description": "Babel compiler core."
+    },
+    {
+      "name": "@babel/generator",
+      "versions": [
+        "7.29.1"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-generator",
+      "description": "Turns an AST into code."
+    },
+    {
+      "name": "@babel/helper-compilation-targets",
+      "versions": [
+        "7.28.6"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://github.com/babel/babel#readme",
+      "description": "Helper functions on Babel compilation targets"
+    },
+    {
+      "name": "@babel/helper-globals",
+      "versions": [
+        "7.28.0"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://github.com/babel/babel#readme",
+      "description": "A collection of JavaScript globals for Babel internal usage"
+    },
+    {
+      "name": "@babel/helper-module-imports",
+      "versions": [
+        "7.28.6"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-helper-module-imports",
+      "description": "Babel helper functions for inserting module loads"
+    },
+    {
+      "name": "@babel/helper-module-transforms",
+      "versions": [
+        "7.28.6"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-helper-module-transforms",
+      "description": "Babel helper functions for implementing ES6 module transformations"
+    },
+    {
+      "name": "@babel/helper-plugin-utils",
+      "versions": [
+        "7.28.6"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-helper-plugin-utils",
+      "description": "General utilities for plugins to use"
+    },
+    {
+      "name": "@babel/helper-string-parser",
+      "versions": [
+        "7.27.1"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-helper-string-parser",
+      "description": "A utility package to parse strings"
+    },
+    {
+      "name": "@babel/helper-validator-identifier",
+      "versions": [
+        "7.28.5"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://github.com/babel/babel#readme",
+      "description": "Validate identifier/keywords name"
+    },
+    {
+      "name": "@babel/helper-validator-option",
+      "versions": [
+        "7.27.1"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://github.com/babel/babel#readme",
+      "description": "Validate plugin/preset options"
+    },
+    {
+      "name": "@babel/helpers",
+      "versions": [
+        "7.28.6"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-helpers",
+      "description": "Collection of helper functions used by Babel transforms."
+    },
+    {
+      "name": "@babel/parser",
+      "versions": [
+        "7.29.0"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-parser",
+      "description": "A JavaScript parser"
+    },
+    {
+      "name": "@babel/plugin-transform-react-jsx-self",
+      "versions": [
+        "7.27.1"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-plugin-transform-react-jsx-self",
+      "description": "Add a __self prop to all JSX Elements"
+    },
+    {
+      "name": "@babel/plugin-transform-react-jsx-source",
+      "versions": [
+        "7.27.1"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-plugin-transform-react-jsx-source",
+      "description": "Add a __source prop to all JSX Elements"
+    },
+    {
+      "name": "@babel/template",
+      "versions": [
+        "7.28.6"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-template",
+      "description": "Generate an AST from a string template."
+    },
+    {
+      "name": "@babel/traverse",
+      "versions": [
+        "7.29.0"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-traverse",
+      "description": "The Babel Traverse module maintains the overall tree state, and is responsible for replacing, removing, and adding nodes"
+    },
+    {
+      "name": "@babel/types",
+      "versions": [
+        "7.29.0"
+      ],
+      "license": "MIT",
+      "author": "The Babel Team",
+      "homepage": "https://babel.dev/docs/en/next/babel-types",
+      "description": "Babel Types is a Lodash-esque utility library for AST nodes"
+    },
+    {
+      "name": "@esbuild/linux-x64",
+      "versions": [
+        "0.21.5",
+        "0.27.3"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/evanw/esbuild#readme",
+      "description": "The Linux 64-bit binary for esbuild, a JavaScript bundler."
+    },
+    {
+      "name": "@eslint-community/eslint-utils",
+      "versions": [
+        "4.9.1"
+      ],
+      "license": "MIT",
+      "author": "Toru Nagashima",
+      "homepage": "https://github.com/eslint-community/eslint-utils#readme",
+      "description": "Utilities for ESLint plugins."
+    },
+    {
+      "name": "@eslint-community/regexpp",
+      "versions": [
+        "4.12.2"
+      ],
+      "license": "MIT",
+      "author": "Toru Nagashima",
+      "homepage": "https://github.com/eslint-community/regexpp#readme",
+      "description": "Regular expression parser for ECMAScript."
+    },
+    {
+      "name": "@eslint/eslintrc",
+      "versions": [
+        "3.3.4"
+      ],
+      "license": "MIT",
+      "author": "Nicholas C. Zakas",
+      "homepage": "https://github.com/eslint/eslintrc#readme",
+      "description": "The legacy ESLintRC config file format for ESLint"
+    },
+    {
+      "name": "@eslint/js",
+      "versions": [
+        "9.39.3"
+      ],
+      "license": "MIT",
+      "homepage": "https://eslint.org",
+      "description": "ESLint JavaScript language implementation"
+    },
+    {
+      "name": "@fastify/ajv-compiler",
+      "versions": [
+        "4.0.5"
+      ],
+      "license": "MIT",
+      "author": "Manuel Spigolon",
+      "homepage": "https://github.com/fastify/ajv-compiler#readme",
+      "description": "Build and manage the AJV instances for the fastify framework"
+    },
+    {
+      "name": "@fastify/cookie",
+      "versions": [
+        "10.0.1"
+      ],
+      "license": "MIT",
+      "author": "James Sumners",
+      "homepage": "https://github.com/fastify/fastify-cookie#readme",
+      "description": "Plugin for fastify to add support for cookies"
+    },
+    {
+      "name": "@fastify/cors",
+      "versions": [
+        "10.1.0"
+      ],
+      "license": "MIT",
+      "author": "Tomas Della Vedova - @delvedor",
+      "homepage": "https://github.com/fastify/fastify-cors#readme",
+      "description": "Fastify CORS"
+    },
+    {
+      "name": "@fastify/error",
+      "versions": [
+        "4.2.0"
+      ],
+      "license": "MIT",
+      "author": "Tomas Della Vedova",
+      "homepage": "https://github.com/fastify/fastify-error#readme",
+      "description": "A small utility, used by Fastify itself, for generating consistent error objects across your codebase and plugins."
+    },
+    {
+      "name": "@fastify/fast-json-stringify-compiler",
+      "versions": [
+        "5.0.3"
+      ],
+      "license": "MIT",
+      "author": "Manuel Spigolon",
+      "homepage": "https://github.com/fastify/fast-json-stringify-compiler#readme",
+      "description": "Build and manage the fast-json-stringify instances for the fastify framework"
+    },
+    {
+      "name": "@fastify/forwarded",
+      "versions": [
+        "3.0.1"
+      ],
+      "license": "MIT",
+      "author": "Douglas Christopher Wilson",
+      "homepage": "https://github.com/fastify/forwarded#readme",
+      "description": "Parse HTTP X-Forwarded-For header"
+    },
+    {
+      "name": "@fastify/helmet",
+      "versions": [
+        "13.0.2"
+      ],
+      "license": "MIT",
+      "author": "Matteo Collina",
+      "homepage": "https://github.com/fastify/fastify-helmet#readme",
+      "description": "Important security headers for Fastify"
+    },
+    {
+      "name": "@fastify/merge-json-schemas",
+      "versions": [
+        "0.2.1"
+      ],
+      "license": "MIT",
+      "author": "Ivan Tymoshenko",
+      "homepage": "https://github.com/fastify/merge-json-schemas#readme",
+      "description": "Builds a logical conjunction (AND) of multiple JSON schemas"
+    },
+    {
+      "name": "@fastify/proxy-addr",
+      "versions": [
+        "5.1.0"
+      ],
+      "license": "MIT",
+      "author": "Douglas Christopher Wilson",
+      "homepage": "https://github.com/fastify/proxy-addr#readme",
+      "description": "Determine the address of a proxied request"
+    },
+    {
+      "name": "@jridgewell/gen-mapping",
+      "versions": [
+        "0.3.13"
+      ],
+      "license": "MIT",
+      "author": "Justin Ridgewell",
+      "homepage": "https://github.com/jridgewell/sourcemaps/tree/main/packages/gen-mapping",
+      "description": "Generate source maps"
+    },
+    {
+      "name": "@jridgewell/remapping",
+      "versions": [
+        "2.3.5"
+      ],
+      "license": "MIT",
+      "author": "Justin Ridgewell",
+      "homepage": "https://github.com/jridgewell/sourcemaps/tree/main/packages/remapping",
+      "description": "Remap sequential sourcemaps through transformations to point at the original source code"
+    },
+    {
+      "name": "@jridgewell/resolve-uri",
+      "versions": [
+        "3.1.2"
+      ],
+      "license": "MIT",
+      "author": "Justin Ridgewell",
+      "homepage": "https://github.com/jridgewell/resolve-uri#readme",
+      "description": "Resolve a URI relative to an optional base URI"
+    },
+    {
+      "name": "@jridgewell/sourcemap-codec",
+      "versions": [
+        "1.5.5"
+      ],
+      "license": "MIT",
+      "author": "Justin Ridgewell",
+      "homepage": "https://github.com/jridgewell/sourcemaps/tree/main/packages/sourcemap-codec",
+      "description": "Encode/decode sourcemap mappings"
+    },
+    {
+      "name": "@jridgewell/trace-mapping",
+      "versions": [
+        "0.3.31"
+      ],
+      "license": "MIT",
+      "author": "Justin Ridgewell",
+      "homepage": "https://github.com/jridgewell/sourcemaps/tree/main/packages/trace-mapping",
+      "description": "Trace the original position through a source map"
+    },
+    {
+      "name": "@pinojs/redact",
+      "versions": [
+        "0.4.0"
+      ],
+      "license": "MIT",
+      "author": "Matteo Collina",
+      "homepage": "https://github.com/pinojs/redact#readme",
+      "description": "Redact JS objects"
+    },
+    {
+      "name": "@rolldown/pluginutils",
+      "versions": [
+        "1.0.0-beta.27"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/rolldown/rolldown#readme"
+    },
+    {
+      "name": "@rollup/rollup-linux-x64-gnu",
+      "versions": [
+        "4.59.0"
+      ],
+      "license": "MIT",
+      "author": "Lukas Taegert-Atkinson",
+      "homepage": "https://rollupjs.org/",
+      "description": "Native bindings for Rollup"
+    },
+    {
+      "name": "@rollup/rollup-linux-x64-musl",
+      "versions": [
+        "4.59.0"
+      ],
+      "license": "MIT",
+      "author": "Lukas Taegert-Atkinson",
+      "homepage": "https://rollupjs.org/",
+      "description": "Native bindings for Rollup"
+    },
+    {
+      "name": "@rtsao/scc",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/rtsao/scc#readme"
+    },
+    {
+      "name": "@types/babel__core",
+      "versions": [
+        "7.20.5"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/babel__core",
+      "description": "TypeScript definitions for @babel/core"
+    },
+    {
+      "name": "@types/babel__generator",
+      "versions": [
+        "7.27.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/babel__generator",
+      "description": "TypeScript definitions for @babel/generator"
+    },
+    {
+      "name": "@types/babel__template",
+      "versions": [
+        "7.4.4"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/babel__template",
+      "description": "TypeScript definitions for @babel/template"
+    },
+    {
+      "name": "@types/babel__traverse",
+      "versions": [
+        "7.28.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/babel__traverse",
+      "description": "TypeScript definitions for @babel/traverse"
+    },
+    {
+      "name": "@types/chai",
+      "versions": [
+        "5.2.3"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/chai",
+      "description": "TypeScript definitions for chai"
+    },
+    {
+      "name": "@types/deep-eql",
+      "versions": [
+        "4.0.2"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/deep-eql",
+      "description": "TypeScript definitions for deep-eql"
+    },
+    {
+      "name": "@types/estree",
+      "versions": [
+        "1.0.8"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/estree",
+      "description": "TypeScript definitions for estree"
+    },
+    {
+      "name": "@types/json-schema",
+      "versions": [
+        "7.0.15"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/json-schema",
+      "description": "TypeScript definitions for json-schema"
+    },
+    {
+      "name": "@types/json5",
+      "versions": [
+        "0.0.29"
+      ],
+      "license": "MIT",
+      "author": "Jason Swearingen",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped#readme",
+      "description": "TypeScript definitions for JSON5"
+    },
+    {
+      "name": "@types/node",
+      "versions": [
+        "22.19.13"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node",
+      "description": "TypeScript definitions for node"
+    },
+    {
+      "name": "@types/pg",
+      "versions": [
+        "8.18.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/pg",
+      "description": "TypeScript definitions for pg"
+    },
+    {
+      "name": "@types/prop-types",
+      "versions": [
+        "15.7.15"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/prop-types",
+      "description": "TypeScript definitions for prop-types"
+    },
+    {
+      "name": "@types/react",
+      "versions": [
+        "18.3.28"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react",
+      "description": "TypeScript definitions for react"
+    },
+    {
+      "name": "@types/react-dom",
+      "versions": [
+        "18.3.7"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom",
+      "description": "TypeScript definitions for react-dom"
+    },
+    {
+      "name": "@typescript-eslint/eslint-plugin",
+      "versions": [
+        "8.56.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://typescript-eslint.io/packages/eslint-plugin",
+      "description": "TypeScript plugin for ESLint"
+    },
+    {
+      "name": "@typescript-eslint/parser",
+      "versions": [
+        "8.56.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://typescript-eslint.io/packages/parser",
+      "description": "An ESLint custom parser which leverages TypeScript ESTree"
+    },
+    {
+      "name": "@typescript-eslint/project-service",
+      "versions": [
+        "8.56.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://typescript-eslint.io",
+      "description": "Standalone TypeScript project service wrapper for linting."
+    },
+    {
+      "name": "@typescript-eslint/scope-manager",
+      "versions": [
+        "8.56.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://typescript-eslint.io/packages/scope-manager",
+      "description": "TypeScript scope analyser for ESLint"
+    },
+    {
+      "name": "@typescript-eslint/tsconfig-utils",
+      "versions": [
+        "8.56.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://typescript-eslint.io",
+      "description": "Utilities for collecting TSConfigs for linting scenarios."
+    },
+    {
+      "name": "@typescript-eslint/type-utils",
+      "versions": [
+        "8.56.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://typescript-eslint.io",
+      "description": "Type utilities for working with TypeScript + ESLint together"
+    },
+    {
+      "name": "@typescript-eslint/types",
+      "versions": [
+        "8.56.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://typescript-eslint.io",
+      "description": "Types for the TypeScript-ESTree AST spec"
+    },
+    {
+      "name": "@typescript-eslint/typescript-estree",
+      "versions": [
+        "8.56.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://typescript-eslint.io/packages/typescript-estree",
+      "description": "A parser that converts TypeScript source code into an ESTree compatible form"
+    },
+    {
+      "name": "@typescript-eslint/utils",
+      "versions": [
+        "8.56.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://typescript-eslint.io/packages/utils",
+      "description": "Utilities for working with TypeScript + ESLint together"
+    },
+    {
+      "name": "@typescript-eslint/visitor-keys",
+      "versions": [
+        "8.56.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://typescript-eslint.io",
+      "description": "Visitor keys used to help traverse the TypeScript-ESTree AST"
+    },
+    {
+      "name": "@vitejs/plugin-react",
+      "versions": [
+        "4.7.0"
+      ],
+      "license": "MIT",
+      "author": "Evan You",
+      "homepage": "https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#readme",
+      "description": "The default Vite plugin for React projects"
+    },
+    {
+      "name": "@vitest/expect",
+      "versions": [
+        "3.2.4"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/vitest-dev/vitest/tree/main/packages/expect#readme",
+      "description": "Jest's expect matchers as a Chai plugin"
+    },
+    {
+      "name": "@vitest/mocker",
+      "versions": [
+        "3.2.4"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/vitest-dev/vitest/tree/main/packages/mocker#readme",
+      "description": "Vitest module mocker implementation"
+    },
+    {
+      "name": "@vitest/pretty-format",
+      "versions": [
+        "3.2.4"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/vitest-dev/vitest/tree/main/packages/utils#readme",
+      "description": "Fork of pretty-format with support for ESM"
+    },
+    {
+      "name": "@vitest/runner",
+      "versions": [
+        "3.2.4"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/vitest-dev/vitest/tree/main/packages/runner#readme",
+      "description": "Vitest test runner"
+    },
+    {
+      "name": "@vitest/snapshot",
+      "versions": [
+        "3.2.4"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/vitest-dev/vitest/tree/main/packages/snapshot#readme",
+      "description": "Vitest snapshot manager"
+    },
+    {
+      "name": "@vitest/spy",
+      "versions": [
+        "3.2.4"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/vitest-dev/vitest/tree/main/packages/spy#readme",
+      "description": "Lightweight Jest compatible spy implementation"
+    },
+    {
+      "name": "@vitest/utils",
+      "versions": [
+        "3.2.4"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/vitest-dev/vitest/tree/main/packages/utils#readme",
+      "description": "Shared Vitest utility functions"
+    },
+    {
+      "name": "abstract-logging",
+      "versions": [
+        "2.0.1"
+      ],
+      "license": "MIT",
+      "author": "James Sumners",
+      "homepage": "https://github.com/jsumners/abstract-logging#readme",
+      "description": "A noop logger that conforms to the Log4j interface for modules to stub out internal logging"
+    },
+    {
+      "name": "acorn",
+      "versions": [
+        "8.16.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/acornjs/acorn",
+      "description": "ECMAScript parser"
+    },
+    {
+      "name": "acorn-jsx",
+      "versions": [
+        "5.3.2"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/acornjs/acorn-jsx",
+      "description": "Modern, fast React.js JSX parser"
+    },
+    {
+      "name": "ajv",
+      "versions": [
+        "6.14.0",
+        "8.18.0"
+      ],
+      "license": "MIT",
+      "author": "Evgeny Poberezkin",
+      "homepage": "https://ajv.js.org",
+      "description": "Another JSON Schema Validator"
+    },
+    {
+      "name": "ajv-formats",
+      "versions": [
+        "3.0.1"
+      ],
+      "license": "MIT",
+      "author": "Evgeny Poberezkin",
+      "homepage": "https://github.com/ajv-validator/ajv-formats#readme",
+      "description": "Format validation for Ajv v7+"
+    },
+    {
+      "name": "ansi-styles",
+      "versions": [
+        "4.3.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/chalk/ansi-styles#readme",
+      "description": "ANSI escape codes for styling strings in the terminal"
+    },
+    {
+      "name": "array-buffer-byte-length",
+      "versions": [
+        "1.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/array-buffer-byte-length#readme",
+      "description": "Get the byte length of an ArrayBuffer, even in engines without a `.byteLength` method."
+    },
+    {
+      "name": "array-includes",
+      "versions": [
+        "3.1.9"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/array-includes#readme",
+      "description": "An ES7/ES2016 spec-compliant `Array.prototype.includes` shim/polyfill/replacement that works as far down as ES3."
+    },
+    {
+      "name": "array.prototype.findlastindex",
+      "versions": [
+        "1.2.6"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/Array.prototype.findLastIndex#readme",
+      "description": "An ESnext spec-compliant `Array.prototype.findLastIndex` shim/polyfill/replacement that works as far down as ES3."
+    },
+    {
+      "name": "array.prototype.flat",
+      "versions": [
+        "1.3.3"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/Array.prototype.flat#readme",
+      "description": "An ES2019 spec-compliant `Array.prototype.flat` shim/polyfill/replacement that works as far down as ES3."
+    },
+    {
+      "name": "array.prototype.flatmap",
+      "versions": [
+        "1.3.3"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/Array.prototype.flatMap#readme",
+      "description": "An ES2019 spec-compliant `Array.prototype.flatMap` shim/polyfill/replacement that works as far down as ES3."
+    },
+    {
+      "name": "arraybuffer.prototype.slice",
+      "versions": [
+        "1.0.4"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/ArrayBuffer.prototype.slice#readme",
+      "description": "ES spec-compliant shim for ArrayBuffer.prototype.slice"
+    },
+    {
+      "name": "assertion-error",
+      "versions": [
+        "2.0.1"
+      ],
+      "license": "MIT",
+      "author": "Jake Luer",
+      "homepage": "https://github.com/chaijs/assertion-error#readme",
+      "description": "Error constructor for test and validation frameworks that implements standardized AssertionError specification."
+    },
+    {
+      "name": "async-function",
+      "versions": [
+        "1.0.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harbamd",
+      "homepage": "https://github.com/ljharb/async-function#readme",
+      "description": "A function that returns the normally hidden `AsyncFunction` constructor"
+    },
+    {
+      "name": "atomic-sleep",
+      "versions": [
+        "1.0.0"
+      ],
+      "license": "MIT",
+      "author": "David Mark Clements",
+      "homepage": "https://github.com/davidmarkclements/atomic-sleep#readme",
+      "description": "Zero CPU overhead, zero dependency, true event-loop blocking sleep"
+    },
+    {
+      "name": "available-typed-arrays",
+      "versions": [
+        "1.0.7"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/available-typed-arrays#readme",
+      "description": "Returns an array of Typed Array names that are available in the current environment"
+    },
+    {
+      "name": "avvio",
+      "versions": [
+        "9.2.0"
+      ],
+      "license": "MIT",
+      "author": "Matteo Collina",
+      "homepage": "https://github.com/fastify/avvio#readme",
+      "description": "Asynchronous bootstrapping of Node applications"
+    },
+    {
+      "name": "balanced-match",
+      "versions": [
+        "1.0.2",
+        "4.0.4"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/juliangruber/balanced-match#readme",
+      "description": "Match balanced character pairs, like \"{\" and \"}\""
+    },
+    {
+      "name": "brace-expansion",
+      "versions": [
+        "1.1.12",
+        "5.0.4"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/juliangruber/brace-expansion#readme",
+      "description": "Brace expansion as known from sh/bash"
+    },
+    {
+      "name": "browserslist",
+      "versions": [
+        "4.28.1"
+      ],
+      "license": "MIT",
+      "author": "Andrey Sitnik",
+      "homepage": "https://github.com/browserslist/browserslist#readme",
+      "description": "Share target browsers between different front-end tools, like Autoprefixer, Stylelint and babel-env-preset"
+    },
+    {
+      "name": "cac",
+      "versions": [
+        "6.7.14"
+      ],
+      "license": "MIT",
+      "author": "egoist",
+      "homepage": "https://github.com/egoist/cac#readme",
+      "description": "Simple yet powerful framework for building command-line apps."
+    },
+    {
+      "name": "call-bind",
+      "versions": [
+        "1.0.8"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/call-bind#readme",
+      "description": "Robustly `.call.bind()` a function"
+    },
+    {
+      "name": "call-bind-apply-helpers",
+      "versions": [
+        "1.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/call-bind-apply-helpers#readme",
+      "description": "Helper functions around Function call/apply/bind, for use in `call-bind`"
+    },
+    {
+      "name": "call-bound",
+      "versions": [
+        "1.0.4"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/call-bound#readme",
+      "description": "Robust call-bound JavaScript intrinsics, using `call-bind` and `get-intrinsic`."
+    },
+    {
+      "name": "callsites",
+      "versions": [
+        "3.1.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/callsites#readme",
+      "description": "Get callsites from the V8 stack trace API"
+    },
+    {
+      "name": "chai",
+      "versions": [
+        "5.3.3"
+      ],
+      "license": "MIT",
+      "author": "Jake Luer",
+      "homepage": "http://chaijs.com",
+      "description": "BDD/TDD assertion library for node.js and the browser. Test framework agnostic."
+    },
+    {
+      "name": "chalk",
+      "versions": [
+        "4.1.2"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/chalk/chalk#readme",
+      "description": "Terminal string styling done right"
+    },
+    {
+      "name": "check-error",
+      "versions": [
+        "2.1.3"
+      ],
+      "license": "MIT",
+      "author": "Jake Luer",
+      "homepage": "https://github.com/chaijs/check-error#readme",
+      "description": "Error comparison and information related utility for node and the browser"
+    },
+    {
+      "name": "color-convert",
+      "versions": [
+        "2.0.1"
+      ],
+      "license": "MIT",
+      "author": "Heather Arthur",
+      "homepage": "https://github.com/Qix-/color-convert#readme",
+      "description": "Plain color conversion functions"
+    },
+    {
+      "name": "color-name",
+      "versions": [
+        "1.1.4"
+      ],
+      "license": "MIT",
+      "author": "DY",
+      "homepage": "https://github.com/colorjs/color-name",
+      "description": "A list of color names and its values"
+    },
+    {
+      "name": "commander",
+      "versions": [
+        "2.20.3"
+      ],
+      "license": "MIT",
+      "author": "TJ Holowaychuk",
+      "homepage": "https://github.com/tj/commander.js#readme",
+      "description": "the complete solution for node.js command-line programs"
+    },
+    {
+      "name": "concat-map",
+      "versions": [
+        "0.0.1"
+      ],
+      "license": "MIT",
+      "author": "James Halliday",
+      "homepage": "https://github.com/substack/node-concat-map#readme",
+      "description": "concatenative mapdashery"
+    },
+    {
+      "name": "convert-source-map",
+      "versions": [
+        "2.0.0"
+      ],
+      "license": "MIT",
+      "author": "Thorsten Lorenz",
+      "homepage": "https://github.com/thlorenz/convert-source-map",
+      "description": "Converts a source-map from/to  different formats and allows adding/changing properties."
+    },
+    {
+      "name": "cookie",
+      "versions": [
+        "1.1.1"
+      ],
+      "license": "MIT",
+      "author": "Roman Shtylman",
+      "homepage": "https://github.com/jshttp/cookie#readme",
+      "description": "HTTP server cookie parsing and serialization"
+    },
+    {
+      "name": "cookie-signature",
+      "versions": [
+        "1.2.2"
+      ],
+      "license": "MIT",
+      "author": "TJ Holowaychuk",
+      "homepage": "https://github.com/visionmedia/node-cookie-signature#readme",
+      "description": "Sign and unsign cookies"
+    },
+    {
+      "name": "cross-spawn",
+      "versions": [
+        "7.0.6"
+      ],
+      "license": "MIT",
+      "author": "André Cruz",
+      "homepage": "https://github.com/moxystudio/node-cross-spawn",
+      "description": "Cross platform child_process#spawn and child_process#spawnSync"
+    },
+    {
+      "name": "csstype",
+      "versions": [
+        "3.2.3"
+      ],
+      "license": "MIT",
+      "author": "Fredrik Nicol",
+      "homepage": "https://github.com/frenic/csstype#readme",
+      "description": "Strict TypeScript and Flow types for style based on MDN data"
+    },
+    {
+      "name": "data-view-buffer",
+      "versions": [
+        "1.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/data-view-buffer#readme",
+      "description": "Get the ArrayBuffer out of a DataView, robustly."
+    },
+    {
+      "name": "data-view-byte-length",
+      "versions": [
+        "1.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/data-view-byte-length#readme",
+      "description": "Get the byteLength out of a DataView, robustly."
+    },
+    {
+      "name": "data-view-byte-offset",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/data-view-byte-offset#readme",
+      "description": "Get the byteOffset out of a DataView, robustly."
+    },
+    {
+      "name": "debug",
+      "versions": [
+        "3.2.7",
+        "4.4.3"
+      ],
+      "license": "MIT",
+      "author": "Josh Junon",
+      "homepage": "https://github.com/debug-js/debug#readme",
+      "description": "Lightweight debugging utility for Node.js and the browser"
+    },
+    {
+      "name": "deep-eql",
+      "versions": [
+        "5.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jake Luer",
+      "homepage": "https://github.com/chaijs/deep-eql#readme",
+      "description": "Improved deep equality testing for Node.js and the browser."
+    },
+    {
+      "name": "deep-is",
+      "versions": [
+        "0.1.4"
+      ],
+      "license": "MIT",
+      "author": "Thorsten Lorenz",
+      "homepage": "https://github.com/thlorenz/deep-is#readme",
+      "description": "node's assert.deepEqual algorithm except for NaN being equal to NaN"
+    },
+    {
+      "name": "define-data-property",
+      "versions": [
+        "1.1.4"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/define-data-property#readme",
+      "description": "Define a data property on an object. Will fall back to assignment in an engine without descriptors."
+    },
+    {
+      "name": "define-properties",
+      "versions": [
+        "1.2.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/define-properties#readme",
+      "description": "Define multiple non-enumerable properties at once. Uses `Object.defineProperty` when available; falls back to standard assignment in older engines."
+    },
+    {
+      "name": "dequal",
+      "versions": [
+        "2.0.3"
+      ],
+      "license": "MIT",
+      "author": "Luke Edwards",
+      "homepage": "https://github.com/lukeed/dequal#readme",
+      "description": "A tiny (304B to 489B) utility for check for deep equality"
+    },
+    {
+      "name": "discontinuous-range",
+      "versions": [
+        "1.0.0"
+      ],
+      "license": "MIT",
+      "author": "David Tudury",
+      "homepage": "https://github.com/dtudury/discontinuous-range",
+      "description": "for adding, subtracting, and indexing discontinuous ranges of numbers"
+    },
+    {
+      "name": "dunder-proto",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/dunder-proto#readme",
+      "description": "If available, the `Object.prototype.__proto__` accessor and mutator, call-bound"
+    },
+    {
+      "name": "es-abstract",
+      "versions": [
+        "1.24.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/es-abstract#readme",
+      "description": "ECMAScript spec abstract operations."
+    },
+    {
+      "name": "es-define-property",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/es-define-property#readme",
+      "description": "`Object.defineProperty`, but not IE 8's broken one."
+    },
+    {
+      "name": "es-errors",
+      "versions": [
+        "1.3.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/es-errors#readme",
+      "description": "A simple cache for a few of the JS Error constructors."
+    },
+    {
+      "name": "es-module-lexer",
+      "versions": [
+        "1.7.0"
+      ],
+      "license": "MIT",
+      "author": "Guy Bedford",
+      "homepage": "https://github.com/guybedford/es-module-lexer#readme",
+      "description": "Lexes ES modules returning their import/export metadata"
+    },
+    {
+      "name": "es-object-atoms",
+      "versions": [
+        "1.1.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/es-object-atoms#readme",
+      "description": "ES Object-related atoms: Object, ToObject, RequireObjectCoercible"
+    },
+    {
+      "name": "es-set-tostringtag",
+      "versions": [
+        "2.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/es-set-tostringtag#readme",
+      "description": "A helper to optimistically set Symbol.toStringTag, when possible."
+    },
+    {
+      "name": "es-shim-unscopables",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/es-shim-unscopables#readme",
+      "description": "Helper package to shim a method into `Array.prototype[Symbol.unscopables]`"
+    },
+    {
+      "name": "es-to-primitive",
+      "versions": [
+        "1.3.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/es-to-primitive#readme",
+      "description": "ECMAScript “ToPrimitive” algorithm. Provides ES5 and ES2015 versions."
+    },
+    {
+      "name": "esbuild",
+      "versions": [
+        "0.21.5",
+        "0.27.3"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/evanw/esbuild#readme",
+      "description": "An extremely fast JavaScript and CSS bundler and minifier."
+    },
+    {
+      "name": "escalade",
+      "versions": [
+        "3.2.0"
+      ],
+      "license": "MIT",
+      "author": "Luke Edwards",
+      "homepage": "https://github.com/lukeed/escalade#readme",
+      "description": "A tiny (183B to 210B) and fast utility to ascend parent directories"
+    },
+    {
+      "name": "escape-string-regexp",
+      "versions": [
+        "4.0.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/escape-string-regexp#readme",
+      "description": "Escape RegExp special characters"
+    },
+    {
+      "name": "eslint",
+      "versions": [
+        "9.39.3"
+      ],
+      "license": "MIT",
+      "author": "Nicholas C. Zakas",
+      "homepage": "https://eslint.org",
+      "description": "An AST-based pattern checker for JavaScript."
+    },
+    {
+      "name": "eslint-import-resolver-node",
+      "versions": [
+        "0.3.9"
+      ],
+      "license": "MIT",
+      "author": "Ben Mosher",
+      "homepage": "https://github.com/import-js/eslint-plugin-import",
+      "description": "Node default behavior import resolution plugin for eslint-plugin-import."
+    },
+    {
+      "name": "eslint-module-utils",
+      "versions": [
+        "2.12.1"
+      ],
+      "license": "MIT",
+      "author": "Ben Mosher",
+      "homepage": "https://github.com/import-js/eslint-plugin-import#readme",
+      "description": "Core utilities to support eslint-plugin-import and other module-related plugins."
+    },
+    {
+      "name": "eslint-plugin-import",
+      "versions": [
+        "2.32.0"
+      ],
+      "license": "MIT",
+      "author": "Ben Mosher",
+      "homepage": "https://github.com/import-js/eslint-plugin-import",
+      "description": "Import with sanity."
+    },
+    {
+      "name": "eslint-plugin-react-hooks",
+      "versions": [
+        "5.2.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://react.dev/",
+      "description": "ESLint rules for React Hooks"
+    },
+    {
+      "name": "estree-walker",
+      "versions": [
+        "3.0.3"
+      ],
+      "license": "MIT",
+      "author": "Rich Harris",
+      "homepage": "https://github.com/Rich-Harris/estree-walker#readme",
+      "description": "Traverse an ESTree-compliant AST"
+    },
+    {
+      "name": "fast-decode-uri-component",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "MIT",
+      "author": "Tomas Della Vedova - @delvedor",
+      "homepage": "https://github.com/delvedor/fast-decode-uri-component#readme",
+      "description": "Fast and safe decodeURIComponent"
+    },
+    {
+      "name": "fast-deep-equal",
+      "versions": [
+        "3.1.3"
+      ],
+      "license": "MIT",
+      "author": "Evgeny Poberezkin",
+      "homepage": "https://github.com/epoberezkin/fast-deep-equal#readme",
+      "description": "Fast deep equal"
+    },
+    {
+      "name": "fast-json-stable-stringify",
+      "versions": [
+        "2.1.0"
+      ],
+      "license": "MIT",
+      "author": "James Halliday",
+      "homepage": "https://github.com/epoberezkin/fast-json-stable-stringify",
+      "description": "deterministic `JSON.stringify()` - a faster version of substack's json-stable-strigify without jsonify"
+    },
+    {
+      "name": "fast-json-stringify",
+      "versions": [
+        "6.3.0"
+      ],
+      "license": "MIT",
+      "author": "Matteo Collina",
+      "homepage": "https://github.com/fastify/fast-json-stringify#readme",
+      "description": "Stringify your JSON at max speed"
+    },
+    {
+      "name": "fast-levenshtein",
+      "versions": [
+        "2.0.6"
+      ],
+      "license": "MIT",
+      "author": "Ramesh Nair",
+      "homepage": "https://github.com/hiddentao/fast-levenshtein#readme",
+      "description": "Efficient implementation of Levenshtein algorithm  with locale-specific collator support."
+    },
+    {
+      "name": "fast-querystring",
+      "versions": [
+        "1.1.2"
+      ],
+      "license": "MIT",
+      "author": "Yagiz Nizipli",
+      "homepage": "https://github.com/anonrig/fast-querystring#readme",
+      "description": "A fast alternative to legacy querystring module"
+    },
+    {
+      "name": "fastify",
+      "versions": [
+        "5.7.4"
+      ],
+      "license": "MIT",
+      "author": "Matteo Collina",
+      "homepage": "https://fastify.dev/",
+      "description": "Fast and low overhead web framework, for Node.js"
+    },
+    {
+      "name": "fastify-plugin",
+      "versions": [
+        "5.1.0"
+      ],
+      "license": "MIT",
+      "author": "Tomas Della Vedova - @delvedor",
+      "homepage": "https://github.com/fastify/fastify-plugin#readme",
+      "description": "Plugin helper for Fastify"
+    },
+    {
+      "name": "fdir",
+      "versions": [
+        "6.5.0"
+      ],
+      "license": "MIT",
+      "author": "thecodrr",
+      "homepage": "https://github.com/thecodrr/fdir#readme",
+      "description": "The fastest directory crawler & globbing alternative to glob, fast-glob, & tiny-glob. Crawls 1m files in < 1s"
+    },
+    {
+      "name": "file-entry-cache",
+      "versions": [
+        "8.0.0"
+      ],
+      "license": "MIT",
+      "author": "Jared Wray",
+      "homepage": "https://github.com/jaredwray/file-entry-cache#readme",
+      "description": "Super simple cache for file metadata, useful for process that work o a given series of files and that only need to repeat the job on the changed ones since the previous run of the process"
+    },
+    {
+      "name": "find-my-way",
+      "versions": [
+        "9.5.0"
+      ],
+      "license": "MIT",
+      "author": "Tomas Della Vedova - @delvedor",
+      "homepage": "https://github.com/delvedor/find-my-way#readme",
+      "description": "Crazy fast http radix based router"
+    },
+    {
+      "name": "find-up",
+      "versions": [
+        "5.0.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/find-up#readme",
+      "description": "Find a file or directory by walking up parent directories"
+    },
+    {
+      "name": "flat-cache",
+      "versions": [
+        "4.0.1"
+      ],
+      "license": "MIT",
+      "author": "Jared Wray",
+      "homepage": "https://github.com/jaredwray/flat-cache#readme",
+      "description": "A stupidly simple key/value storage using files to persist some data"
+    },
+    {
+      "name": "for-each",
+      "versions": [
+        "0.3.5"
+      ],
+      "license": "MIT",
+      "author": "Raynos",
+      "homepage": "https://github.com/Raynos/for-each",
+      "description": "A better forEach"
+    },
+    {
+      "name": "function-bind",
+      "versions": [
+        "1.1.2"
+      ],
+      "license": "MIT",
+      "author": "Raynos",
+      "homepage": "https://github.com/Raynos/function-bind",
+      "description": "Implementation of Function.prototype.bind"
+    },
+    {
+      "name": "function.prototype.name",
+      "versions": [
+        "1.1.8"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/Function.prototype.name#readme",
+      "description": "An ES2015 spec-compliant `Function.prototype.name` shim"
+    },
+    {
+      "name": "functional-red-black-tree",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "MIT",
+      "author": "Mikola Lysenko",
+      "homepage": "https://github.com/mikolalysenko/functional-red-black-tree#readme",
+      "description": "A fully persistent balanced binary search tree"
+    },
+    {
+      "name": "functions-have-names",
+      "versions": [
+        "1.2.3"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/functions-have-names#readme",
+      "description": "Does this JS environment support the `name` property on functions?"
+    },
+    {
+      "name": "generator-function",
+      "versions": [
+        "2.0.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harbamd",
+      "homepage": "https://github.com/TimothyGu/generator-function#readme",
+      "description": "A function that returns the normally hidden `GeneratorFunction` constructor"
+    },
+    {
+      "name": "gensync",
+      "versions": [
+        "1.0.0-beta.2"
+      ],
+      "license": "MIT",
+      "author": "Logan Smyth",
+      "homepage": "https://github.com/loganfsmyth/gensync",
+      "description": "Allows users to use generators in order to write common functions that can be both sync or async."
+    },
+    {
+      "name": "get-intrinsic",
+      "versions": [
+        "1.3.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/get-intrinsic#readme",
+      "description": "Get and robustly cache all JS language-level intrinsics at first require time"
+    },
+    {
+      "name": "get-proto",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/get-proto#readme",
+      "description": "Robustly get the [[Prototype]] of an object"
+    },
+    {
+      "name": "get-symbol-description",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/get-symbol-description#readme",
+      "description": "Gets the description of a Symbol. Handles `Symbol()` vs `Symbol('')` properly when possible."
+    },
+    {
+      "name": "get-tsconfig",
+      "versions": [
+        "4.13.6"
+      ],
+      "license": "MIT",
+      "author": "Hiroki Osame",
+      "homepage": "https://github.com/privatenumber/get-tsconfig#readme",
+      "description": "Find and parse the tsconfig.json file from a directory path"
+    },
+    {
+      "name": "globals",
+      "versions": [
+        "14.0.0",
+        "15.15.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/globals#readme",
+      "description": "Global identifiers from different JavaScript environments"
+    },
+    {
+      "name": "globalthis",
+      "versions": [
+        "1.0.4"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/System.global#readme",
+      "description": "ECMAScript spec-compliant polyfill/shim for `globalThis`"
+    },
+    {
+      "name": "gopd",
+      "versions": [
+        "1.2.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/gopd#readme",
+      "description": "`Object.getOwnPropertyDescriptor`, but accounts for IE's broken implementation."
+    },
+    {
+      "name": "has-bigints",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/has-bigints#readme",
+      "description": "Determine if the JS environment has BigInt support."
+    },
+    {
+      "name": "has-flag",
+      "versions": [
+        "4.0.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/has-flag#readme",
+      "description": "Check if argv has a specific flag"
+    },
+    {
+      "name": "has-property-descriptors",
+      "versions": [
+        "1.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/has-property-descriptors#readme",
+      "description": "Does the environment have full property descriptor support? Handles IE 8's broken defineProperty/gOPD."
+    },
+    {
+      "name": "has-proto",
+      "versions": [
+        "1.2.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/has-proto#readme",
+      "description": "Does this environment have the ability to get the [[Prototype]] of an object on creation with `__proto__`?"
+    },
+    {
+      "name": "has-symbols",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/has-symbols#readme",
+      "description": "Determine if the JS environment has Symbol support. Supports spec, or shams."
+    },
+    {
+      "name": "has-tostringtag",
+      "versions": [
+        "1.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/has-tostringtag#readme",
+      "description": "Determine if the JS environment has `Symbol.toStringTag` support. Supports spec, or shams."
+    },
+    {
+      "name": "hasown",
+      "versions": [
+        "2.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/hasOwn#readme",
+      "description": "A robust, ES3 compatible, \"has own property\" predicate."
+    },
+    {
+      "name": "helmet",
+      "versions": [
+        "8.1.0"
+      ],
+      "license": "MIT",
+      "author": "Adam Baldwin",
+      "homepage": "https://helmetjs.github.io/",
+      "description": "help secure Express/Connect apps with various HTTP headers"
+    },
+    {
+      "name": "ignore",
+      "versions": [
+        "5.3.2",
+        "7.0.5"
+      ],
+      "license": "MIT",
+      "author": "kael",
+      "homepage": "https://github.com/kaelzhang/node-ignore#readme",
+      "description": "Ignore is a manager and filter for .gitignore rules, the one used by eslint, gitbook and many others."
+    },
+    {
+      "name": "immutable",
+      "versions": [
+        "4.3.8"
+      ],
+      "license": "MIT",
+      "author": "Lee Byron",
+      "homepage": "https://immutable-js.com",
+      "description": "Immutable Data Collections"
+    },
+    {
+      "name": "import-fresh",
+      "versions": [
+        "3.3.1"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/import-fresh#readme",
+      "description": "Import a module while bypassing the cache"
+    },
+    {
+      "name": "imurmurhash",
+      "versions": [
+        "0.1.4"
+      ],
+      "license": "MIT",
+      "author": "Jens Taylor",
+      "homepage": "https://github.com/jensyt/imurmurhash-js",
+      "description": "An incremental implementation of MurmurHash3"
+    },
+    {
+      "name": "internal-slot",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/internal-slot#readme",
+      "description": "ES spec-like internal slots"
+    },
+    {
+      "name": "ipaddr.js",
+      "versions": [
+        "2.3.0"
+      ],
+      "license": "MIT",
+      "author": "whitequark",
+      "homepage": "https://github.com/whitequark/ipaddr.js#readme",
+      "description": "A library for manipulating IPv4 and IPv6 addresses in JavaScript."
+    },
+    {
+      "name": "is-array-buffer",
+      "versions": [
+        "3.0.5"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-array-buffer#readme",
+      "description": "Is this value a JS ArrayBuffer?"
+    },
+    {
+      "name": "is-async-function",
+      "versions": [
+        "2.1.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-async-function#readme",
+      "description": "Determine if a function is a native async function."
+    },
+    {
+      "name": "is-bigint",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-bigint#readme",
+      "description": "Is this value an ES BigInt?"
+    },
+    {
+      "name": "is-boolean-object",
+      "versions": [
+        "1.2.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-boolean-object#readme",
+      "description": "Is this value a JS Boolean? This module works cross-realm/iframe, and despite ES6 @@toStringTag."
+    },
+    {
+      "name": "is-callable",
+      "versions": [
+        "1.2.7"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-callable#readme",
+      "description": "Is this JS value callable? Works with Functions and GeneratorFunctions, despite ES6 @@toStringTag."
+    },
+    {
+      "name": "is-core-module",
+      "versions": [
+        "2.16.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-core-module",
+      "description": "Is this specifier a node.js core module?"
+    },
+    {
+      "name": "is-data-view",
+      "versions": [
+        "1.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-data-view#readme",
+      "description": "Is this value a JS DataView? This module works cross-realm/iframe, does not depend on `instanceof` or mutable properties, and despite ES6 Symbol.toStringTag."
+    },
+    {
+      "name": "is-date-object",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-date-object#readme",
+      "description": "Is this value a JS Date object? This module works cross-realm/iframe, and despite ES6 @@toStringTag."
+    },
+    {
+      "name": "is-extglob",
+      "versions": [
+        "2.1.1"
+      ],
+      "license": "MIT",
+      "author": "Jon Schlinkert",
+      "homepage": "https://github.com/jonschlinkert/is-extglob",
+      "description": "Returns true if a string has an extglob."
+    },
+    {
+      "name": "is-finalizationregistry",
+      "versions": [
+        "1.1.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-finalizationregistry#readme",
+      "description": "Is this value a JS FinalizationRegistry? This module works cross-realm/iframe, and despite ES6 @@toStringTag."
+    },
+    {
+      "name": "is-generator-function",
+      "versions": [
+        "1.1.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-generator-function#readme",
+      "description": "Determine if a function is a native generator function."
+    },
+    {
+      "name": "is-glob",
+      "versions": [
+        "4.0.3"
+      ],
+      "license": "MIT",
+      "author": "Jon Schlinkert",
+      "homepage": "https://github.com/micromatch/is-glob",
+      "description": "Returns `true` if the given string looks like a glob pattern or an extglob pattern. This makes it easy to create code that only uses external modules like node-glob when necessary, resulting in much faster code execution and initialization time, and a better user experience."
+    },
+    {
+      "name": "is-map",
+      "versions": [
+        "2.0.3"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-map#readme",
+      "description": "Is this value a JS Map? This module works cross-realm/iframe, and despite ES6 @@toStringTag."
+    },
+    {
+      "name": "is-negative-zero",
+      "versions": [
+        "2.0.3"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-negative-zero",
+      "description": "Is this value negative zero? === will lie to you"
+    },
+    {
+      "name": "is-number-object",
+      "versions": [
+        "1.1.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-number-object#readme",
+      "description": "Is this value a JS Number object? This module works cross-realm/iframe, and despite ES6 @@toStringTag."
+    },
+    {
+      "name": "is-regex",
+      "versions": [
+        "1.2.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-regex",
+      "description": "Is this value a JS regex? Works cross-realm/iframe, and despite ES6 @@toStringTag"
+    },
+    {
+      "name": "is-set",
+      "versions": [
+        "2.0.3"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-set#readme",
+      "description": "Is this value a JS Set? This module works cross-realm/iframe, and despite ES6 @@toStringTag."
+    },
+    {
+      "name": "is-shared-array-buffer",
+      "versions": [
+        "1.0.4"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-shared-array-buffer#readme",
+      "description": "Is this value a JS SharedArrayBuffer?"
+    },
+    {
+      "name": "is-string",
+      "versions": [
+        "1.1.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-string#readme",
+      "description": "Is this value a JS String object or primitive? This module works cross-realm/iframe, and despite ES6 @@toStringTag."
+    },
+    {
+      "name": "is-symbol",
+      "versions": [
+        "1.1.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-symbol#readme",
+      "description": "Determine if a value is an ES6 Symbol or not."
+    },
+    {
+      "name": "is-typed-array",
+      "versions": [
+        "1.1.15"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-typed-array#readme",
+      "description": "Is this value a JS Typed Array? This module works cross-realm/iframe, does not depend on `instanceof` or mutable properties, and despite ES6 Symbol.toStringTag."
+    },
+    {
+      "name": "is-weakmap",
+      "versions": [
+        "2.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-weakmap#readme",
+      "description": "Is this value a JS WeakMap? This module works cross-realm/iframe, and despite ES6 @@toStringTag."
+    },
+    {
+      "name": "is-weakref",
+      "versions": [
+        "1.1.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-weakref#readme",
+      "description": "Is this value a JS WeakRef? This module works cross-realm/iframe, and despite ES6 @@toStringTag."
+    },
+    {
+      "name": "is-weakset",
+      "versions": [
+        "2.0.4"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/is-weakset#readme",
+      "description": "Is this value a JS WeakSet? This module works cross-realm/iframe, and despite ES6 @@toStringTag."
+    },
+    {
+      "name": "isarray",
+      "versions": [
+        "2.0.5"
+      ],
+      "license": "MIT",
+      "author": "Julian Gruber",
+      "homepage": "https://github.com/juliangruber/isarray",
+      "description": "Array#isArray for older browsers"
+    },
+    {
+      "name": "js-tokens",
+      "versions": [
+        "4.0.0",
+        "9.0.1"
+      ],
+      "license": "MIT",
+      "author": "Simon Lydell",
+      "homepage": "https://github.com/lydell/js-tokens#readme",
+      "description": "Tiny JavaScript tokenizer."
+    },
+    {
+      "name": "js-yaml",
+      "versions": [
+        "4.1.1"
+      ],
+      "license": "MIT",
+      "author": "Vladimir Zapparov",
+      "homepage": "https://github.com/nodeca/js-yaml#readme",
+      "description": "YAML 1.2 parser and serializer"
+    },
+    {
+      "name": "jsesc",
+      "versions": [
+        "3.1.0"
+      ],
+      "license": "MIT",
+      "author": "Mathias Bynens",
+      "homepage": "https://mths.be/jsesc",
+      "description": "Given some data, jsesc returns the shortest possible stringified & ASCII-safe representation of that data."
+    },
+    {
+      "name": "json-buffer",
+      "versions": [
+        "3.0.1"
+      ],
+      "license": "MIT",
+      "author": "Dominic Tarr",
+      "homepage": "https://github.com/dominictarr/json-buffer",
+      "description": "JSON parse & stringify that supports binary via bops & base64"
+    },
+    {
+      "name": "json-schema-ref-resolver",
+      "versions": [
+        "3.0.0"
+      ],
+      "license": "MIT",
+      "author": "Ivan Tymoshenko",
+      "homepage": "https://github.com/fastify/json-schema-ref-resolver#readme",
+      "description": "JSON schema reference resolver"
+    },
+    {
+      "name": "json-schema-traverse",
+      "versions": [
+        "0.4.1",
+        "1.0.0"
+      ],
+      "license": "MIT",
+      "author": "Evgeny Poberezkin",
+      "homepage": "https://github.com/epoberezkin/json-schema-traverse#readme",
+      "description": "Traverse JSON Schema passing each schema object to callback"
+    },
+    {
+      "name": "json-stable-stringify",
+      "versions": [
+        "1.3.0"
+      ],
+      "license": "MIT",
+      "author": "James Halliday",
+      "homepage": "https://github.com/ljharb/json-stable-stringify",
+      "description": "deterministic JSON.stringify() with custom sorting to get deterministic hashes from stringified results"
+    },
+    {
+      "name": "json-stable-stringify-without-jsonify",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "MIT",
+      "author": "James Halliday",
+      "homepage": "https://github.com/samn/json-stable-stringify",
+      "description": "deterministic JSON.stringify() with custom sorting to get deterministic hashes from stringified results, with no public domain dependencies"
+    },
+    {
+      "name": "json5",
+      "versions": [
+        "1.0.2",
+        "2.2.3"
+      ],
+      "license": "MIT",
+      "author": "Aseem Kishore",
+      "homepage": "http://json5.org/",
+      "description": "JSON for Humans"
+    },
+    {
+      "name": "keyv",
+      "versions": [
+        "4.5.4"
+      ],
+      "license": "MIT",
+      "author": "Jared Wray",
+      "homepage": "https://github.com/jaredwray/keyv",
+      "description": "Simple key-value storage with support for multiple backends"
+    },
+    {
+      "name": "levn",
+      "versions": [
+        "0.4.1"
+      ],
+      "license": "MIT",
+      "author": "George Zahariev",
+      "homepage": "https://github.com/gkz/levn",
+      "description": "Light ECMAScript (JavaScript) Value Notation - human written, concise, typed, flexible"
+    },
+    {
+      "name": "locate-path",
+      "versions": [
+        "6.0.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/locate-path#readme",
+      "description": "Get the first path that exists on disk of multiple paths"
+    },
+    {
+      "name": "lodash.merge",
+      "versions": [
+        "4.6.2"
+      ],
+      "license": "MIT",
+      "author": "John-David Dalton",
+      "homepage": "https://lodash.com/",
+      "description": "The Lodash method `_.merge` exported as a module."
+    },
+    {
+      "name": "loose-envify",
+      "versions": [
+        "1.4.0"
+      ],
+      "license": "MIT",
+      "author": "Andres Suarez",
+      "homepage": "https://github.com/zertosh/loose-envify",
+      "description": "Fast (and loose) selective `process.env` replacer using js-tokens instead of an AST"
+    },
+    {
+      "name": "loupe",
+      "versions": [
+        "3.2.1"
+      ],
+      "license": "MIT",
+      "author": "Veselin Todorov",
+      "homepage": "https://github.com/chaijs/loupe",
+      "description": "Inspect utility for Node.js and browsers"
+    },
+    {
+      "name": "magic-string",
+      "versions": [
+        "0.30.21"
+      ],
+      "license": "MIT",
+      "author": "Rich Harris",
+      "homepage": "https://github.com/Rich-Harris/magic-string#readme",
+      "description": "Modify strings, generate sourcemaps"
+    },
+    {
+      "name": "math-intrinsics",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/math-intrinsics#readme",
+      "description": "ES Math-related intrinsics and helpers, robustly cached."
+    },
+    {
+      "name": "minimist",
+      "versions": [
+        "1.2.8"
+      ],
+      "license": "MIT",
+      "author": "James Halliday",
+      "homepage": "https://github.com/minimistjs/minimist",
+      "description": "parse argument options"
+    },
+    {
+      "name": "mnemonist",
+      "versions": [
+        "0.40.0"
+      ],
+      "license": "MIT",
+      "author": "Guillaume Plique",
+      "homepage": "https://github.com/yomguithereal/mnemonist#readme",
+      "description": "Curated collection of data structures for the JavaScript/TypeScript."
+    },
+    {
+      "name": "moment",
+      "versions": [
+        "2.30.1"
+      ],
+      "license": "MIT",
+      "author": "Iskren Ivov Chernev",
+      "homepage": "https://momentjs.com",
+      "description": "Parse, validate, manipulate, and display dates"
+    },
+    {
+      "name": "ms",
+      "versions": [
+        "2.1.3"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/vercel/ms#readme",
+      "description": "Tiny millisecond conversion utility"
+    },
+    {
+      "name": "nanoid",
+      "versions": [
+        "3.3.11"
+      ],
+      "license": "MIT",
+      "author": "Andrey Sitnik",
+      "homepage": "https://github.com/ai/nanoid#readme",
+      "description": "A tiny (116 bytes), secure URL-friendly unique string ID generator"
+    },
+    {
+      "name": "natural-compare",
+      "versions": [
+        "1.4.0"
+      ],
+      "license": "MIT",
+      "author": "Lauri Rooden",
+      "homepage": "https://github.com/litejs/natural-compare-lite#readme",
+      "description": "Compare strings containing a mix of letters and numbers in the way a human being would in sort order."
+    },
+    {
+      "name": "nearley",
+      "versions": [
+        "2.20.1"
+      ],
+      "license": "MIT",
+      "author": "Hardmath123",
+      "homepage": "https://github.com/hardmath123/nearley#readme",
+      "description": "Simple, fast, powerful parser toolkit for JavaScript."
+    },
+    {
+      "name": "node-releases",
+      "versions": [
+        "2.0.36"
+      ],
+      "license": "MIT",
+      "author": "Sergey Rubanov",
+      "homepage": "https://github.com/chicoxyzzy/node-releases#readme",
+      "description": "Node.js releases data"
+    },
+    {
+      "name": "object-hash",
+      "versions": [
+        "2.2.0"
+      ],
+      "license": "MIT",
+      "author": "Scott Puleo",
+      "homepage": "https://github.com/puleos/object-hash",
+      "description": "Generate hashes from javascript objects in node and the browser."
+    },
+    {
+      "name": "object-inspect",
+      "versions": [
+        "1.13.4"
+      ],
+      "license": "MIT",
+      "author": "James Halliday",
+      "homepage": "https://github.com/inspect-js/object-inspect",
+      "description": "string representations of objects in node and the browser"
+    },
+    {
+      "name": "object-keys",
+      "versions": [
+        "1.1.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/object-keys#readme",
+      "description": "An Object.keys replacement, in case Object.keys is not available. From https://github.com/es-shims/es5-shim"
+    },
+    {
+      "name": "object.assign",
+      "versions": [
+        "4.1.7"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/object.assign#readme",
+      "description": "ES6 spec-compliant Object.assign shim. From https://github.com/es-shims/es6-shim"
+    },
+    {
+      "name": "object.fromentries",
+      "versions": [
+        "2.0.8"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/Object.fromEntries#readme",
+      "description": "ES proposal-spec-compliant Object.fromEntries shim."
+    },
+    {
+      "name": "object.groupby",
+      "versions": [
+        "1.0.3"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/Object.groupBy#readme",
+      "description": "An ESnext spec-compliant `Object.groupBy` shim/polyfill/replacement that works as far down as ES3."
+    },
+    {
+      "name": "object.values",
+      "versions": [
+        "1.2.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/Object.values#readme",
+      "description": "ES2017 spec-compliant Object.values shim."
+    },
+    {
+      "name": "obliterator",
+      "versions": [
+        "2.0.5"
+      ],
+      "license": "MIT",
+      "author": "Guillaume Plique",
+      "homepage": "https://github.com/yomguithereal/obliterator#readme",
+      "description": "Higher order iterator library for JavaScript/TypeScript."
+    },
+    {
+      "name": "on-exit-leak-free",
+      "versions": [
+        "2.1.2"
+      ],
+      "license": "MIT",
+      "author": "Matteo Collina",
+      "homepage": "https://github.com/mcollina/on-exit-or-gc#readme",
+      "description": "Execute a function on exit without leaking memory, allowing all objects to be garbage collected"
+    },
+    {
+      "name": "optionator",
+      "versions": [
+        "0.9.4"
+      ],
+      "license": "MIT",
+      "author": "George Zahariev",
+      "homepage": "https://github.com/gkz/optionator",
+      "description": "option parsing and help generation"
+    },
+    {
+      "name": "own-keys",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/own-keys#readme",
+      "description": "Robustly get an object's own property keys (strings and symbols), including non-enumerables when possible"
+    },
+    {
+      "name": "p-limit",
+      "versions": [
+        "3.1.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/p-limit#readme",
+      "description": "Run multiple promise-returning & async functions with limited concurrency"
+    },
+    {
+      "name": "p-locate",
+      "versions": [
+        "5.0.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/p-locate#readme",
+      "description": "Get the first fulfilled promise that satisfies the provided testing function"
+    },
+    {
+      "name": "parent-module",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/parent-module#readme",
+      "description": "Get the path of the parent module"
+    },
+    {
+      "name": "path-exists",
+      "versions": [
+        "4.0.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/path-exists#readme",
+      "description": "Check if a path exists"
+    },
+    {
+      "name": "path-key",
+      "versions": [
+        "3.1.1"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/path-key#readme",
+      "description": "Get the PATH environment variable key cross-platform"
+    },
+    {
+      "name": "path-parse",
+      "versions": [
+        "1.0.7"
+      ],
+      "license": "MIT",
+      "author": "Javier Blanco",
+      "homepage": "https://github.com/jbgutierrez/path-parse#readme",
+      "description": "Node.js path.parse() ponyfill"
+    },
+    {
+      "name": "pathe",
+      "versions": [
+        "2.0.3"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/unjs/pathe#readme",
+      "description": "Universal filesystem path utils"
+    },
+    {
+      "name": "pathval",
+      "versions": [
+        "2.0.1"
+      ],
+      "license": "MIT",
+      "author": "Veselin Todorov",
+      "homepage": "https://github.com/chaijs/pathval",
+      "description": "Object value retrieval given a string path"
+    },
+    {
+      "name": "pg",
+      "versions": [
+        "8.20.0"
+      ],
+      "license": "MIT",
+      "author": "Brian Carlson",
+      "homepage": "https://github.com/brianc/node-postgres",
+      "description": "PostgreSQL client - pure javascript & libpq with the same API"
+    },
+    {
+      "name": "pg-cloudflare",
+      "versions": [
+        "1.3.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/brianc/node-postgres#readme",
+      "description": "A socket implementation that can run on Cloudflare Workers using native TCP connections."
+    },
+    {
+      "name": "pg-connection-string",
+      "versions": [
+        "2.12.0"
+      ],
+      "license": "MIT",
+      "author": "Blaine Bublitz",
+      "homepage": "https://github.com/brianc/node-postgres/tree/master/packages/pg-connection-string",
+      "description": "Functions for dealing with a PostgresSQL connection string"
+    },
+    {
+      "name": "pg-mem",
+      "versions": [
+        "3.0.14"
+      ],
+      "license": "MIT",
+      "author": "Olivier Guimbal",
+      "homepage": "https://github.com/oguimbal/pg-mem#readme",
+      "description": "A memory version of postgres"
+    },
+    {
+      "name": "pg-pool",
+      "versions": [
+        "3.13.0"
+      ],
+      "license": "MIT",
+      "author": "Brian M. Carlson",
+      "homepage": "https://github.com/brianc/node-postgres/tree/master/packages/pg-pool#readme",
+      "description": "Connection pool for node-postgres"
+    },
+    {
+      "name": "pg-protocol",
+      "versions": [
+        "1.13.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/brianc/node-postgres#readme",
+      "description": "The postgres client/server binary protocol, implemented in TypeScript"
+    },
+    {
+      "name": "pg-types",
+      "versions": [
+        "2.2.0"
+      ],
+      "license": "MIT",
+      "author": "Brian M. Carlson",
+      "homepage": "https://github.com/brianc/node-pg-types",
+      "description": "Query result type converters for node-postgres"
+    },
+    {
+      "name": "pgpass",
+      "versions": [
+        "1.0.5"
+      ],
+      "license": "MIT",
+      "author": "Hannes Hörl",
+      "homepage": "https://github.com/hoegaarden/pgpass#readme",
+      "description": "Module for reading .pgpass"
+    },
+    {
+      "name": "pgsql-ast-parser",
+      "versions": [
+        "12.0.2"
+      ],
+      "license": "MIT",
+      "author": "Olivier Guimbal",
+      "homepage": "https://github.com/oguimbal/pgsql-ast-parser#readme",
+      "description": "Yet another simple Postgres SQL parser/modifier"
+    },
+    {
+      "name": "picomatch",
+      "versions": [
+        "4.0.3"
+      ],
+      "license": "MIT",
+      "author": "Jon Schlinkert",
+      "homepage": "https://github.com/micromatch/picomatch",
+      "description": "Blazing fast and accurate glob matcher written in JavaScript, with no dependencies and full support for standard and extended Bash glob features, including braces, extglobs, POSIX brackets, and regular expressions."
+    },
+    {
+      "name": "pino",
+      "versions": [
+        "9.14.0",
+        "10.3.1"
+      ],
+      "license": "MIT",
+      "author": "Matteo Collina",
+      "homepage": "https://getpino.io",
+      "description": "super fast, all natural json logger"
+    },
+    {
+      "name": "pino-abstract-transport",
+      "versions": [
+        "2.0.0",
+        "3.0.0"
+      ],
+      "license": "MIT",
+      "author": "Matteo Collina",
+      "homepage": "https://github.com/pinojs/pino-abstract-transport#readme",
+      "description": "Write Pino transports easily"
+    },
+    {
+      "name": "pino-std-serializers",
+      "versions": [
+        "7.1.0"
+      ],
+      "license": "MIT",
+      "author": "James Sumners",
+      "homepage": "https://github.com/pinojs/pino-std-serializers#readme",
+      "description": "A collection of standard object serializers for Pino"
+    },
+    {
+      "name": "possible-typed-array-names",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/possible-typed-array-names#readme",
+      "description": "A simple list of possible Typed Array names."
+    },
+    {
+      "name": "postcss",
+      "versions": [
+        "8.5.8"
+      ],
+      "license": "MIT",
+      "author": "Andrey Sitnik",
+      "homepage": "https://postcss.org/",
+      "description": "Tool for transforming styles with JS plugins"
+    },
+    {
+      "name": "postgres-array",
+      "versions": [
+        "2.0.0"
+      ],
+      "license": "MIT",
+      "author": "Ben Drucker",
+      "homepage": "https://github.com/bendrucker/postgres-array#readme",
+      "description": "Parse postgres array columns"
+    },
+    {
+      "name": "postgres-bytea",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "MIT",
+      "author": "Ben Drucker",
+      "homepage": "https://github.com/bendrucker/postgres-bytea#readme",
+      "description": "Postgres bytea parser"
+    },
+    {
+      "name": "postgres-date",
+      "versions": [
+        "1.0.7"
+      ],
+      "license": "MIT",
+      "author": "Ben Drucker",
+      "homepage": "https://github.com/bendrucker/postgres-date#readme",
+      "description": "Postgres date column parser"
+    },
+    {
+      "name": "postgres-interval",
+      "versions": [
+        "1.2.0"
+      ],
+      "license": "MIT",
+      "author": "Ben Drucker",
+      "homepage": "https://github.com/bendrucker/postgres-interval#readme",
+      "description": "Parse Postgres interval columns"
+    },
+    {
+      "name": "prelude-ls",
+      "versions": [
+        "1.2.1"
+      ],
+      "license": "MIT",
+      "author": "George Zahariev",
+      "homepage": "http://preludels.com",
+      "description": "prelude.ls is a functionally oriented utility library. It is powerful and flexible. Almost all of its functions are curried. It is written in, and is the recommended base library for, LiveScript."
+    },
+    {
+      "name": "prettier",
+      "versions": [
+        "3.8.1"
+      ],
+      "license": "MIT",
+      "author": "James Long",
+      "homepage": "https://prettier.io",
+      "description": "Prettier is an opinionated code formatter"
+    },
+    {
+      "name": "process-warning",
+      "versions": [
+        "4.0.1",
+        "5.0.0"
+      ],
+      "license": "MIT",
+      "author": "Tomas Della Vedova",
+      "homepage": "https://github.com/fastify/fastify-warning#readme",
+      "description": "A small utility for creating warnings and emitting them."
+    },
+    {
+      "name": "punycode",
+      "versions": [
+        "2.3.1"
+      ],
+      "license": "MIT",
+      "author": "Mathias Bynens",
+      "homepage": "https://mths.be/punycode",
+      "description": "A robust Punycode converter that fully complies to RFC 3492 and RFC 5891, and works on nearly all JavaScript platforms."
+    },
+    {
+      "name": "quick-format-unescaped",
+      "versions": [
+        "4.0.4"
+      ],
+      "license": "MIT",
+      "author": "David Mark Clements",
+      "homepage": "https://github.com/davidmarkclements/quick-format#readme",
+      "description": "Solves a problem with util.format"
+    },
+    {
+      "name": "randexp",
+      "versions": [
+        "0.4.6"
+      ],
+      "license": "MIT",
+      "author": "Roly Fentanes",
+      "homepage": "http://fent.github.io/randexp.js/",
+      "description": "Create random strings that match a given regular expression."
+    },
+    {
+      "name": "react",
+      "versions": [
+        "18.3.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://reactjs.org/",
+      "description": "React is a JavaScript library for building user interfaces."
+    },
+    {
+      "name": "react-dom",
+      "versions": [
+        "18.3.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://reactjs.org/",
+      "description": "React package for working with the DOM."
+    },
+    {
+      "name": "react-refresh",
+      "versions": [
+        "0.17.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://react.dev/",
+      "description": "React is a JavaScript library for building user interfaces."
+    },
+    {
+      "name": "real-require",
+      "versions": [
+        "0.2.0"
+      ],
+      "license": "MIT",
+      "author": "Paolo Insogna",
+      "homepage": "https://github.com/pinojs/real-require",
+      "description": "Keep require and import consistent after bundling or transpiling"
+    },
+    {
+      "name": "reflect.getprototypeof",
+      "versions": [
+        "1.0.10"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/Reflect.getPrototypeOf",
+      "description": "An ES2015 mostly-spec-compliant `Reflect.getPrototypeOf` sham/polyfill/replacement that works in as many engines as possible"
+    },
+    {
+      "name": "regexp.prototype.flags",
+      "versions": [
+        "1.5.4"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/RegExp.prototype.flags#readme",
+      "description": "ES6 spec-compliant RegExp.prototype.flags shim."
+    },
+    {
+      "name": "require-from-string",
+      "versions": [
+        "2.0.2"
+      ],
+      "license": "MIT",
+      "author": "Vsevolod Strukchinsky",
+      "homepage": "https://github.com/floatdrop/require-from-string#readme",
+      "description": "Require module from string"
+    },
+    {
+      "name": "resolve",
+      "versions": [
+        "1.22.11"
+      ],
+      "license": "MIT",
+      "author": "James Halliday",
+      "homepage": "https://github.com/browserify/resolve#readme",
+      "description": "resolve like require.resolve() on behalf of files asynchronously and synchronously"
+    },
+    {
+      "name": "resolve-from",
+      "versions": [
+        "4.0.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/resolve-from#readme",
+      "description": "Resolve the path of a module like `require.resolve()` but from a given path"
+    },
+    {
+      "name": "resolve-pkg-maps",
+      "versions": [
+        "1.0.0"
+      ],
+      "license": "MIT",
+      "author": "Hiroki Osame",
+      "homepage": "https://github.com/privatenumber/resolve-pkg-maps#readme",
+      "description": "Resolve package.json exports & imports maps"
+    },
+    {
+      "name": "ret",
+      "versions": [
+        "0.1.15",
+        "0.5.0"
+      ],
+      "license": "MIT",
+      "author": "fent",
+      "homepage": "https://github.com/fent/ret.js#readme",
+      "description": "Tokenizes a string that represents a regular expression."
+    },
+    {
+      "name": "reusify",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Matteo Collina",
+      "homepage": "https://github.com/mcollina/reusify#readme",
+      "description": "Reuse objects and functions with style"
+    },
+    {
+      "name": "rfdc",
+      "versions": [
+        "1.4.1"
+      ],
+      "license": "MIT",
+      "author": "David Mark Clements",
+      "homepage": "https://github.com/davidmarkclements/rfdc#readme",
+      "description": "Really Fast Deep Clone"
+    },
+    {
+      "name": "rollup",
+      "versions": [
+        "4.59.0"
+      ],
+      "license": "MIT",
+      "author": "Rich Harris",
+      "homepage": "https://rollupjs.org/",
+      "description": "Next-generation ES module bundler"
+    },
+    {
+      "name": "safe-array-concat",
+      "versions": [
+        "1.1.3"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/safe-array-concat#readme",
+      "description": "`Array.prototype.concat`, but made safe by ignoring Symbol.isConcatSpreadable"
+    },
+    {
+      "name": "safe-push-apply",
+      "versions": [
+        "1.0.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/safe-push-apply#readme",
+      "description": "Push an array of items into an array, while being robust against prototype modification"
+    },
+    {
+      "name": "safe-regex-test",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/safe-regex-test#readme",
+      "description": "Give a regex, get a robust predicate function that tests it against a string."
+    },
+    {
+      "name": "safe-regex2",
+      "versions": [
+        "5.0.0"
+      ],
+      "license": "MIT",
+      "author": "James Halliday",
+      "homepage": "https://github.com/fastify/safe-regex2",
+      "description": "detect possibly catastrophic, exponential-time regular expressions"
+    },
+    {
+      "name": "safe-stable-stringify",
+      "versions": [
+        "2.5.0"
+      ],
+      "license": "MIT",
+      "author": "Ruben Bridgewater",
+      "homepage": "https://github.com/BridgeAR/safe-stable-stringify#readme",
+      "description": "Deterministic and safely JSON.stringify to quickly serialize JavaScript objects"
+    },
+    {
+      "name": "scheduler",
+      "versions": [
+        "0.23.2"
+      ],
+      "license": "MIT",
+      "homepage": "https://reactjs.org/",
+      "description": "Cooperative scheduler for the browser environment."
+    },
+    {
+      "name": "set-cookie-parser",
+      "versions": [
+        "2.7.2"
+      ],
+      "license": "MIT",
+      "author": "Nathan Friedly",
+      "homepage": "https://github.com/nfriedly/set-cookie-parser",
+      "description": "Parses set-cookie headers into objects"
+    },
+    {
+      "name": "set-function-length",
+      "versions": [
+        "1.2.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/set-function-length#readme",
+      "description": "Set a function's length property"
+    },
+    {
+      "name": "set-function-name",
+      "versions": [
+        "2.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/set-function-name#readme",
+      "description": "Set a function's name property"
+    },
+    {
+      "name": "set-proto",
+      "versions": [
+        "1.0.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/set-proto#readme",
+      "description": "Robustly set the [[Prototype]] of an object"
+    },
+    {
+      "name": "shebang-command",
+      "versions": [
+        "2.0.0"
+      ],
+      "license": "MIT",
+      "author": "Kevin Mårtensson",
+      "homepage": "https://github.com/kevva/shebang-command#readme",
+      "description": "Get the command from a shebang"
+    },
+    {
+      "name": "shebang-regex",
+      "versions": [
+        "3.0.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/shebang-regex#readme",
+      "description": "Regular expression for matching a shebang line"
+    },
+    {
+      "name": "side-channel",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/side-channel#readme",
+      "description": "Store information about any JS value in a side channel. Uses WeakMap if available."
+    },
+    {
+      "name": "side-channel-list",
+      "versions": [
+        "1.0.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/side-channel-list#readme",
+      "description": "Store information about any JS value in a side channel, using a linked list"
+    },
+    {
+      "name": "side-channel-map",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/side-channel-map#readme",
+      "description": "Store information about any JS value in a side channel, using a Map"
+    },
+    {
+      "name": "side-channel-weakmap",
+      "versions": [
+        "1.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/side-channel-weakmap#readme",
+      "description": "Store information about any JS value in a side channel. Uses WeakMap if available."
+    },
+    {
+      "name": "sonic-boom",
+      "versions": [
+        "4.2.1"
+      ],
+      "license": "MIT",
+      "author": "Matteo Collina",
+      "homepage": "https://github.com/pinojs/sonic-boom#readme",
+      "description": "Extremely fast utf8 only stream implementation"
+    },
+    {
+      "name": "stackback",
+      "versions": [
+        "0.0.2"
+      ],
+      "license": "MIT",
+      "author": "Roman Shtylman",
+      "homepage": "https://github.com/shtylman/node-stackback#readme",
+      "description": "return list of CallSite objects from a captured stacktrace"
+    },
+    {
+      "name": "std-env",
+      "versions": [
+        "3.10.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/unjs/std-env#readme",
+      "description": "Runtime agnostic JS utils"
+    },
+    {
+      "name": "stop-iteration-iterator",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/stop-iteration-iterator#readme",
+      "description": "Firefox 17-26 iterators throw a StopIteration object to indicate \"done\". This normalizes it."
+    },
+    {
+      "name": "string.prototype.trim",
+      "versions": [
+        "1.2.10"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/String.prototype.trim#readme",
+      "description": "ES5 spec-compliant shim for String.prototype.trim"
+    },
+    {
+      "name": "string.prototype.trimend",
+      "versions": [
+        "1.0.9"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/String.prototype.trimEnd#readme",
+      "description": "ES2019 spec-compliant String.prototype.trimEnd shim."
+    },
+    {
+      "name": "string.prototype.trimstart",
+      "versions": [
+        "1.0.8"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/es-shims/String.prototype.trimStart#readme",
+      "description": "ES2019 spec-compliant String.prototype.trimStart shim."
+    },
+    {
+      "name": "strip-bom",
+      "versions": [
+        "3.0.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/strip-bom#readme",
+      "description": "Strip UTF-8 byte order mark (BOM) from a string"
+    },
+    {
+      "name": "strip-json-comments",
+      "versions": [
+        "3.1.1"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/strip-json-comments#readme",
+      "description": "Strip comments from JSON. Lets you use comments in your JSON files!"
+    },
+    {
+      "name": "strip-literal",
+      "versions": [
+        "3.1.0"
+      ],
+      "license": "MIT",
+      "author": "Anthony Fu",
+      "homepage": "https://github.com/antfu/strip-literal#readme",
+      "description": "Strip comments and string literals from JavaScript code"
+    },
+    {
+      "name": "supports-color",
+      "versions": [
+        "7.2.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/chalk/supports-color#readme",
+      "description": "Detect whether a terminal supports color"
+    },
+    {
+      "name": "supports-preserve-symlinks-flag",
+      "versions": [
+        "1.0.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/node-supports-preserve-symlinks-flag#readme",
+      "description": "Determine if the current node version supports the `--preserve-symlinks` flag."
+    },
+    {
+      "name": "thread-stream",
+      "versions": [
+        "3.1.0",
+        "4.0.0"
+      ],
+      "license": "MIT",
+      "author": "Matteo Collina",
+      "homepage": "https://github.com/mcollina/thread-stream#readme",
+      "description": "A streaming way to send data to a Node.js Worker Thread"
+    },
+    {
+      "name": "tinybench",
+      "versions": [
+        "2.9.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/tinylibs/tinybench#readme"
+    },
+    {
+      "name": "tinyexec",
+      "versions": [
+        "0.3.2"
+      ],
+      "license": "MIT",
+      "author": "James Garbutt",
+      "homepage": "https://github.com/tinylibs/tinyexec#readme",
+      "description": "A minimal library for executing processes in Node"
+    },
+    {
+      "name": "tinyglobby",
+      "versions": [
+        "0.2.15"
+      ],
+      "license": "MIT",
+      "author": "Superchupu",
+      "homepage": "https://superchupu.dev/tinyglobby",
+      "description": "A fast and minimal alternative to globby and fast-glob"
+    },
+    {
+      "name": "tinypool",
+      "versions": [
+        "1.1.1"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/tinylibs/tinypool#readme",
+      "description": "A minimal and tiny Node.js Worker Thread Pool implementation, a fork of piscina, but with fewer features"
+    },
+    {
+      "name": "tinyrainbow",
+      "versions": [
+        "2.0.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/tinylibs/tinyrainbow#readme",
+      "description": "A small library to print colourful messages."
+    },
+    {
+      "name": "tinyspy",
+      "versions": [
+        "4.0.4"
+      ],
+      "license": "MIT",
+      "homepage": "https://github.com/tinylibs/tinyspy#readme",
+      "description": "A minimal fork of nanospy, with more features"
+    },
+    {
+      "name": "toad-cache",
+      "versions": [
+        "3.7.0"
+      ],
+      "license": "MIT",
+      "author": "Igor Savin",
+      "homepage": "https://github.com/kibertoad/toad-cache",
+      "description": "LRU and FIFO caches for Client or Server"
+    },
+    {
+      "name": "ts-api-utils",
+      "versions": [
+        "2.4.0"
+      ],
+      "license": "MIT",
+      "author": "JoshuaKGoldberg",
+      "homepage": "https://github.com/JoshuaKGoldberg/ts-api-utils#readme",
+      "description": "Utility functions for working with TypeScript's API. Successor to the wonderful tsutils. 🛠️️"
+    },
+    {
+      "name": "tsconfig-paths",
+      "versions": [
+        "3.15.0"
+      ],
+      "license": "MIT",
+      "author": "Jonas Kello",
+      "homepage": "https://github.com/dividab/tsconfig-paths#readme",
+      "description": "Load node modules according to tsconfig paths, in run-time or via API."
+    },
+    {
+      "name": "tsx",
+      "versions": [
+        "4.21.0"
+      ],
+      "license": "MIT",
+      "author": "Hiroki Osame",
+      "homepage": "https://tsx.is",
+      "description": "TypeScript Execute (tsx): Node.js enhanced with esbuild to run TypeScript & ESM files"
+    },
+    {
+      "name": "type-check",
+      "versions": [
+        "0.4.0"
+      ],
+      "license": "MIT",
+      "author": "George Zahariev",
+      "homepage": "https://github.com/gkz/type-check",
+      "description": "type-check allows you to check the types of JavaScript values at runtime with a Haskell like type syntax."
+    },
+    {
+      "name": "typed-array-buffer",
+      "versions": [
+        "1.0.3"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/typed-array-buffer#readme",
+      "description": "Get the ArrayBuffer out of a TypedArray, robustly."
+    },
+    {
+      "name": "typed-array-byte-length",
+      "versions": [
+        "1.0.3"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/typed-array-byte-length#readme",
+      "description": "Robustly get the byte length of a Typed Array"
+    },
+    {
+      "name": "typed-array-byte-offset",
+      "versions": [
+        "1.0.4"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/typed-array-byte-offset#readme",
+      "description": "Robustly get the byte offset of a Typed Array"
+    },
+    {
+      "name": "typed-array-length",
+      "versions": [
+        "1.0.7"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/typed-array-length#readme",
+      "description": "Robustly get the length of a Typed Array"
+    },
+    {
+      "name": "unbox-primitive",
+      "versions": [
+        "1.1.0"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/ljharb/unbox-primitive#readme",
+      "description": "Unbox a boxed JS primitive value."
+    },
+    {
+      "name": "undici-types",
+      "versions": [
+        "6.21.0"
+      ],
+      "license": "MIT",
+      "homepage": "https://undici.nodejs.org",
+      "description": "A stand-alone types package for Undici"
+    },
+    {
+      "name": "update-browserslist-db",
+      "versions": [
+        "1.2.3"
+      ],
+      "license": "MIT",
+      "author": "Andrey Sitnik",
+      "homepage": "https://github.com/browserslist/update-db#readme",
+      "description": "CLI tool to update caniuse-lite to refresh target browsers from Browserslist config"
+    },
+    {
+      "name": "vite",
+      "versions": [
+        "5.4.21"
+      ],
+      "license": "MIT",
+      "author": "Evan You",
+      "homepage": "https://vite.dev",
+      "description": "Native-ESM powered web dev build tool"
+    },
+    {
+      "name": "vite-node",
+      "versions": [
+        "3.2.4"
+      ],
+      "license": "MIT",
+      "author": "Anthony Fu",
+      "homepage": "https://github.com/vitest-dev/vitest/blob/main/packages/vite-node#readme",
+      "description": "Vite as Node.js runtime"
+    },
+    {
+      "name": "vitest",
+      "versions": [
+        "3.2.4"
+      ],
+      "license": "MIT",
+      "author": "Anthony Fu",
+      "homepage": "https://github.com/vitest-dev/vitest#readme",
+      "description": "Next generation testing framework powered by Vite"
+    },
+    {
+      "name": "which-boxed-primitive",
+      "versions": [
+        "1.1.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/which-boxed-primitive#readme",
+      "description": "Which kind of boxed JS primitive is this?"
+    },
+    {
+      "name": "which-builtin-type",
+      "versions": [
+        "1.2.1"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/which-builtin-type#readme",
+      "description": "What is the type of this builtin JS value?"
+    },
+    {
+      "name": "which-collection",
+      "versions": [
+        "1.0.2"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/which-collection#readme",
+      "description": "Which kind of Collection (Map, Set, WeakMap, WeakSet) is this JavaScript value? Works cross-realm, without `instanceof`, and despite Symbol.toStringTag."
+    },
+    {
+      "name": "which-typed-array",
+      "versions": [
+        "1.1.20"
+      ],
+      "license": "MIT",
+      "author": "Jordan Harband",
+      "homepage": "https://github.com/inspect-js/which-typed-array#readme",
+      "description": "Which kind of Typed Array is this JavaScript value? Works cross-realm, without `instanceof`, and despite Symbol.toStringTag."
+    },
+    {
+      "name": "why-is-node-running",
+      "versions": [
+        "2.3.0"
+      ],
+      "license": "MIT",
+      "author": "Mathias Buus",
+      "homepage": "https://github.com/mafintosh/why-is-node-running",
+      "description": "Node is running but you don't know why? why-is-node-running is here to help you."
+    },
+    {
+      "name": "word-wrap",
+      "versions": [
+        "1.2.5"
+      ],
+      "license": "MIT",
+      "author": "Jon Schlinkert",
+      "homepage": "https://github.com/jonschlinkert/word-wrap",
+      "description": "Wrap words to a specified length."
+    },
+    {
+      "name": "xtend",
+      "versions": [
+        "4.0.2"
+      ],
+      "license": "MIT",
+      "author": "Raynos",
+      "homepage": "https://github.com/Raynos/xtend",
+      "description": "extend like a boss"
+    },
+    {
+      "name": "yocto-queue",
+      "versions": [
+        "0.1.0"
+      ],
+      "license": "MIT",
+      "author": "Sindre Sorhus",
+      "homepage": "https://github.com/sindresorhus/yocto-queue#readme",
+      "description": "Tiny queue data structure"
+    },
+    {
+      "name": "zod",
+      "versions": [
+        "3.25.76"
+      ],
+      "license": "MIT",
+      "author": "Colin McDonnell",
+      "homepage": "https://zod.dev",
+      "description": "TypeScript-first schema declaration and validation library with static type inference"
+    }
+  ],
+  "Apache-2.0": [
+    {
+      "name": "@eslint/config-array",
+      "versions": [
+        "0.21.1"
+      ],
+      "license": "Apache-2.0",
+      "author": "Nicholas C. Zakas",
+      "homepage": "https://github.com/eslint/rewrite/tree/main/packages/config-array#readme",
+      "description": "General purpose glob-based configuration matching."
+    },
+    {
+      "name": "@eslint/config-helpers",
+      "versions": [
+        "0.4.2"
+      ],
+      "license": "Apache-2.0",
+      "homepage": "https://github.com/eslint/rewrite/tree/main/packages/config-helpers#readme",
+      "description": "Helper utilities for creating ESLint configuration"
+    },
+    {
+      "name": "@eslint/core",
+      "versions": [
+        "0.17.0"
+      ],
+      "license": "Apache-2.0",
+      "author": "Nicholas C. Zakas",
+      "homepage": "https://github.com/eslint/rewrite/tree/main/packages/core#readme",
+      "description": "Runtime-agnostic core of ESLint"
+    },
+    {
+      "name": "@eslint/object-schema",
+      "versions": [
+        "2.1.7"
+      ],
+      "license": "Apache-2.0",
+      "author": "Nicholas C. Zakas",
+      "homepage": "https://github.com/eslint/rewrite/tree/main/packages/object-schema#readme",
+      "description": "An object schema merger/validator"
+    },
+    {
+      "name": "@eslint/plugin-kit",
+      "versions": [
+        "0.4.1"
+      ],
+      "license": "Apache-2.0",
+      "author": "Nicholas C. Zakas",
+      "homepage": "https://github.com/eslint/rewrite/tree/main/packages/plugin-kit#readme",
+      "description": "Utilities for building ESLint plugins."
+    },
+    {
+      "name": "@humanfs/core",
+      "versions": [
+        "0.19.1"
+      ],
+      "license": "Apache-2.0",
+      "author": "Nicholas C. Zakas",
+      "homepage": "https://github.com/humanwhocodes/humanfs#readme",
+      "description": "The core of the humanfs library."
+    },
+    {
+      "name": "@humanfs/node",
+      "versions": [
+        "0.16.7"
+      ],
+      "license": "Apache-2.0",
+      "author": "Nicholas C. Zakas",
+      "homepage": "https://github.com/humanwhocodes/humanfs#readme",
+      "description": "The Node.js bindings of the humanfs library."
+    },
+    {
+      "name": "@humanwhocodes/module-importer",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "Apache-2.0",
+      "author": "Nicholas C. Zaks",
+      "homepage": "https://github.com/humanwhocodes/module-importer#readme",
+      "description": "Universal module importer for Node.js"
+    },
+    {
+      "name": "@humanwhocodes/retry",
+      "versions": [
+        "0.4.3"
+      ],
+      "license": "Apache-2.0",
+      "author": "Nicholas C. Zaks",
+      "homepage": "https://github.com/humanwhocodes/retry#readme",
+      "description": "A utility to retry failed async methods."
+    },
+    {
+      "name": "@mliebelt/pgn-parser",
+      "versions": [
+        "1.4.19"
+      ],
+      "license": "Apache-2.0",
+      "author": "mliebelt",
+      "homepage": "https://github.com/mliebelt/pgn-parser/blob/master/README.md",
+      "description": "A PEG parser to read PGN (Portable Game Notation) games."
+    },
+    {
+      "name": "@mliebelt/pgn-types",
+      "versions": [
+        "1.0.4"
+      ],
+      "license": "Apache-2.0",
+      "author": "Markus Liebelt",
+      "homepage": "https://github.com/mliebelt/pgn-types#readme",
+      "description": "Provide the (type) language for all the `pgn-*` packages I am developing."
+    },
+    {
+      "name": "baseline-browser-mapping",
+      "versions": [
+        "2.10.0"
+      ],
+      "license": "Apache-2.0",
+      "homepage": "https://github.com/web-platform-dx/baseline-browser-mapping#readme",
+      "description": "A library for obtaining browser versions with their maximum supported Baseline feature set and Widely Available status."
+    },
+    {
+      "name": "doctrine",
+      "versions": [
+        "2.1.0"
+      ],
+      "license": "Apache-2.0",
+      "homepage": "https://github.com/eslint/doctrine",
+      "description": "JSDoc parser"
+    },
+    {
+      "name": "eslint-visitor-keys",
+      "versions": [
+        "3.4.3",
+        "4.2.1",
+        "5.0.1"
+      ],
+      "license": "Apache-2.0",
+      "author": "Toru Nagashima",
+      "homepage": "https://github.com/eslint/js/blob/main/packages/eslint-visitor-keys/README.md",
+      "description": "Constants and utilities about visitor keys to traverse AST."
+    },
+    {
+      "name": "expect-type",
+      "versions": [
+        "1.3.0"
+      ],
+      "license": "Apache-2.0",
+      "homepage": "https://github.com/mmkal/expect-type#readme"
+    },
+    {
+      "name": "typescript",
+      "versions": [
+        "5.9.3"
+      ],
+      "license": "Apache-2.0",
+      "author": "Microsoft Corp.",
+      "homepage": "https://www.typescriptlang.org/",
+      "description": "TypeScript is a language for application scale JavaScript development"
+    }
+  ],
+  "Python-2.0": [
+    {
+      "name": "argparse",
+      "versions": [
+        "2.0.1"
+      ],
+      "license": "Python-2.0",
+      "homepage": "https://github.com/nodeca/argparse#readme",
+      "description": "CLI arguments parser. Native port of python's argparse."
+    }
+  ],
+  "CC-BY-4.0": [
+    {
+      "name": "caniuse-lite",
+      "versions": [
+        "1.0.30001776"
+      ],
+      "license": "CC-BY-4.0",
+      "author": "Ben Briggs",
+      "homepage": "https://github.com/browserslist/caniuse-lite#readme",
+      "description": "A smaller version of caniuse-db, with only the essentials!"
+    }
+  ],
+  "BSD-2-Clause": [
+    {
+      "name": "chess.js",
+      "versions": [
+        "1.4.0"
+      ],
+      "license": "BSD-2-Clause",
+      "author": "Jeff Hlywa",
+      "homepage": "https://github.com/jhlywa/chess.js"
+    },
+    {
+      "name": "dotenv",
+      "versions": [
+        "16.6.1"
+      ],
+      "license": "BSD-2-Clause",
+      "homepage": "https://github.com/motdotla/dotenv#readme",
+      "description": "Loads environment variables from .env file"
+    },
+    {
+      "name": "eslint-scope",
+      "versions": [
+        "8.4.0"
+      ],
+      "license": "BSD-2-Clause",
+      "homepage": "https://github.com/eslint/js/blob/main/packages/eslint-scope/README.md",
+      "description": "ECMAScript scope analyzer for ESLint"
+    },
+    {
+      "name": "espree",
+      "versions": [
+        "10.4.0"
+      ],
+      "license": "BSD-2-Clause",
+      "author": "Nicholas C. Zakas",
+      "homepage": "https://github.com/eslint/js/blob/main/packages/espree/README.md",
+      "description": "An Esprima-compatible JavaScript parser built on Acorn"
+    },
+    {
+      "name": "esrecurse",
+      "versions": [
+        "4.3.0"
+      ],
+      "license": "BSD-2-Clause",
+      "homepage": "https://github.com/estools/esrecurse",
+      "description": "ECMAScript AST recursive visitor"
+    },
+    {
+      "name": "estraverse",
+      "versions": [
+        "5.3.0"
+      ],
+      "license": "BSD-2-Clause",
+      "homepage": "https://github.com/estools/estraverse",
+      "description": "ECMAScript JS AST traversal functions"
+    },
+    {
+      "name": "esutils",
+      "versions": [
+        "2.0.3"
+      ],
+      "license": "BSD-2-Clause",
+      "homepage": "https://github.com/estools/esutils",
+      "description": "utility box for ECMAScript language tools"
+    },
+    {
+      "name": "uri-js",
+      "versions": [
+        "4.4.1"
+      ],
+      "license": "BSD-2-Clause",
+      "author": "Gary Court",
+      "homepage": "https://github.com/garycourt/uri-js",
+      "description": "An RFC 3986/3987 compliant, scheme extendable URI/IRI parsing/validating/resolving library for JavaScript."
+    }
+  ],
+  "GPL-3.0-or-later": [
+    {
+      "name": "chessground",
+      "versions": [
+        "9.2.1"
+      ],
+      "license": "GPL-3.0-or-later",
+      "author": "Thibault Duplessis",
+      "homepage": "https://github.com/lichess-org/chessground#readme",
+      "description": "lichess.org chess ui"
+    }
+  ],
+  "ISC": [
+    {
+      "name": "electron-to-chromium",
+      "versions": [
+        "1.5.307"
+      ],
+      "license": "ISC",
+      "author": "Kilian Valkhof",
+      "homepage": "https://github.com/kilian/electron-to-chromium#readme",
+      "description": "Provides a list of electron-to-chromium version mappings"
+    },
+    {
+      "name": "fastq",
+      "versions": [
+        "1.20.1"
+      ],
+      "license": "ISC",
+      "author": "Matteo Collina",
+      "homepage": "https://github.com/mcollina/fastq#readme",
+      "description": "Fast, in memory work queue"
+    },
+    {
+      "name": "flatted",
+      "versions": [
+        "3.3.4"
+      ],
+      "license": "ISC",
+      "author": "Andrea Giammarchi",
+      "homepage": "https://github.com/WebReflection/flatted#readme",
+      "description": "A super light and fast circular JSON parser."
+    },
+    {
+      "name": "glob-parent",
+      "versions": [
+        "6.0.2"
+      ],
+      "license": "ISC",
+      "author": "Gulp Team",
+      "homepage": "https://github.com/gulpjs/glob-parent#readme",
+      "description": "Extract the non-magic parent path from a glob string."
+    },
+    {
+      "name": "isexe",
+      "versions": [
+        "2.0.0"
+      ],
+      "license": "ISC",
+      "author": "Isaac Z. Schlueter",
+      "homepage": "https://github.com/isaacs/isexe#readme",
+      "description": "Minimal module to check if a file is executable."
+    },
+    {
+      "name": "lru-cache",
+      "versions": [
+        "5.1.1",
+        "6.0.0"
+      ],
+      "license": "ISC",
+      "author": "Isaac Z. Schlueter",
+      "homepage": "https://github.com/isaacs/node-lru-cache#readme",
+      "description": "A cache object that deletes the least-recently-used items."
+    },
+    {
+      "name": "minimatch",
+      "versions": [
+        "3.1.5"
+      ],
+      "license": "ISC",
+      "author": "Isaac Z. Schlueter",
+      "homepage": "https://github.com/isaacs/minimatch#readme",
+      "description": "a glob matcher in javascript"
+    },
+    {
+      "name": "pg-int8",
+      "versions": [
+        "1.0.1"
+      ],
+      "license": "ISC",
+      "homepage": "https://github.com/charmander/pg-int8#readme",
+      "description": "64-bit big-endian signed integer-to-string conversion"
+    },
+    {
+      "name": "picocolors",
+      "versions": [
+        "1.1.1"
+      ],
+      "license": "ISC",
+      "author": "Alexey Raspopov",
+      "homepage": "https://github.com/alexeyraspopov/picocolors#readme",
+      "description": "The tiniest and the fastest library for terminal output formatting with ANSI colors"
+    },
+    {
+      "name": "semver",
+      "versions": [
+        "6.3.1",
+        "7.7.4"
+      ],
+      "license": "ISC",
+      "author": "GitHub Inc.",
+      "homepage": "https://github.com/npm/node-semver#readme",
+      "description": "The semantic version parser used by npm."
+    },
+    {
+      "name": "siginfo",
+      "versions": [
+        "2.0.0"
+      ],
+      "license": "ISC",
+      "author": "Emil Bay",
+      "homepage": "https://github.com/emilbayes/siginfo#readme",
+      "description": "Utility module to print pretty messages on SIGINFO/SIGUSR1"
+    },
+    {
+      "name": "split2",
+      "versions": [
+        "4.2.0"
+      ],
+      "license": "ISC",
+      "author": "Matteo Collina",
+      "homepage": "https://github.com/mcollina/split2#readme",
+      "description": "split a Text Stream into a Line Stream, using Stream 3"
+    },
+    {
+      "name": "which",
+      "versions": [
+        "2.0.2"
+      ],
+      "license": "ISC",
+      "author": "Isaac Z. Schlueter",
+      "homepage": "https://github.com/isaacs/node-which#readme",
+      "description": "Like which(1) unix command. Find the first instance of an executable in the PATH."
+    },
+    {
+      "name": "yallist",
+      "versions": [
+        "3.1.1",
+        "4.0.0"
+      ],
+      "license": "ISC",
+      "author": "Isaac Z. Schlueter",
+      "homepage": "https://github.com/isaacs/yallist#readme",
+      "description": "Yet Another Linked List"
+    }
+  ],
+  "BSD-3-Clause": [
+    {
+      "name": "esquery",
+      "versions": [
+        "1.7.0"
+      ],
+      "license": "BSD-3-Clause",
+      "author": "Joel Feenstra",
+      "homepage": "https://github.com/estools/esquery/",
+      "description": "A query library for ECMAScript AST using a CSS selector like query language."
+    },
+    {
+      "name": "fast-uri",
+      "versions": [
+        "3.1.0"
+      ],
+      "license": "BSD-3-Clause",
+      "author": "Vincent Le Goff",
+      "homepage": "https://github.com/fastify/fast-uri",
+      "description": "Dependency-free RFC 3986 URI toolbox"
+    },
+    {
+      "name": "light-my-request",
+      "versions": [
+        "6.6.0"
+      ],
+      "license": "BSD-3-Clause",
+      "author": "Tomas Della Vedova - @delvedor",
+      "homepage": "https://github.com/fastify/light-my-request#readme",
+      "description": "Fake HTTP injection library"
+    },
+    {
+      "name": "moo",
+      "versions": [
+        "0.5.3"
+      ],
+      "license": "BSD-3-Clause",
+      "author": "Tim Radvan",
+      "homepage": "https://github.com/tjvr/moo#readme",
+      "description": "Optimised tokenizer/lexer generator! 🐄 Much performance. Moo!"
+    },
+    {
+      "name": "secure-json-parse",
+      "versions": [
+        "4.1.0"
+      ],
+      "license": "BSD-3-Clause",
+      "author": "Eran Hammer",
+      "homepage": "https://github.com/fastify/secure-json-parse#readme",
+      "description": "JSON parse with prototype poisoning protection"
+    },
+    {
+      "name": "source-map-js",
+      "versions": [
+        "1.2.1"
+      ],
+      "license": "BSD-3-Clause",
+      "author": "Valentin 7rulnik Semirulnik",
+      "homepage": "https://github.com/7rulnik/source-map-js",
+      "description": "Generates and consumes source maps"
+    }
+  ],
+  "Public Domain": [
+    {
+      "name": "jsonify",
+      "versions": [
+        "0.0.1"
+      ],
+      "license": "Public Domain",
+      "author": "Douglas Crockford",
+      "homepage": "https://github.com/ljharb/jsonify#readme",
+      "description": "JSON without touching any globals"
+    }
+  ],
+  "BlueOak-1.0.0": [
+    {
+      "name": "minimatch",
+      "versions": [
+        "10.2.4"
+      ],
+      "license": "BlueOak-1.0.0",
+      "author": "Isaac Z. Schlueter",
+      "homepage": "https://github.com/isaacs/minimatch#readme",
+      "description": "a glob matcher in javascript"
+    }
+  ],
+  "CC0-1.0": [
+    {
+      "name": "railroad-diagrams",
+      "versions": [
+        "1.0.0"
+      ],
+      "license": "CC0-1.0",
+      "author": "Tab Atkins Jr.",
+      "homepage": "https://github.com/tabatkins/railroad-diagrams",
+      "description": "A small JS+SVG library for drawing railroad syntax diagrams."
+    }
+  ],
+  "GPL": [
+    {
+      "name": "stockfish",
+      "versions": [
+        "16.0.0"
+      ],
+      "license": "GPL",
+      "author": "Nathan Rugg",
+      "homepage": "https://github.com/nmrugg/stockfish.js#readme",
+      "description": "The Stockfish chess engine in Web Assembly (WASM)"
+    }
+  ]
+}
