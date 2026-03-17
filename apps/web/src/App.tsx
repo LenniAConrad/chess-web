@@ -1,14 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Chess, type PieceSymbol, type Square } from 'chess.js';
 import { ChessBoard } from './components/ChessBoard.js';
 import { EvalBar } from './components/EvalBar.js';
 import { useLocalPrefs } from './hooks/useLocalPrefs.js';
 import { useStockfishEval } from './hooks/useStockfishEval.js';
-import {
-  getHistoryDotLabel,
-  getHistoryDotSymbol,
-  getHistoryDotTone
-} from './lib/historyDots.js';
+import { getHistoryDotLabel, getHistoryDotSymbol, getHistoryDotTone } from './lib/historyDots.js';
 import {
   getHint,
   loadSession,
@@ -51,6 +47,18 @@ type PrimaryMoveSoundType = Exclude<MoveSoundType, 'check'>;
 interface MoveSoundDecision {
   primary: PrimaryMoveSoundType | null;
   isCheck: boolean;
+}
+
+interface AppChromeLink {
+  href: string;
+  label: string;
+  external?: boolean;
+}
+
+interface FallingCapturePiece {
+  id: number;
+  src: string;
+  style: CSSProperties & Record<`--${string}`, string>;
 }
 
 interface AutoPlayAnimationPayload {
@@ -169,6 +177,29 @@ function getMoveSquaresBetweenFens(beforeFen: string, afterFen: string): [Square
   return null;
 }
 
+function getCapturedPieceAsset(fen: string, uciMove: string): string | null {
+  if (uciMove.length < 4) {
+    return null;
+  }
+
+  const chess = new Chess(fen);
+  const from = uciMove.slice(0, 2) as Square;
+  const to = uciMove.slice(2, 4) as Square;
+  const promotion = (uciMove[4] as PieceSymbol | undefined) ?? undefined;
+  const move = chess.move({ from, to, promotion });
+
+  if (!move?.captured) {
+    return null;
+  }
+
+  const capturedColor = move.color === 'w' ? 'b' : 'w';
+  return `/pieces/cburnett/${capturedColor}${move.captured.toUpperCase()}.svg`;
+}
+
+function randomBetween(min: number, max: number): number {
+  return min + Math.random() * (max - min);
+}
+
 function isPuzzleSolved(snapshot: SessionStatePayload): boolean {
   return snapshot.completedBranches >= snapshot.totalLines;
 }
@@ -242,6 +273,9 @@ export function App() {
   const [reviewPath, setReviewPath] = useState<number[] | null>(null);
   const [wrongMoveSquare, setWrongMoveSquare] = useState<Square | null>(null);
   const [wrongMoveFlashToken, setWrongMoveFlashToken] = useState(0);
+  const [fallingCapturePieces, setFallingCapturePieces] = useState<FallingCapturePiece[]>([]);
+  const headerSettingsRef = useRef<HTMLDetailsElement | null>(null);
+  const capturePieceIdRef = useRef(0);
   const recentHistoryItems = historyItems;
 
   const reviewNodeId = reviewPath?.at(-1) ?? null;
@@ -282,7 +316,7 @@ export function App() {
   }, [sessionTree]);
 
   const isReviewMode = Boolean(reviewPath && reviewPath.length > 1);
-  const reviewNode = reviewNodeId ? treeNodeMap.get(reviewNodeId) ?? null : null;
+  const reviewNode = reviewNodeId ? (treeNodeMap.get(reviewNodeId) ?? null) : null;
   const reviewFen = reviewNode?.fen_after ?? null;
   const liveFen = displayFen ?? state?.fen ?? null;
   const boardFen = reviewFen ?? liveFen;
@@ -372,6 +406,49 @@ export function App() {
   }, [prefs.darkMode]);
 
   useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      const settingsEl = headerSettingsRef.current;
+      const target = event.target;
+      if (!settingsEl?.open || !(target instanceof Node)) {
+        return;
+      }
+
+      if (!settingsEl.contains(target)) {
+        settingsEl.open = false;
+      }
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, []);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape' || !prefs.zenMode) {
+        return;
+      }
+
+      setPrefs((previous) => ({
+        ...previous,
+        zenMode: false
+      }));
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [prefs.zenMode, setPrefs]);
+
+  useEffect(() => {
+    if (!prefs.captureRain) {
+      setFallingCapturePieces([]);
+    }
+  }, [prefs.captureRain]);
+
+  useEffect(() => {
     if (!sessionId) {
       return;
     }
@@ -397,6 +474,42 @@ export function App() {
       setStatusText(status);
     },
     [resetHints]
+  );
+
+  const spawnCaptureRainPiece = useCallback(
+    (fen: string, uciMove: string) => {
+      if (!prefs.captureRain) {
+        return;
+      }
+
+      const src = getCapturedPieceAsset(fen, uciMove);
+      if (!src) {
+        return;
+      }
+
+      const id = capturePieceIdRef.current++;
+      const fallDurationMs = Math.round(randomBetween(6500, 12000));
+      const piece = {
+        id,
+        src,
+        style: {
+          '--capture-x': `${randomBetween(4, 96).toFixed(2)}%`,
+          '--capture-size': `${Math.round(randomBetween(44, 118))}px`,
+          '--capture-drift-x': `${Math.round(randomBetween(-180, 180))}px`,
+          '--capture-fall-duration': `${fallDurationMs}ms`,
+          '--capture-spin-from': `${Math.round(randomBetween(-80, 80))}deg`,
+          '--capture-spin-to': `${Math.round(randomBetween(-1440, 1440))}deg`,
+          '--capture-opacity': randomBetween(0.45, 0.9).toFixed(2)
+        }
+      } satisfies FallingCapturePiece;
+
+      setFallingCapturePieces((previous) => [...previous.slice(-11), piece]);
+
+      window.setTimeout(() => {
+        setFallingCapturePieces((previous) => previous.filter((entry) => entry.id !== id));
+      }, fallDurationMs + 220);
+    },
+    [prefs.captureRain]
   );
 
   const animateAutoPlay = useCallback(
@@ -436,7 +549,8 @@ export function App() {
       await maybeWait(AUTO_PLAY_DELAY_MS, animationsEnabled);
 
       for (const move of response.autoPlayedMoves) {
-        const soundDecision = getMoveSoundDecision(chess.fen(), move);
+        const sourceFen = chess.fen();
+        const soundDecision = getMoveSoundDecision(sourceFen, move);
         const ok = applyUciMove(chess, move);
         if (!ok) {
           break;
@@ -445,6 +559,7 @@ export function App() {
         if (moveSquares) {
           setLastMoveSquares(moveSquares);
         }
+        spawnCaptureRainPiece(sourceFen, move);
         playMoveSoundDecision(soundDecision, soundEnabled);
         setDisplayFen(chess.fen());
         await maybeWait(AUTO_PLAY_DELAY_MS, animationsEnabled);
@@ -452,7 +567,7 @@ export function App() {
 
       setDisplayFen(response.nextState.fen);
     },
-    []
+    [spawnCaptureRainPiece]
   );
 
   const loadInitial = useCallback(async () => {
@@ -467,7 +582,10 @@ export function App() {
 
     try {
       const response = await startSession(prefs.variationMode, prefs.autoNext);
-      applyStartedSession(response, response.state.toMove === 'w' ? 'White to move' : 'Black to move');
+      applyStartedSession(
+        response,
+        response.state.toMove === 'w' ? 'White to move' : 'Black to move'
+      );
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : 'Failed to load puzzle');
       setStatusText('Failed to load puzzle');
@@ -482,7 +600,14 @@ export function App() {
 
   const handleMove = useCallback(
     async (uciMove: string) => {
-      if (!sessionId || loading || historyLoading || !state || isReviewMode || isPuzzleSolved(state)) {
+      if (
+        !sessionId ||
+        loading ||
+        historyLoading ||
+        !state ||
+        isReviewMode ||
+        isPuzzleSolved(state)
+      ) {
         return;
       }
 
@@ -494,6 +619,7 @@ export function App() {
       if (optimisticFen) {
         setDisplayFen(optimisticFen);
         setLastMoveSquares(optimisticLastMove);
+        spawnCaptureRainPiece(baseFen, uciMove);
       }
 
       setLoading(true);
@@ -526,7 +652,12 @@ export function App() {
           setCorrectText('Correct');
           setStatusText('Correct move');
           await maybeWait(CORRECT_BREAK_MS, prefs.animations);
-          await animateAutoPlay(response, optimisticFen ?? baseFen, prefs.animations, prefs.soundEnabled);
+          await animateAutoPlay(
+            response,
+            optimisticFen ?? baseFen,
+            prefs.animations,
+            prefs.soundEnabled
+          );
           setStatusText(
             `Correct. Branch ${response.nextState.completedBranches + 1}/${response.nextState.totalLines}`
           );
@@ -535,7 +666,12 @@ export function App() {
           setCorrectText('Correct');
           setStatusText('Correct move');
           await maybeWait(CORRECT_BREAK_MS, prefs.animations);
-          await animateAutoPlay(response, optimisticFen ?? baseFen, prefs.animations, prefs.soundEnabled);
+          await animateAutoPlay(
+            response,
+            optimisticFen ?? baseFen,
+            prefs.animations,
+            prefs.soundEnabled
+          );
           setStatusText('Puzzle complete');
           if (prefs.autoNext) {
             await maybeWait(SHORT_STATUS_DELAY_MS, prefs.animations);
@@ -575,6 +711,7 @@ export function App() {
       prefs.variationMode,
       resetHints,
       sessionId,
+      spawnCaptureRainPiece,
       state
     ]
   );
@@ -592,9 +729,7 @@ export function App() {
       setHintLevel(nextHintLevel);
       setHintSquare(response.pieceFromSquare);
       setHintArrow(
-        nextHintLevel >= 2 && response.bestMoveUci
-          ? getMoveSquares(response.bestMoveUci)
-          : null
+        nextHintLevel >= 2 && response.bestMoveUci ? getMoveSquares(response.bestMoveUci) : null
       );
       setState(response.state);
       setDisplayFen(response.state.fen);
@@ -635,7 +770,9 @@ export function App() {
         if (!response.bestMoveUci || !response.afterFen) {
           setDisplayFen(response.nextState.fen);
           setLastMoveSquares(null);
-          setStatusText(isPuzzleSolved(response.nextState) ? 'Puzzle complete' : 'No move to reveal');
+          setStatusText(
+            isPuzzleSolved(response.nextState) ? 'Puzzle complete' : 'No move to reveal'
+          );
           await loadSessionArtifacts(sessionId);
           return;
         }
@@ -646,11 +783,14 @@ export function App() {
         }
 
         const moveSoundDecision = getMoveSoundDecision(baseFen, response.bestMoveUci);
+        spawnCaptureRainPiece(baseFen, response.bestMoveUci);
         playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
 
         setDisplayFen(response.afterFen);
         setStatusText(
-          mode === 'auto' ? `Autoplay: ${response.bestMoveUci}` : `Best move: ${response.bestMoveUci}`
+          mode === 'auto'
+            ? `Autoplay: ${response.bestMoveUci}`
+            : `Best move: ${response.bestMoveUci}`
         );
         await maybeWait(CORRECT_BREAK_MS, prefs.animations);
 
@@ -684,6 +824,7 @@ export function App() {
       prefs.soundEnabled,
       resetHints,
       sessionId,
+      spawnCaptureRainPiece,
       state
     ]
   );
@@ -736,7 +877,14 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [applyStartedSession, loading, historyLoading, prefs.autoNext, prefs.variationMode, sessionId]);
+  }, [
+    applyStartedSession,
+    loading,
+    historyLoading,
+    prefs.autoNext,
+    prefs.variationMode,
+    sessionId
+  ]);
 
   const handleRestartPuzzle = useCallback(async () => {
     if (!puzzle || !state || loading || historyLoading || isReviewMode || !isPuzzleSolved(state)) {
@@ -777,9 +925,12 @@ export function App() {
       return;
     }
 
-    const timer = window.setTimeout(() => {
-      void handleReveal('auto');
-    }, prefs.animations ? 450 : NO_ANIMATION_DELAY_MS);
+    const timer = window.setTimeout(
+      () => {
+        void handleReveal('auto');
+      },
+      prefs.animations ? 450 : NO_ANIMATION_DELAY_MS
+    );
 
     return () => {
       window.clearTimeout(timer);
@@ -829,7 +980,15 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [applyStartedSession, loading, historyLoading, prefs.autoNext, prefs.variationMode, puzzleIdInput, resetHints]);
+  }, [
+    applyStartedSession,
+    loading,
+    historyLoading,
+    prefs.autoNext,
+    prefs.variationMode,
+    puzzleIdInput,
+    resetHints
+  ]);
 
   const handleLoadHistorySession = useCallback(
     async (targetSessionId: string) => {
@@ -918,361 +1077,477 @@ export function App() {
   }
 
   const interactive = boardCanInteract;
+  const footerLinks: AppChromeLink[] = [
+    { href: REPO_URL, label: 'GitHub', external: true }
+  ];
 
   return (
     <>
-      <main className="layout split-layout">
-        <section className="board-column">
-          <div className={`board-stack ${prefs.showEngineEval ? '' : 'no-eval'}`}>
-            <div className="board-stage">
-              {prefs.showEngineEval ? (
-                <EvalBar
-                  cp={engineEval.cp}
-                  mate={engineEval.mate}
-                />
-              ) : null}
-              <div className="board-shell">
-                <ChessBoard
-                  fen={boardFen ?? state.fen}
-                  orientation={playerOrientation}
-                  checkColor={checkColor}
-                  interactive={interactive}
-                  canMoveExecution={!loading && !historyLoading}
-                  animationsEnabled={prefs.animations}
-                  premoveResetToken={sessionId}
-                  autoQueenPromotion={prefs.autoQueenPromotion}
-                  hintSquare={hintSquare}
-                  hintArrow={hintArrow}
-                  lastMove={isReviewMode ? reviewLastMoveSquares : lastMoveSquares}
-                  wrongMoveSquare={isReviewMode ? null : wrongMoveSquare}
-                  wrongMoveFlashToken={wrongMoveFlashToken}
-                  onMove={(uciMove) => void handleMove(uciMove)}
-                />
+      <div className={`app-shell ${prefs.zenMode ? 'is-zen-mode' : ''}`}>
+        {prefs.zenMode ? (
+          <button
+            type="button"
+            className="zen-exit-hint"
+            onClick={() =>
+              setPrefs((previous) => ({
+                ...previous,
+                zenMode: false
+              }))
+            }
+          >
+            Click here or press Esc to exit zen mode
+          </button>
+        ) : null}
+        <div className="capture-rain-layer" aria-hidden="true">
+          {fallingCapturePieces.map((piece) => (
+            <div key={piece.id} className="capture-rain-piece" style={piece.style}>
+              <img className="capture-rain-piece-spin" src={piece.src} alt="" />
+            </div>
+          ))}
+        </div>
+        <header className="app-header">
+          <div className="app-header-inner">
+            <a className="app-brand" href="/" aria-label="chess-web home">
+              chess-web
+            </a>
+
+            <details ref={headerSettingsRef} className="app-header-settings settings-panel">
+              <summary className="settings-summary">Settings</summary>
+              <div className="settings-content">
+                <div className="toggle-chip-grid">
+                  <button
+                    type="button"
+                    className={`toggle-chip ${prefs.variationMode === 'explore' ? 'is-on' : 'is-off'}`}
+                    aria-pressed={prefs.variationMode === 'explore'}
+                    onClick={() => toggleVariationMode(prefs.variationMode !== 'explore')}
+                  >
+                    <span className="toggle-chip-text">Explore variations</span>
+                    <span className="toggle-chip-track" aria-hidden="true">
+                      <span className="toggle-chip-thumb" />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`toggle-chip ${prefs.autoNext ? 'is-on' : 'is-off'}`}
+                    aria-pressed={prefs.autoNext}
+                    onClick={() =>
+                      setPrefs((previous) => ({
+                        ...previous,
+                        autoNext: !previous.autoNext
+                      }))
+                    }
+                  >
+                    <span className="toggle-chip-text">Auto-next puzzle</span>
+                    <span className="toggle-chip-track" aria-hidden="true">
+                      <span className="toggle-chip-thumb" />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`toggle-chip ${prefs.hintsEnabled ? 'is-on' : 'is-off'}`}
+                    aria-pressed={prefs.hintsEnabled}
+                    onClick={() =>
+                      setPrefs((previous) => ({
+                        ...previous,
+                        hintsEnabled: !previous.hintsEnabled
+                      }))
+                    }
+                  >
+                    <span className="toggle-chip-text">Enable hints</span>
+                    <span className="toggle-chip-track" aria-hidden="true">
+                      <span className="toggle-chip-thumb" />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`toggle-chip ${prefs.darkMode ? 'is-on' : 'is-off'}`}
+                    aria-pressed={prefs.darkMode}
+                    onClick={() =>
+                      setPrefs((previous) => ({
+                        ...previous,
+                        darkMode: !previous.darkMode
+                      }))
+                    }
+                  >
+                    <span className="toggle-chip-text">Dark mode</span>
+                    <span className="toggle-chip-track" aria-hidden="true">
+                      <span className="toggle-chip-thumb" />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`toggle-chip ${prefs.zenMode ? 'is-on' : 'is-off'}`}
+                    aria-pressed={prefs.zenMode}
+                    onClick={() =>
+                      setPrefs((previous) => ({
+                        ...previous,
+                        zenMode: !previous.zenMode
+                      }))
+                    }
+                  >
+                    <span className="toggle-chip-text">Zen mode</span>
+                    <span className="toggle-chip-track" aria-hidden="true">
+                      <span className="toggle-chip-thumb" />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`toggle-chip ${prefs.captureRain ? 'is-on' : 'is-off'}`}
+                    aria-pressed={prefs.captureRain}
+                    onClick={() =>
+                      setPrefs((previous) => ({
+                        ...previous,
+                        captureRain: !previous.captureRain
+                      }))
+                    }
+                  >
+                    <span className="toggle-chip-text">Capture rain</span>
+                    <span className="toggle-chip-track" aria-hidden="true">
+                      <span className="toggle-chip-thumb" />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`toggle-chip ${prefs.boardGlass ? 'is-on' : 'is-off'}`}
+                    aria-pressed={prefs.boardGlass}
+                    onClick={() =>
+                      setPrefs((previous) => ({
+                        ...previous,
+                        boardGlass: !previous.boardGlass
+                      }))
+                    }
+                  >
+                    <span className="toggle-chip-text">Board glass</span>
+                    <span className="toggle-chip-track" aria-hidden="true">
+                      <span className="toggle-chip-thumb" />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`toggle-chip ${prefs.autoPlay ? 'is-on' : 'is-off'}`}
+                    aria-pressed={prefs.autoPlay}
+                    onClick={() =>
+                      setPrefs((previous) => ({
+                        ...previous,
+                        autoPlay: !previous.autoPlay
+                      }))
+                    }
+                  >
+                    <span className="toggle-chip-text">Autoplay puzzles</span>
+                    <span className="toggle-chip-track" aria-hidden="true">
+                      <span className="toggle-chip-thumb" />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`toggle-chip ${prefs.animations ? 'is-on' : 'is-off'}`}
+                    aria-pressed={prefs.animations}
+                    onClick={() =>
+                      setPrefs((previous) => ({
+                        ...previous,
+                        animations: !previous.animations
+                      }))
+                    }
+                  >
+                    <span className="toggle-chip-text">Animations</span>
+                    <span className="toggle-chip-track" aria-hidden="true">
+                      <span className="toggle-chip-thumb" />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`toggle-chip ${prefs.autoQueenPromotion ? 'is-on' : 'is-off'}`}
+                    aria-pressed={prefs.autoQueenPromotion}
+                    onClick={() =>
+                      setPrefs((previous) => ({
+                        ...previous,
+                        autoQueenPromotion: !previous.autoQueenPromotion
+                      }))
+                    }
+                  >
+                    <span className="toggle-chip-text">Auto-queen</span>
+                    <span className="toggle-chip-track" aria-hidden="true">
+                      <span className="toggle-chip-thumb" />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`toggle-chip ${prefs.soundEnabled ? 'is-on' : 'is-off'}`}
+                    aria-pressed={prefs.soundEnabled}
+                    onClick={() =>
+                      setPrefs((previous) => ({
+                        ...previous,
+                        soundEnabled: !previous.soundEnabled
+                      }))
+                    }
+                  >
+                    <span className="toggle-chip-text">Sound</span>
+                    <span className="toggle-chip-track" aria-hidden="true">
+                      <span className="toggle-chip-thumb" />
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    className={`toggle-chip ${prefs.showEngineEval ? 'is-on' : 'is-off'}`}
+                    aria-pressed={prefs.showEngineEval}
+                    onClick={() =>
+                      setPrefs((previous) => ({
+                        ...previous,
+                        showEngineEval: !previous.showEngineEval
+                      }))
+                    }
+                  >
+                    <span className="toggle-chip-text">Engine + eval</span>
+                    <span className="toggle-chip-track" aria-hidden="true">
+                      <span className="toggle-chip-thumb" />
+                    </span>
+                  </button>
+                </div>
+
+                <div className="id-search-row">
+                  <input
+                    type="text"
+                    value={puzzleIdInput}
+                    onChange={(event) => setPuzzleIdInput(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        void handleLoadById();
+                      }
+                    }}
+                    placeholder="Puzzle ID (UUID)"
+                    spellCheck={false}
+                  />
+                  <button
+                    type="button"
+                    disabled={loading || historyLoading || puzzleIdInput.trim().length === 0}
+                    onClick={() => void handleLoadById()}
+                  >
+                    Load ID
+                  </button>
+                </div>
+              </div>
+            </details>
+          </div>
+        </header>
+        <main className="layout split-layout">
+          <section className="board-column" id="board">
+            <div className={`board-stack ${prefs.showEngineEval ? '' : 'no-eval'}`}>
+              <div className="board-stage">
+                {prefs.showEngineEval ? (
+                  <EvalBar cp={engineEval.cp} mate={engineEval.mate} />
+                ) : null}
+                <div className="board-shell">
+                  <ChessBoard
+                    fen={boardFen ?? state.fen}
+                    orientation={playerOrientation}
+                    checkColor={checkColor}
+                    interactive={interactive}
+                    canMoveExecution={!loading && !historyLoading}
+                    animationsEnabled={prefs.animations}
+                    premoveResetToken={sessionId}
+                    autoQueenPromotion={prefs.autoQueenPromotion}
+                    hintSquare={hintSquare}
+                    hintArrow={hintArrow}
+                    lastMove={isReviewMode ? reviewLastMoveSquares : lastMoveSquares}
+                    wrongMoveSquare={isReviewMode ? null : wrongMoveSquare}
+                    wrongMoveFlashToken={wrongMoveFlashToken}
+                    glassEnabled={prefs.boardGlass}
+                    onMove={(uciMove) => void handleMove(uciMove)}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </section>
-
-        <aside className="side-column panel">
-          <section className="rail-block header rail-status">
-            <h1>Chess Puzzle Trainer</h1>
-            <p className="subtitle">{puzzle.title || 'Puzzle'}</p>
-            <p className="meta">ID: {puzzle.publicId}</p>
-            <p className="turn-indicator">{turnLabel}</p>
-            {prefs.showEngineEval ? (
-              <p className="meta">
-                Engine: {engineEvalText} | d{engineEval.depth} | {engineEvalSideText}
-              </p>
-            ) : null}
-            <p className="status status-line">{statusText}</p>
-            <p className="correct correct-line">{correctText ?? '\u00A0'}</p>
-            <p className="meta expected-line">{lastBestMove ? `Expected: ${lastBestMove}` : '\u00A0'}</p>
-            {isReviewMode ? <p className="meta">Review mode active</p> : null}
           </section>
 
-        <section className="rail-block rail-actions">
-          <div className="button-row">
-            <button
-              type="button"
-              className="btn-secondary"
-              disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled}
-              onClick={() => void handleHint()}
-            >
-              Hint
-            </button>
-            <button
-              type="button"
-              className="btn-secondary"
-              disabled={panelControlsDisabled || isReviewMode}
-              onClick={() => void handleReveal()}
-            >
-              Show solution
-            </button>
-            {puzzleIsComplete ? (
-              <button
-                type="button"
-                className="btn-secondary"
-                disabled={panelControlsDisabled || isReviewMode}
-                onClick={() => void handleRestartPuzzle()}
-              >
-                Restart puzzle
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="btn-secondary"
-                disabled={panelControlsDisabled || isReviewMode}
-                onClick={() => void handleSkipVariation()}
-              >
-                Skip variation
-              </button>
-            )}
-            <button
-              type="button"
-              className="btn-primary"
-              disabled={panelControlsDisabled}
-              onClick={() => void handleNextPuzzle()}
-            >
-              Next puzzle
-            </button>
-          </div>
+          <aside className="side-column panel">
+            <section className="rail-block header rail-status">
+              <p className={`subtitle rail-title ${!puzzle.title ? 'is-untitled' : ''}`}>
+                {puzzle.title || 'Untitled Puzzle'}
+              </p>
+              <p className="meta rail-id">ID: {puzzle.publicId}</p>
+              <div className="rail-status-main">
+                <p className="turn-indicator">{turnLabel}</p>
+                {prefs.showEngineEval ? (
+                  <p className="meta rail-engine">
+                    Engine: {engineEvalText} | d{engineEval.depth} | {engineEvalSideText}
+                  </p>
+                ) : null}
+                <p className="status status-line">{statusText}</p>
+                <p className="correct correct-line">{correctText ?? '\u00A0'}</p>
+              </div>
+              <div className="rail-status-footer">
+                <p className="meta expected-line">
+                  {lastBestMove ? `Expected: ${lastBestMove}` : '\u00A0'}
+                </p>
+                <p className="meta rail-branch">Completed {state.completedBranches}/{state.totalLines}</p>
+                {isReviewMode ? <p className="meta rail-review">Review mode active</p> : null}
+              </div>
+            </section>
 
-          <p className="meta rail-branch">
-            Branch {state.lineIndex + 1}/{state.totalLines} | Completed {state.completedBranches}/{state.totalLines}
-          </p>
-        </section>
-
-        <section className="rail-block history-strip" aria-label="Recent game history">
-          <div className="history-head">
-            <p className="history-title">Recent games</p>
-          </div>
-          <div className="history-list">
-            {recentHistoryItems.map((item) => {
-              const tone = getHistoryDotTone(item);
-              const label = getHistoryDotLabel(tone);
-              const symbol = getHistoryDotSymbol(tone);
-              const selected = item.sessionId === sessionId;
-              return (
+            <section className="rail-block rail-actions">
+              <div className="button-row">
                 <button
-                  key={item.sessionId}
                   type="button"
-                  className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
-                  onClick={() => void handleLoadHistorySession(item.sessionId)}
-                  disabled={panelControlsDisabled}
-                  aria-label={`${selected ? 'Current' : label} puzzle ${item.puzzlePublicId} from history`}
-                  title={`${selected ? 'Current' : label} · ${item.puzzlePublicId} · ${item.puzzleTitle || 'Puzzle'} · ${new Date(item.createdAt).toLocaleString()}`}
+                  className="btn-secondary"
+                  disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled}
+                  onClick={() => void handleHint()}
                 >
-                  {symbol}
+                  Hint
                 </button>
-              );
-            })}
-          </div>
-          {historyError ? <p className="error">{historyError}</p> : null}
-        </section>
-
-        <section className="rail-block pgn-panel">
-          <div className="pgn-header-row">
-            <p className="pgn-title">PGN Explorer</p>
-            <div className="pgn-actions">
-              <button type="button" disabled={panelControlsDisabled || !isReviewMode} onClick={handleReviewBackOne}>
-                Back one move
-              </button>
-              <button type="button" disabled={panelControlsDisabled || !isReviewMode} onClick={handleBackToLive}>
-                Back to live puzzle
-              </button>
-            </div>
-          </div>
-
-          <p className="meta pgn-path">
-            {isReviewMode && reviewMoves.length > 0 ? `Path: ${reviewMoves.join(' ')}` : 'Path: Live position'}
-          </p>
-
-          {treeError ? <p className="error">{treeError}</p> : null}
-
-          <div className="pgn-move-list">
-            {pgnNextMoves.length === 0 ? (
-              <span className="meta">No legal continuation from this node</span>
-            ) : (
-              pgnNextMoves.map((node) => (
                 <button
-                  key={node.id}
                   type="button"
-                  className={`pgn-move ${node.is_mainline ? 'is-mainline' : ''}`}
-                  disabled={panelControlsDisabled}
-                  onClick={() => handleReviewMove(node)}
+                  className="btn-secondary"
+                  disabled={panelControlsDisabled || isReviewMode}
+                  onClick={() => void handleReveal()}
                 >
-                  <span>{node.san || node.uci}</span>
-                  <span>{node.is_mainline ? 'Main' : 'Var'}</span>
+                  Show solution
                 </button>
-              ))
-            )}
-          </div>
-        </section>
+                {puzzleIsComplete ? (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={panelControlsDisabled || isReviewMode}
+                    onClick={() => void handleRestartPuzzle()}
+                  >
+                    Restart puzzle
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={panelControlsDisabled || isReviewMode}
+                    onClick={() => void handleSkipVariation()}
+                  >
+                    Skip variation
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={panelControlsDisabled}
+                  onClick={() => void handleNextPuzzle()}
+                >
+                  Next puzzle
+                </button>
+              </div>
 
-        <details className="rail-block settings-panel">
-          <summary className="settings-summary">Settings</summary>
-          <div className="settings-content">
-            <div className="toggle-chip-grid">
-              <button
-                type="button"
-                className={`toggle-chip ${prefs.variationMode === 'explore' ? 'is-on' : 'is-off'}`}
-                aria-pressed={prefs.variationMode === 'explore'}
-                onClick={() => toggleVariationMode(prefs.variationMode !== 'explore')}
-              >
-                <span className="toggle-chip-text">Explore variations</span>
-                <span className="toggle-chip-track" aria-hidden="true">
-                  <span className="toggle-chip-thumb" />
-                </span>
-              </button>
+            </section>
 
-              <button
-                type="button"
-                className={`toggle-chip ${prefs.autoNext ? 'is-on' : 'is-off'}`}
-                aria-pressed={prefs.autoNext}
-                onClick={() =>
-                  setPrefs((previous) => ({
-                    ...previous,
-                    autoNext: !previous.autoNext
-                  }))
-                }
-              >
-                <span className="toggle-chip-text">Auto-next puzzle</span>
-                <span className="toggle-chip-track" aria-hidden="true">
-                  <span className="toggle-chip-thumb" />
-                </span>
-              </button>
+            <section
+              className="rail-block history-strip"
+              id="history"
+              aria-label="Recent game history"
+            >
+              <div className="history-head">
+                <p className="history-title">Recent games</p>
+              </div>
+              <div className="history-list">
+                {recentHistoryItems.map((item) => {
+                  const tone = getHistoryDotTone(item);
+                  const label = getHistoryDotLabel(tone);
+                  const symbol = getHistoryDotSymbol(tone);
+                  const selected = item.sessionId === sessionId;
+                  return (
+                    <button
+                      key={item.sessionId}
+                      type="button"
+                      className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
+                      onClick={() => void handleLoadHistorySession(item.sessionId)}
+                      disabled={panelControlsDisabled}
+                      aria-label={`${selected ? 'Current' : label} puzzle ${item.puzzlePublicId} from history`}
+                      title={`${selected ? 'Current' : label} · ${item.puzzlePublicId} · ${item.puzzleTitle || 'Puzzle'} · ${new Date(item.createdAt).toLocaleString()}`}
+                    >
+                      {symbol}
+                    </button>
+                  );
+                })}
+              </div>
+              {historyError ? <p className="error">{historyError}</p> : null}
+            </section>
 
-              <button
-                type="button"
-                className={`toggle-chip ${prefs.hintsEnabled ? 'is-on' : 'is-off'}`}
-                aria-pressed={prefs.hintsEnabled}
-                onClick={() =>
-                  setPrefs((previous) => ({
-                    ...previous,
-                    hintsEnabled: !previous.hintsEnabled
-                  }))
-                }
-              >
-                <span className="toggle-chip-text">Enable hints</span>
-                <span className="toggle-chip-track" aria-hidden="true">
-                  <span className="toggle-chip-thumb" />
-                </span>
-              </button>
+            <section className="rail-block pgn-panel" id="explorer">
+              <div className="pgn-header-row">
+                <p className="pgn-title">PGN Explorer</p>
+                <div className="pgn-actions">
+                  <button
+                    type="button"
+                    disabled={panelControlsDisabled || !isReviewMode}
+                    onClick={handleReviewBackOne}
+                  >
+                    Back one move
+                  </button>
+                  <button
+                    type="button"
+                    disabled={panelControlsDisabled || !isReviewMode}
+                    onClick={handleBackToLive}
+                  >
+                    Back to live puzzle
+                  </button>
+                </div>
+              </div>
 
-              <button
-                type="button"
-                className={`toggle-chip ${prefs.darkMode ? 'is-on' : 'is-off'}`}
-                aria-pressed={prefs.darkMode}
-                onClick={() =>
-                  setPrefs((previous) => ({
-                    ...previous,
-                    darkMode: !previous.darkMode
-                  }))
-                }
-              >
-                <span className="toggle-chip-text">Dark mode</span>
-                <span className="toggle-chip-track" aria-hidden="true">
-                  <span className="toggle-chip-thumb" />
-                </span>
-              </button>
+              <p className="meta pgn-path">
+                {isReviewMode && reviewMoves.length > 0
+                  ? `Path: ${reviewMoves.join(' ')}`
+                  : 'Path: Live position'}
+              </p>
 
-              <button
-                type="button"
-                className={`toggle-chip ${prefs.autoPlay ? 'is-on' : 'is-off'}`}
-                aria-pressed={prefs.autoPlay}
-                onClick={() =>
-                  setPrefs((previous) => ({
-                    ...previous,
-                    autoPlay: !previous.autoPlay
-                  }))
-                }
-              >
-                <span className="toggle-chip-text">Autoplay puzzles</span>
-                <span className="toggle-chip-track" aria-hidden="true">
-                  <span className="toggle-chip-thumb" />
-                </span>
-              </button>
+              {treeError ? <p className="error">{treeError}</p> : null}
 
-              <button
-                type="button"
-                className={`toggle-chip ${prefs.animations ? 'is-on' : 'is-off'}`}
-                aria-pressed={prefs.animations}
-                onClick={() =>
-                  setPrefs((previous) => ({
-                    ...previous,
-                    animations: !previous.animations
-                  }))
-                }
-              >
-                <span className="toggle-chip-text">Animations</span>
-                <span className="toggle-chip-track" aria-hidden="true">
-                  <span className="toggle-chip-thumb" />
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className={`toggle-chip ${prefs.autoQueenPromotion ? 'is-on' : 'is-off'}`}
-                aria-pressed={prefs.autoQueenPromotion}
-                onClick={() =>
-                  setPrefs((previous) => ({
-                    ...previous,
-                    autoQueenPromotion: !previous.autoQueenPromotion
-                  }))
-                }
-              >
-                <span className="toggle-chip-text">Auto-queen</span>
-                <span className="toggle-chip-track" aria-hidden="true">
-                  <span className="toggle-chip-thumb" />
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className={`toggle-chip ${prefs.soundEnabled ? 'is-on' : 'is-off'}`}
-                aria-pressed={prefs.soundEnabled}
-                onClick={() =>
-                  setPrefs((previous) => ({
-                    ...previous,
-                    soundEnabled: !previous.soundEnabled
-                  }))
-                }
-              >
-                <span className="toggle-chip-text">Sound</span>
-                <span className="toggle-chip-track" aria-hidden="true">
-                  <span className="toggle-chip-thumb" />
-                </span>
-              </button>
-
-              <button
-                type="button"
-                className={`toggle-chip ${prefs.showEngineEval ? 'is-on' : 'is-off'}`}
-                aria-pressed={prefs.showEngineEval}
-                onClick={() =>
-                  setPrefs((previous) => ({
-                    ...previous,
-                    showEngineEval: !previous.showEngineEval
-                  }))
-                }
-              >
-                <span className="toggle-chip-text">Engine + eval</span>
-                <span className="toggle-chip-track" aria-hidden="true">
-                  <span className="toggle-chip-thumb" />
-                </span>
-              </button>
+              <div className="pgn-move-list">
+                {pgnNextMoves.length === 0 ? (
+                  <span className="meta">No legal continuation from this node</span>
+                ) : (
+                  pgnNextMoves.map((node) => (
+                    <button
+                      key={node.id}
+                      type="button"
+                      className={`pgn-move ${node.is_mainline ? 'is-mainline' : ''}`}
+                      disabled={panelControlsDisabled}
+                      onClick={() => handleReviewMove(node)}
+                    >
+                      <span>{node.san || node.uci}</span>
+                      <span>{node.is_mainline ? 'Main' : 'Var'}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            </section>
+          </aside>
+        </main>
+        <footer className="app-footer">
+          <div className="app-footer-inner">
+            <div className="app-footer-links" aria-label="Footer links">
+              {footerLinks.map((link) => (
+                <a
+                  key={link.label}
+                  className="app-footer-link"
+                  href={link.href}
+                  {...(link.external ? { target: '_blank', rel: 'noreferrer' } : {})}
+                >
+                  {link.label}
+                </a>
+              ))}
             </div>
 
-            <div className="id-search-row">
-              <input
-                type="text"
-                value={puzzleIdInput}
-                onChange={(event) => setPuzzleIdInput(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    event.preventDefault();
-                    void handleLoadById();
-                  }
-                }}
-                placeholder="Puzzle ID (UUID)"
-                spellCheck={false}
-              />
-              <button
-                type="button"
-                disabled={loading || historyLoading || puzzleIdInput.trim().length === 0}
-                onClick={() => void handleLoadById()}
-              >
-                Load ID
-              </button>
-            </div>
+            <p className="app-footer-copy">
+              Open-source chess puzzle trainer. GPL-3.0-or-later.
+            </p>
           </div>
-        </details>
-        <footer className="repo-link-footer">
-          <a href={REPO_URL} target="_blank" rel="noreferrer">
-            View on GitHub
-          </a>
         </footer>
-        </aside>
-      </main>
+      </div>
       {errorText ? (
         <p className="global-error-toast" role="alert" aria-live="assertive">
           {errorText}

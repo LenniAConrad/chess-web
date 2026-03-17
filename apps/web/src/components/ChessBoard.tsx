@@ -21,6 +21,7 @@ interface ChessBoardProps {
   lastMove: [string, string] | null;
   wrongMoveSquare: string | null;
   wrongMoveFlashToken: number;
+  glassEnabled: boolean;
   onMove: (uci: string) => void;
 }
 
@@ -210,6 +211,7 @@ export function ChessBoard({
   lastMove,
   wrongMoveSquare,
   wrongMoveFlashToken,
+  glassEnabled,
   onMove
 }: ChessBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -450,7 +452,7 @@ export function ChessBoard({
   }, [chessgroundLastMove, fen]);
 
   return (
-    <div className="board-wrap">
+    <div className={`board-wrap ${glassEnabled ? 'glass-enabled' : ''}`}>
       <div ref={containerRef} className="board" />
       <div className="board-coordinates" aria-hidden="true">
         {coordinateLabels.map((label) => (

@@ -9,6 +9,9 @@ export interface UserPreferences {
   hintsEnabled: boolean;
   autoQueenPromotion: boolean;
   darkMode: boolean;
+  zenMode: boolean;
+  captureRain: boolean;
+  boardGlass: boolean;
   autoPlay: boolean;
   animations: boolean;
   soundEnabled: boolean;
@@ -21,6 +24,9 @@ const DEFAULT_PREFS: UserPreferences = {
   hintsEnabled: true,
   autoQueenPromotion: true,
   darkMode: false,
+  zenMode: false,
+  captureRain: true,
+  boardGlass: true,
   autoPlay: false,
   animations: true,
   soundEnabled: true,
@@ -42,6 +48,9 @@ export function useLocalPrefs() {
         hintsEnabled: parsed.hintsEnabled ?? DEFAULT_PREFS.hintsEnabled,
         autoQueenPromotion: parsed.autoQueenPromotion ?? DEFAULT_PREFS.autoQueenPromotion,
         darkMode: parsed.darkMode ?? DEFAULT_PREFS.darkMode,
+        zenMode: parsed.zenMode ?? DEFAULT_PREFS.zenMode,
+        captureRain: parsed.captureRain ?? DEFAULT_PREFS.captureRain,
+        boardGlass: parsed.boardGlass ?? DEFAULT_PREFS.boardGlass,
         autoPlay: parsed.autoPlay ?? DEFAULT_PREFS.autoPlay,
         animations: parsed.animations ?? DEFAULT_PREFS.animations,
         soundEnabled: parsed.soundEnabled ?? DEFAULT_PREFS.soundEnabled,

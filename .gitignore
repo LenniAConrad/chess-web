@@ -14,6 +14,7 @@ logs/
 *.seed
 .tmp/
 .DS_Store
+.directory
 .idea/
 .vscode/
 *.swp

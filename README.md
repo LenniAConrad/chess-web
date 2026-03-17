@@ -6,14 +6,22 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
 
 <img
   src="assets/chess-puzzle-trainer.png"
-  alt="Composite Chess Puzzle Trainer desktop screenshot with the board on the left and the control rail on the right; top-left area from the light UI and bottom-right area from the dark UI"
+  alt="Composite Chess Puzzle Trainer desktop screenshot with a diagonal split; the top-left portion uses the light UI screenshot and the opposite side uses the dark UI screenshot"
   width="100%"
 />
 
 Composite desktop UI preview of the split layout:
 - Left: interactive chessboard (with optional eval bar).
 - Right: puzzle header/status, hint/solution controls, recent games strip, PGN Explorer, and Settings.
-- Composition: top-left section from the light screenshot + bottom-right section from the dark screenshot.
+- Composition: diagonal split with the light screenshot on the top-left side and the dark screenshot on the opposite side.
+
+<img
+  src="assets/chess-puzzle-trainer-zen-mode.png"
+  alt="Chess Puzzle Trainer desktop screenshot in Zen mode with the gameplay area focused and chrome hidden"
+  width="100%"
+/>
+
+Zen mode preview with the header and footer hidden.
 
 ## Stack
 
