@@ -214,9 +214,11 @@ export function ChessBoard({
   glassEnabled,
   onMove
 }: ChessBoardProps) {
+  const boardWrapRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const apiRef = useRef<Api | null>(null);
   const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
+  const [boardSize, setBoardSize] = useState<number | null>(null);
 
   const turnColor = useMemo(() => turnColorFromFen(fen), [fen]);
   const destinations = useMemo(() => legalDestinations(fen), [fen]);
@@ -308,6 +310,44 @@ export function ChessBoard({
       setPendingPromotion(null);
     }
   }, [autoQueenPromotion, interactive, fen]);
+
+  useEffect(() => {
+    const boardWrap = boardWrapRef.current;
+    const host = boardWrap?.parentElement;
+    if (!boardWrap || !host || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    let frameId = 0;
+
+    const syncBoardSize = () => {
+      frameId = 0;
+      const width = host.getBoundingClientRect().width;
+      const nextSize = Math.max(0, Math.round(width));
+      setBoardSize((current) => (current === nextSize ? current : nextSize));
+    };
+
+    const queueSyncBoardSize = () => {
+      if (frameId !== 0) {
+        return;
+      }
+      frameId = window.requestAnimationFrame(syncBoardSize);
+    };
+
+    queueSyncBoardSize();
+
+    const observer = new ResizeObserver(() => {
+      queueSyncBoardSize();
+    });
+    observer.observe(host);
+
+    return () => {
+      observer.disconnect();
+      if (frameId !== 0) {
+        window.cancelAnimationFrame(frameId);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current || apiRef.current) {
@@ -432,6 +472,20 @@ export function ChessBoard({
     setPendingPromotion(null);
   }, [premoveResetToken]);
 
+  useEffect(() => {
+    if (!apiRef.current || boardSize === null) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      apiRef.current?.redrawAll();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [boardSize]);
+
   const applyPromotion = useCallback(
     (piece: PromotionPiece) => {
       if (!pendingPromotion) {
@@ -452,7 +506,10 @@ export function ChessBoard({
   }, [chessgroundLastMove, fen]);
 
   return (
-    <div className={`board-wrap ${glassEnabled ? 'glass-enabled' : ''}`}>
+    <div
+      ref={boardWrapRef}
+      className={`board-wrap ${glassEnabled ? 'glass-enabled' : ''}`}
+    >
       <div ref={containerRef} className="board" />
       <div className="board-coordinates" aria-hidden="true">
         {coordinateLabels.map((label) => (

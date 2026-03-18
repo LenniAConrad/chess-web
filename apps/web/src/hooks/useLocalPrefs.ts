@@ -5,6 +5,7 @@ const STORAGE_KEY = 'chess-web-prefs';
 
 export interface UserPreferences {
   autoNext: boolean;
+  oneTryMode: boolean;
   variationMode: VariationMode;
   hintsEnabled: boolean;
   autoQueenPromotion: boolean;
@@ -20,6 +21,7 @@ export interface UserPreferences {
 
 const DEFAULT_PREFS: UserPreferences = {
   autoNext: true,
+  oneTryMode: false,
   variationMode: 'explore',
   hintsEnabled: true,
   autoQueenPromotion: true,
@@ -44,6 +46,7 @@ export function useLocalPrefs() {
       const parsed = JSON.parse(raw) as Partial<UserPreferences>;
       return {
         autoNext: parsed.autoNext ?? DEFAULT_PREFS.autoNext,
+        oneTryMode: parsed.oneTryMode ?? DEFAULT_PREFS.oneTryMode,
         variationMode: parsed.variationMode ?? DEFAULT_PREFS.variationMode,
         hintsEnabled: parsed.hintsEnabled ?? DEFAULT_PREFS.hintsEnabled,
         autoQueenPromotion: parsed.autoQueenPromotion ?? DEFAULT_PREFS.autoQueenPromotion,

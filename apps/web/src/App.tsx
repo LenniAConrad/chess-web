@@ -1,7 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FocusEvent as ReactFocusEvent,
+  type MouseEvent as ReactMouseEvent
+} from 'react';
 import { Chess, type PieceSymbol, type Square } from 'chess.js';
 import { ChessBoard } from './components/ChessBoard.js';
 import { EvalBar } from './components/EvalBar.js';
+import { MiniPreviewBoard } from './components/MiniPreviewBoard.js';
 import { useLocalPrefs } from './hooks/useLocalPrefs.js';
 import { useStockfishEval } from './hooks/useStockfishEval.js';
 import { getHistoryDotLabel, getHistoryDotSymbol, getHistoryDotTone } from './lib/historyDots.js';
@@ -38,7 +48,7 @@ const REWIND_BREAK_MS = 700;
 const SHORT_STATUS_DELAY_MS = 700;
 const CHECK_SOUND_DELAY_MS = 100;
 const WRONG_MOVE_FEEDBACK_MS = 520;
-const SESSION_HISTORY_FETCH_LIMIT = 200;
+const SESSION_HISTORY_FETCH_LIMIT = 100;
 const NO_ANIMATION_DELAY_MS = 180;
 const REPO_URL = 'https://github.com/LenniAConrad/chess-web';
 
@@ -67,6 +77,24 @@ interface AutoPlayAnimationPayload {
   rewindFens: string[];
   nextState: SessionStatePayload;
 }
+
+interface HistoryPreviewData {
+  sessionId: string;
+  fen: string;
+  puzzleTitle: string;
+  puzzlePublicId: string;
+  createdAt: string;
+  label: string;
+}
+
+interface HistoryPreviewState extends HistoryPreviewData {
+  tone: ReturnType<typeof getHistoryDotTone>;
+  x: number;
+  y: number;
+  loading: boolean;
+}
+
+const HISTORY_PREVIEW_DELAY_MS = 110;
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => {
@@ -274,8 +302,13 @@ export function App() {
   const [wrongMoveSquare, setWrongMoveSquare] = useState<Square | null>(null);
   const [wrongMoveFlashToken, setWrongMoveFlashToken] = useState(0);
   const [fallingCapturePieces, setFallingCapturePieces] = useState<FallingCapturePiece[]>([]);
+  const [oneTryFailed, setOneTryFailed] = useState(false);
+  const [historyPreview, setHistoryPreview] = useState<HistoryPreviewState | null>(null);
   const headerSettingsRef = useRef<HTMLDetailsElement | null>(null);
   const capturePieceIdRef = useRef(0);
+  const historyPreviewCacheRef = useRef(new Map<string, HistoryPreviewData>());
+  const historyPreviewDelayRef = useRef<number | null>(null);
+  const historyPreviewRequestRef = useRef(0);
   const recentHistoryItems = historyItems;
 
   const reviewNodeId = reviewPath?.at(-1) ?? null;
@@ -406,6 +439,14 @@ export function App() {
   }, [prefs.darkMode]);
 
   useEffect(() => {
+    return () => {
+      if (historyPreviewDelayRef.current !== null) {
+        window.clearTimeout(historyPreviewDelayRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
       const settingsEl = headerSettingsRef.current;
       const target = event.target;
@@ -471,6 +512,7 @@ export function App() {
       setReviewPath(null);
       setSessionTree(null);
       setWrongMoveSquare(null);
+      setOneTryFailed(false);
       setStatusText(status);
     },
     [resetHints]
@@ -548,7 +590,7 @@ export function App() {
       const chess = new Chess(response.autoPlayStartFen);
       await maybeWait(AUTO_PLAY_DELAY_MS, animationsEnabled);
 
-      for (const move of response.autoPlayedMoves) {
+      for (const [index, move] of response.autoPlayedMoves.entries()) {
         const sourceFen = chess.fen();
         const soundDecision = getMoveSoundDecision(sourceFen, move);
         const ok = applyUciMove(chess, move);
@@ -562,7 +604,9 @@ export function App() {
         spawnCaptureRainPiece(sourceFen, move);
         playMoveSoundDecision(soundDecision, soundEnabled);
         setDisplayFen(chess.fen());
-        await maybeWait(AUTO_PLAY_DELAY_MS, animationsEnabled);
+        if (index < response.autoPlayedMoves.length - 1) {
+          await maybeWait(AUTO_PLAY_DELAY_MS, animationsEnabled);
+        }
       }
 
       setDisplayFen(response.nextState.fen);
@@ -598,6 +642,11 @@ export function App() {
     void loadInitial();
   }, [loadInitial]);
 
+  const puzzleIsComplete = state ? isPuzzleSolved(state) : false;
+  const oneTryLocked = prefs.oneTryMode && oneTryFailed;
+  const panelControlsDisabled = loading || historyLoading || prefs.autoPlay;
+  const boardCanInteract = !prefs.autoPlay && !historyLoading && !isReviewMode && !puzzleIsComplete && !oneTryLocked;
+
   const handleMove = useCallback(
     async (uciMove: string) => {
       if (
@@ -606,7 +655,8 @@ export function App() {
         historyLoading ||
         !state ||
         isReviewMode ||
-        isPuzzleSolved(state)
+        isPuzzleSolved(state) ||
+        oneTryLocked
       ) {
         return;
       }
@@ -637,16 +687,41 @@ export function App() {
           playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
           const fallbackWrongSquare = uciMove.length >= 4 ? (uciMove.slice(2, 4) as Square) : null;
           const markerSquare = optimisticLastMove?.[1] ?? fallbackWrongSquare;
-          if (markerSquare) {
+          if (markerSquare && !prefs.oneTryMode) {
             setWrongMoveSquare(markerSquare);
             setWrongMoveFlashToken((previous) => previous + 1);
           }
-          setStatusText('Incorrect');
-          await maybeWait(WRONG_MOVE_FEEDBACK_MS, prefs.animations);
-          setDisplayFen(response.nextState.fen);
-          setLastMoveSquares(null);
-          setWrongMoveSquare(null);
-          setStatusText('Try again');
+          if (prefs.oneTryMode) {
+            setDisplayFen(response.nextState.fen);
+            setLastMoveSquares(null);
+            setWrongMoveSquare(null);
+            setOneTryFailed(true);
+
+            if (prefs.autoNext) {
+              setStatusText('Incorrect. Next puzzle...');
+              await maybeWait(SHORT_STATUS_DELAY_MS, prefs.animations);
+              const next = await nextPuzzle(sessionId, prefs.variationMode, prefs.autoNext);
+              applyStartedSession(
+                {
+                  sessionId: next.newSessionId,
+                  puzzle: next.puzzle,
+                  state: next.state,
+                  ui: { autoNextDefault: prefs.autoNext }
+                },
+                'Incorrect. Next puzzle loaded'
+              );
+              artifactSessionId = next.newSessionId;
+            } else {
+              setStatusText('Incorrect. Press Next puzzle');
+            }
+          } else {
+            setStatusText('Incorrect');
+            await maybeWait(WRONG_MOVE_FEEDBACK_MS, prefs.animations);
+            setDisplayFen(response.nextState.fen);
+            setLastMoveSquares(null);
+            setWrongMoveSquare(null);
+            setStatusText('Try again');
+          }
         } else if (response.result === 'correct') {
           playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
           setCorrectText('Correct');
@@ -693,9 +768,11 @@ export function App() {
       } catch (error) {
         setWrongMoveSquare(null);
         setErrorText(error instanceof Error ? error.message : 'Move failed');
-      } finally {
         setLoading(false);
+        return;
       }
+
+      setLoading(false);
     },
     [
       animateAutoPlay,
@@ -707,17 +784,19 @@ export function App() {
       historyLoading,
       prefs.animations,
       prefs.autoNext,
+      prefs.oneTryMode,
       prefs.soundEnabled,
       prefs.variationMode,
       resetHints,
       sessionId,
       spawnCaptureRainPiece,
-      state
+      state,
+      oneTryLocked
     ]
   );
 
   const handleHint = useCallback(async () => {
-    if (!sessionId || loading || historyLoading || isReviewMode) {
+    if (!sessionId || loading || historyLoading || isReviewMode || oneTryLocked) {
       return;
     }
 
@@ -749,11 +828,11 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [hintLevel, isReviewMode, loadSessionArtifacts, loading, historyLoading, sessionId]);
+  }, [hintLevel, isReviewMode, loadSessionArtifacts, loading, historyLoading, sessionId, oneTryLocked]);
 
   const handleReveal = useCallback(
     async (mode: 'manual' | 'auto' = 'manual') => {
-      if (!sessionId || loading || historyLoading || !state || isReviewMode) {
+      if (!sessionId || loading || historyLoading || !state || isReviewMode || oneTryLocked) {
         return;
       }
 
@@ -825,12 +904,13 @@ export function App() {
       resetHints,
       sessionId,
       spawnCaptureRainPiece,
-      state
+      state,
+      oneTryLocked
     ]
   );
 
   const handleSkipVariation = useCallback(async () => {
-    if (!sessionId || loading || historyLoading || isReviewMode) {
+    if (!sessionId || loading || historyLoading || isReviewMode || oneTryLocked) {
       return;
     }
 
@@ -851,7 +931,7 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [isReviewMode, loadSessionArtifacts, loading, historyLoading, resetHints, sessionId]);
+  }, [isReviewMode, loadSessionArtifacts, loading, historyLoading, resetHints, sessionId, oneTryLocked]);
 
   const handleNextPuzzle = useCallback(async () => {
     if (!sessionId || loading || historyLoading) {
@@ -914,7 +994,7 @@ export function App() {
   ]);
 
   useEffect(() => {
-    if (!prefs.autoPlay || !sessionId || !state || loading || historyLoading || isReviewMode) {
+    if (!prefs.autoPlay || !sessionId || !state || loading || historyLoading || isReviewMode || oneTryLocked) {
       return;
     }
 
@@ -945,12 +1025,133 @@ export function App() {
     prefs.autoNext,
     prefs.autoPlay,
     sessionId,
-    state
+    state,
+    oneTryLocked
   ]);
 
-  const puzzleIsComplete = state ? isPuzzleSolved(state) : false;
-  const panelControlsDisabled = loading || historyLoading || prefs.autoPlay;
-  const boardCanInteract = !prefs.autoPlay && !historyLoading && !isReviewMode && !puzzleIsComplete;
+  const hideHistoryPreview = useCallback(() => {
+    if (historyPreviewDelayRef.current !== null) {
+      window.clearTimeout(historyPreviewDelayRef.current);
+      historyPreviewDelayRef.current = null;
+    }
+    historyPreviewRequestRef.current += 1;
+    setHistoryPreview(null);
+  }, []);
+
+  const updateHistoryPreviewPosition = useCallback((x: number, y: number) => {
+    setHistoryPreview((current) => (current ? { ...current, x, y } : current));
+  }, []);
+
+  const openHistoryPreview = useCallback(
+    (item: SessionHistoryItem, x: number, y: number) => {
+      if (historyPreviewDelayRef.current !== null) {
+        window.clearTimeout(historyPreviewDelayRef.current);
+      }
+
+      historyPreviewDelayRef.current = window.setTimeout(() => {
+        historyPreviewDelayRef.current = null;
+        const tone = getHistoryDotTone(item);
+        const label = getHistoryDotLabel(tone);
+        const cached = historyPreviewCacheRef.current.get(item.sessionId);
+        if (cached) {
+          setHistoryPreview({
+            ...cached,
+            tone,
+            x,
+            y,
+            loading: false
+          });
+          return;
+        }
+
+        setHistoryPreview({
+          sessionId: item.sessionId,
+          fen: '',
+          puzzleTitle: item.puzzleTitle,
+          puzzlePublicId: item.puzzlePublicId,
+          createdAt: item.createdAt,
+          label,
+          tone,
+          x,
+          y,
+          loading: true
+        });
+
+        const requestId = ++historyPreviewRequestRef.current;
+        void loadSession(item.sessionId)
+          .then((response) => {
+            if (historyPreviewRequestRef.current !== requestId) {
+              return;
+            }
+
+            const data = {
+              sessionId: item.sessionId,
+              fen: response.state.fen,
+              puzzleTitle: item.puzzleTitle || response.puzzle.title,
+              puzzlePublicId: item.puzzlePublicId,
+              createdAt: item.createdAt,
+              label
+            } satisfies HistoryPreviewData;
+            historyPreviewCacheRef.current.set(item.sessionId, data);
+            setHistoryPreview((current) =>
+              current?.sessionId === item.sessionId
+                ? {
+                    ...current,
+                    ...data,
+                    loading: false
+                  }
+                : current
+            );
+          })
+          .catch(() => {
+            if (historyPreviewRequestRef.current !== requestId) {
+              return;
+            }
+
+            setHistoryPreview((current) =>
+              current?.sessionId === item.sessionId ? { ...current, loading: false } : current
+            );
+          });
+      }, HISTORY_PREVIEW_DELAY_MS);
+    },
+    []
+  );
+
+  const handleHistoryDotMouseEnter = useCallback(
+    (item: SessionHistoryItem, event: ReactMouseEvent<HTMLDivElement>) => {
+      openHistoryPreview(item, event.clientX, event.clientY);
+    },
+    [openHistoryPreview]
+  );
+
+  const handleHistoryDotMouseMove = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
+    updateHistoryPreviewPosition(event.clientX, event.clientY);
+  }, [updateHistoryPreviewPosition]);
+
+  const handleHistoryDotFocus = useCallback(
+    (item: SessionHistoryItem, event: ReactFocusEvent<HTMLDivElement>) => {
+      const rect = event.currentTarget.getBoundingClientRect();
+      openHistoryPreview(item, rect.right, rect.top + rect.height / 2);
+    },
+    [openHistoryPreview]
+  );
+
+  const historyPreviewPosition = useMemo(() => {
+    if (!historyPreview || typeof window === 'undefined') {
+      return null;
+    }
+
+    const previewWidth = 224;
+    const previewHeight = 284;
+    const gap = 18;
+    const maxLeft = Math.max(gap, window.innerWidth - previewWidth - gap);
+    const maxTop = Math.max(gap, window.innerHeight - previewHeight - gap);
+
+    return {
+      left: Math.max(gap, Math.min(historyPreview.x + gap, maxLeft)),
+      top: Math.max(gap, Math.min(historyPreview.y + gap, maxTop))
+    };
+  }, [historyPreview]);
 
   const handleLoadById = useCallback(async () => {
     if (loading || historyLoading) {
@@ -1107,238 +1308,297 @@ export function App() {
         </div>
         <header className="app-header">
           <div className="app-header-inner">
-            <a className="app-brand" href="/" aria-label="chess-web home">
-              chess-web
-            </a>
+            <div className="app-header-primary">
+              <a className="app-brand" href="/" aria-label="chess-web home">
+                chess-web
+              </a>
+              <details ref={headerSettingsRef} className="app-header-settings settings-panel">
+                <summary className="settings-summary">Settings</summary>
+                <div className="settings-content">
+                  <section className="settings-section" aria-labelledby="settings-gameplay">
+                    <div className="settings-section-head">
+                      <span className="settings-section-title" id="settings-gameplay">
+                        Gameplay
+                      </span>
+                    </div>
+                    <div className="toggle-chip-grid">
+                      <button
+                        type="button"
+                        className={`toggle-chip ${prefs.variationMode === 'explore' ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.variationMode === 'explore'}
+                        onClick={() => toggleVariationMode(prefs.variationMode !== 'explore')}
+                      >
+                        <span className="toggle-chip-text">Explore variations</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
 
-            <details ref={headerSettingsRef} className="app-header-settings settings-panel">
-              <summary className="settings-summary">Settings</summary>
-              <div className="settings-content">
-                <div className="toggle-chip-grid">
-                  <button
-                    type="button"
-                    className={`toggle-chip ${prefs.variationMode === 'explore' ? 'is-on' : 'is-off'}`}
-                    aria-pressed={prefs.variationMode === 'explore'}
-                    onClick={() => toggleVariationMode(prefs.variationMode !== 'explore')}
-                  >
-                    <span className="toggle-chip-text">Explore variations</span>
-                    <span className="toggle-chip-track" aria-hidden="true">
-                      <span className="toggle-chip-thumb" />
-                    </span>
-                  </button>
+                      <button
+                        type="button"
+                        className={`toggle-chip ${prefs.autoNext ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.autoNext}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            autoNext: !previous.autoNext
+                          }))
+                        }
+                      >
+                        <span className="toggle-chip-text">Auto-next puzzle</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
 
-                  <button
-                    type="button"
-                    className={`toggle-chip ${prefs.autoNext ? 'is-on' : 'is-off'}`}
-                    aria-pressed={prefs.autoNext}
-                    onClick={() =>
-                      setPrefs((previous) => ({
-                        ...previous,
-                        autoNext: !previous.autoNext
-                      }))
-                    }
-                  >
-                    <span className="toggle-chip-text">Auto-next puzzle</span>
-                    <span className="toggle-chip-track" aria-hidden="true">
-                      <span className="toggle-chip-thumb" />
-                    </span>
-                  </button>
+                      <button
+                        type="button"
+                        className={`toggle-chip ${prefs.hintsEnabled ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.hintsEnabled}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            hintsEnabled: !previous.hintsEnabled
+                          }))
+                        }
+                      >
+                        <span className="toggle-chip-text">Enable hints</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
 
-                  <button
-                    type="button"
-                    className={`toggle-chip ${prefs.hintsEnabled ? 'is-on' : 'is-off'}`}
-                    aria-pressed={prefs.hintsEnabled}
-                    onClick={() =>
-                      setPrefs((previous) => ({
-                        ...previous,
-                        hintsEnabled: !previous.hintsEnabled
-                      }))
-                    }
-                  >
-                    <span className="toggle-chip-text">Enable hints</span>
-                    <span className="toggle-chip-track" aria-hidden="true">
-                      <span className="toggle-chip-thumb" />
-                    </span>
-                  </button>
+                      <button
+                        type="button"
+                        className={`toggle-chip ${prefs.oneTryMode ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.oneTryMode}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            oneTryMode: !previous.oneTryMode
+                          }))
+                        }
+                      >
+                        <span className="toggle-chip-text">One try mode</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
+                    </div>
+                  </section>
 
-                  <button
-                    type="button"
-                    className={`toggle-chip ${prefs.darkMode ? 'is-on' : 'is-off'}`}
-                    aria-pressed={prefs.darkMode}
-                    onClick={() =>
-                      setPrefs((previous) => ({
-                        ...previous,
-                        darkMode: !previous.darkMode
-                      }))
-                    }
-                  >
-                    <span className="toggle-chip-text">Dark mode</span>
-                    <span className="toggle-chip-track" aria-hidden="true">
-                      <span className="toggle-chip-thumb" />
-                    </span>
-                  </button>
+                  <section className="settings-section" aria-labelledby="settings-presentation">
+                    <div className="settings-section-head">
+                      <span className="settings-section-title" id="settings-presentation">
+                        Display
+                      </span>
+                    </div>
+                    <div className="toggle-chip-grid">
+                      <button
+                        type="button"
+                        className={`toggle-chip ${prefs.darkMode ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.darkMode}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            darkMode: !previous.darkMode
+                          }))
+                        }
+                      >
+                        <span className="toggle-chip-text">Dark mode</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
 
-                  <button
-                    type="button"
-                    className={`toggle-chip ${prefs.zenMode ? 'is-on' : 'is-off'}`}
-                    aria-pressed={prefs.zenMode}
-                    onClick={() =>
-                      setPrefs((previous) => ({
-                        ...previous,
-                        zenMode: !previous.zenMode
-                      }))
-                    }
-                  >
-                    <span className="toggle-chip-text">Zen mode</span>
-                    <span className="toggle-chip-track" aria-hidden="true">
-                      <span className="toggle-chip-thumb" />
-                    </span>
-                  </button>
+                      <button
+                        type="button"
+                        className={`toggle-chip ${prefs.zenMode ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.zenMode}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            zenMode: !previous.zenMode
+                          }))
+                        }
+                      >
+                        <span className="toggle-chip-text">Zen mode</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
 
-                  <button
-                    type="button"
-                    className={`toggle-chip ${prefs.captureRain ? 'is-on' : 'is-off'}`}
-                    aria-pressed={prefs.captureRain}
-                    onClick={() =>
-                      setPrefs((previous) => ({
-                        ...previous,
-                        captureRain: !previous.captureRain
-                      }))
-                    }
-                  >
-                    <span className="toggle-chip-text">Capture rain</span>
-                    <span className="toggle-chip-track" aria-hidden="true">
-                      <span className="toggle-chip-thumb" />
-                    </span>
-                  </button>
+                      <button
+                        type="button"
+                        className={`toggle-chip ${prefs.boardGlass ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.boardGlass}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            boardGlass: !previous.boardGlass
+                          }))
+                        }
+                      >
+                        <span className="toggle-chip-text">Board glass</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
 
-                  <button
-                    type="button"
-                    className={`toggle-chip ${prefs.boardGlass ? 'is-on' : 'is-off'}`}
-                    aria-pressed={prefs.boardGlass}
-                    onClick={() =>
-                      setPrefs((previous) => ({
-                        ...previous,
-                        boardGlass: !previous.boardGlass
-                      }))
-                    }
-                  >
-                    <span className="toggle-chip-text">Board glass</span>
-                    <span className="toggle-chip-track" aria-hidden="true">
-                      <span className="toggle-chip-thumb" />
-                    </span>
-                  </button>
+                      <button
+                        type="button"
+                        className={`toggle-chip ${prefs.showEngineEval ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.showEngineEval}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            showEngineEval: !previous.showEngineEval
+                          }))
+                        }
+                      >
+                        <span className="toggle-chip-text">Engine + eval</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
+                    </div>
+                  </section>
 
-                  <button
-                    type="button"
-                    className={`toggle-chip ${prefs.autoPlay ? 'is-on' : 'is-off'}`}
-                    aria-pressed={prefs.autoPlay}
-                    onClick={() =>
-                      setPrefs((previous) => ({
-                        ...previous,
-                        autoPlay: !previous.autoPlay
-                      }))
-                    }
-                  >
-                    <span className="toggle-chip-text">Autoplay puzzles</span>
-                    <span className="toggle-chip-track" aria-hidden="true">
-                      <span className="toggle-chip-thumb" />
-                    </span>
-                  </button>
+                  <section className="settings-section" aria-labelledby="settings-feedback">
+                    <div className="settings-section-head">
+                      <span className="settings-section-title" id="settings-feedback">
+                        Feedback
+                      </span>
+                    </div>
+                    <div className="toggle-chip-grid">
+                      <button
+                        type="button"
+                        className={`toggle-chip ${prefs.animations ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.animations}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            animations: !previous.animations
+                          }))
+                        }
+                      >
+                        <span className="toggle-chip-text">Animations</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
 
-                  <button
-                    type="button"
-                    className={`toggle-chip ${prefs.animations ? 'is-on' : 'is-off'}`}
-                    aria-pressed={prefs.animations}
-                    onClick={() =>
-                      setPrefs((previous) => ({
-                        ...previous,
-                        animations: !previous.animations
-                      }))
-                    }
-                  >
-                    <span className="toggle-chip-text">Animations</span>
-                    <span className="toggle-chip-track" aria-hidden="true">
-                      <span className="toggle-chip-thumb" />
-                    </span>
-                  </button>
+                      <button
+                        type="button"
+                        className={`toggle-chip ${prefs.soundEnabled ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.soundEnabled}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            soundEnabled: !previous.soundEnabled
+                          }))
+                        }
+                      >
+                        <span className="toggle-chip-text">Sound</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
 
-                  <button
-                    type="button"
-                    className={`toggle-chip ${prefs.autoQueenPromotion ? 'is-on' : 'is-off'}`}
-                    aria-pressed={prefs.autoQueenPromotion}
-                    onClick={() =>
-                      setPrefs((previous) => ({
-                        ...previous,
-                        autoQueenPromotion: !previous.autoQueenPromotion
-                      }))
-                    }
-                  >
-                    <span className="toggle-chip-text">Auto-queen</span>
-                    <span className="toggle-chip-track" aria-hidden="true">
-                      <span className="toggle-chip-thumb" />
-                    </span>
-                  </button>
+                      <button
+                        type="button"
+                        className={`toggle-chip ${prefs.captureRain ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.captureRain}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            captureRain: !previous.captureRain
+                          }))
+                        }
+                      >
+                        <span className="toggle-chip-text">Capture rain</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
+                    </div>
+                  </section>
 
-                  <button
-                    type="button"
-                    className={`toggle-chip ${prefs.soundEnabled ? 'is-on' : 'is-off'}`}
-                    aria-pressed={prefs.soundEnabled}
-                    onClick={() =>
-                      setPrefs((previous) => ({
-                        ...previous,
-                        soundEnabled: !previous.soundEnabled
-                      }))
-                    }
-                  >
-                    <span className="toggle-chip-text">Sound</span>
-                    <span className="toggle-chip-track" aria-hidden="true">
-                      <span className="toggle-chip-thumb" />
-                    </span>
-                  </button>
+                  <section className="settings-section" aria-labelledby="settings-automation">
+                    <div className="settings-section-head">
+                      <span className="settings-section-title" id="settings-automation">
+                        Automation
+                      </span>
+                    </div>
+                    <div className="toggle-chip-grid">
+                      <button
+                        type="button"
+                        className={`toggle-chip autoplay-chip ${prefs.autoPlay ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.autoPlay}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            autoPlay: !previous.autoPlay
+                          }))
+                        }
+                      >
+                        <span className="toggle-chip-text">Autoplay puzzles</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
 
-                  <button
-                    type="button"
-                    className={`toggle-chip ${prefs.showEngineEval ? 'is-on' : 'is-off'}`}
-                    aria-pressed={prefs.showEngineEval}
-                    onClick={() =>
-                      setPrefs((previous) => ({
-                        ...previous,
-                        showEngineEval: !previous.showEngineEval
-                      }))
-                    }
-                  >
-                    <span className="toggle-chip-text">Engine + eval</span>
-                    <span className="toggle-chip-track" aria-hidden="true">
-                      <span className="toggle-chip-thumb" />
-                    </span>
-                  </button>
+                      <button
+                        type="button"
+                        className={`toggle-chip ${prefs.autoQueenPromotion ? 'is-on' : 'is-off'}`}
+                        aria-pressed={prefs.autoQueenPromotion}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            autoQueenPromotion: !previous.autoQueenPromotion
+                          }))
+                        }
+                      >
+                        <span className="toggle-chip-text">Auto-queen</span>
+                        <span className="toggle-chip-track" aria-hidden="true">
+                          <span className="toggle-chip-thumb" />
+                        </span>
+                      </button>
+                    </div>
+                  </section>
+
+                  <section className="settings-section" aria-labelledby="settings-tools">
+                    <div className="settings-section-head">
+                      <span className="settings-section-title" id="settings-tools">
+                        Tools
+                      </span>
+                    </div>
+                    <div className="id-search-row">
+                      <input
+                        type="text"
+                        value={puzzleIdInput}
+                        onChange={(event) => setPuzzleIdInput(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            void handleLoadById();
+                          }
+                        }}
+                        placeholder="Puzzle ID (UUID)"
+                        spellCheck={false}
+                      />
+                      <button
+                        type="button"
+                        disabled={loading || historyLoading || puzzleIdInput.trim().length === 0}
+                        onClick={() => void handleLoadById()}
+                      >
+                        Load ID
+                      </button>
+                    </div>
+                  </section>
                 </div>
-
-                <div className="id-search-row">
-                  <input
-                    type="text"
-                    value={puzzleIdInput}
-                    onChange={(event) => setPuzzleIdInput(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        void handleLoadById();
-                      }
-                    }}
-                    placeholder="Puzzle ID (UUID)"
-                    spellCheck={false}
-                  />
-                  <button
-                    type="button"
-                    disabled={loading || historyLoading || puzzleIdInput.trim().length === 0}
-                    onClick={() => void handleLoadById()}
-                  >
-                    Load ID
-                  </button>
-                </div>
-              </div>
-            </details>
+              </details>
+            </div>
           </div>
         </header>
         <main className="layout split-layout">
@@ -1446,12 +1706,13 @@ export function App() {
             </section>
 
             <section
-              className="rail-block history-strip"
+              className={`rail-block history-strip ${prefs.autoPlay ? 'is-muted' : ''}`}
               id="history"
               aria-label="Recent game history"
             >
               <div className="history-head">
                 <p className="history-title">Recent games</p>
+                <p className="history-meta">Last {recentHistoryItems.length}</p>
               </div>
               <div className="history-list">
                 {recentHistoryItems.map((item) => {
@@ -1460,17 +1721,25 @@ export function App() {
                   const symbol = getHistoryDotSymbol(tone);
                   const selected = item.sessionId === sessionId;
                   return (
-                    <button
+                    <div
                       key={item.sessionId}
-                      type="button"
-                      className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
-                      onClick={() => void handleLoadHistorySession(item.sessionId)}
-                      disabled={panelControlsDisabled}
-                      aria-label={`${selected ? 'Current' : label} puzzle ${item.puzzlePublicId} from history`}
-                      title={`${selected ? 'Current' : label} · ${item.puzzlePublicId} · ${item.puzzleTitle || 'Puzzle'} · ${new Date(item.createdAt).toLocaleString()}`}
+                      className="history-dot-slot"
+                      onMouseEnter={(event) => handleHistoryDotMouseEnter(item, event)}
+                      onMouseMove={handleHistoryDotMouseMove}
+                      onMouseLeave={hideHistoryPreview}
+                      onFocus={(event) => handleHistoryDotFocus(item, event)}
+                      onBlur={hideHistoryPreview}
                     >
-                      {symbol}
-                    </button>
+                      <button
+                        type="button"
+                        className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
+                        onClick={() => void handleLoadHistorySession(item.sessionId)}
+                        disabled={panelControlsDisabled}
+                        aria-label={`${selected ? 'Current' : label} puzzle ${item.puzzlePublicId} from history`}
+                      >
+                        {symbol}
+                      </button>
+                    </div>
                   );
                 })}
               </div>
@@ -1508,7 +1777,9 @@ export function App() {
 
               <div className="pgn-move-list">
                 {pgnNextMoves.length === 0 ? (
-                  <span className="meta">No legal continuation from this node</span>
+                  <button type="button" className="pgn-move pgn-empty-state" disabled>
+                    No legal continuation from this node
+                  </button>
                 ) : (
                   pgnNextMoves.map((node) => (
                     <button
@@ -1527,6 +1798,36 @@ export function App() {
             </section>
           </aside>
         </main>
+        {historyPreview && historyPreviewPosition ? (
+          <aside
+            className={`history-preview-card tone-${historyPreview.tone} ${historyPreview.loading ? 'is-loading' : ''}`}
+            style={{
+              left: `${historyPreviewPosition.left}px`,
+              top: `${historyPreviewPosition.top}px`
+            }}
+            aria-hidden="true"
+          >
+            <div className="history-preview-head">
+              <span className="history-preview-state">{historyPreview.label}</span>
+              <span className="history-preview-id">{historyPreview.puzzlePublicId}</span>
+            </div>
+            <div className="history-preview-board-wrap">
+              {historyPreview.loading || !historyPreview.fen ? (
+                <div className="history-preview-loading">Loading preview…</div>
+              ) : (
+                <MiniPreviewBoard
+                  fen={historyPreview.fen}
+                  orientation={playerOrientation}
+                  glassEnabled={prefs.boardGlass}
+                />
+              )}
+            </div>
+            <div className="history-preview-meta">
+              <p className="history-preview-title">{historyPreview.puzzleTitle || 'Puzzle'}</p>
+              <p className="history-preview-time">{new Date(historyPreview.createdAt).toLocaleString()}</p>
+            </div>
+          </aside>
+        ) : null}
         <footer className="app-footer">
           <div className="app-footer-inner">
             <div className="app-footer-links" aria-label="Footer links">
@@ -1541,10 +1842,7 @@ export function App() {
                 </a>
               ))}
             </div>
-
-            <p className="app-footer-copy">
-              Open-source chess puzzle trainer. GPL-3.0-or-later.
-            </p>
+            <p className="app-footer-license">GPL-3.0-or-later.</p>
           </div>
         </footer>
       </div>

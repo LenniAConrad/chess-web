@@ -98,7 +98,7 @@ describe('history dot classification', () => {
   });
 
   it('returns symbols and labels', () => {
-    expect(getHistoryDotSymbol('blue')).toBe('!');
+    expect(getHistoryDotSymbol('blue')).toBe('A');
     expect(getHistoryDotSymbol('green')).toBe('\u2713');
     expect(getHistoryDotSymbol('yellow')).toBe('\u2713');
     expect(getHistoryDotSymbol('orange')).toBe('\u2713');

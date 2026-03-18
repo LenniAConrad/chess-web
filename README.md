@@ -1,56 +1,72 @@
-# Chess Puzzle Web
+# chess-web
 
-No-account chess puzzle trainer with PGN variation support, server-side move validation, browser Stockfish evaluation, and random puzzle delivery.
+No-account chess puzzle trainer with PGN variation support, server-side move validation, browser Stockfish eval, recent-game history, and a fast split-layout UI built for repeated puzzle solving.
 
-## Screenshot
+## Screenshots
+
+### Light Mode
 
 <img
-  src="assets/chess-puzzle-trainer.png"
-  alt="Composite Chess Puzzle Trainer desktop screenshot with a diagonal split; the top-left portion uses the light UI screenshot and the opposite side uses the dark UI screenshot"
+  src="assets/chess-puzzle-trainer-light.png"
+  alt="Chess Puzzle Trainer in light mode with the board on the left and the control rail on the right"
   width="100%"
 />
 
-Composite desktop UI preview of the split layout:
-- Left: interactive chessboard (with optional eval bar).
-- Right: puzzle header/status, hint/solution controls, recent games strip, PGN Explorer, and Settings.
-- Composition: diagonal split with the light screenshot on the top-left side and the dark screenshot on the opposite side.
+### Dark Mode
+
+<img
+  src="assets/chess-puzzle-trainer-dark.png"
+  alt="Chess Puzzle Trainer in dark mode with the board on the left and the control rail on the right"
+  width="100%"
+/>
+
+### Settings Panel
+
+<img
+  src="assets/chess-puzzle-settings.png"
+  alt="Chess Puzzle Trainer settings panel grouped into gameplay, display, feedback, automation, and tools"
+  width="420"
+/>
+
+### Zen Mode
 
 <img
   src="assets/chess-puzzle-trainer-zen-mode.png"
-  alt="Chess Puzzle Trainer desktop screenshot in Zen mode with the gameplay area focused and chrome hidden"
+  alt="Chess Puzzle Trainer in zen mode with the gameplay area focused and chrome hidden"
   width="100%"
 />
 
-Zen mode preview with the header and footer hidden.
+## What It Does
+
+- Serves PGN-based tactical puzzles with variation trees
+- Validates moves on the server instead of trusting the browser
+- Supports explore/mainline solving flows
+- Tracks recent games with replayable history
+- Includes hints, reveal, skip variation, restart, and next puzzle flows
+- Supports autoplay, auto-next, one-try mode, auto-queen, sounds, and animations
+- Shows optional in-browser Stockfish eval with an eval bar
+- Works with local Postgres or in-memory `pg-mem` during development
 
 ## Stack
 
-- Monorepo: `pnpm` workspaces
-- Frontend: React + Vite + TypeScript (`apps/web`)
-- Backend: Fastify + TypeScript + Postgres (`apps/api`)
-- Shared domain logic: `packages/chess-core`
-- DB schema/repositories: `packages/db`
+- Frontend: React, Vite, TypeScript, Chessground
+- Backend: Fastify, TypeScript, Postgres
+- Shared chess logic: `packages/chess-core`
+- DB layer: `packages/db`
+- Workspace: `pnpm`
 
-## Core Features
+## Repo Layout
 
-- PGN-driven tactical puzzle sessions with variation exploration
-- Recent puzzle history with status chips and direct replay/loading
-- Hint system + reveal solution + skip variation + restart puzzle
-- Optional autoplay, auto-next, sound, animation, and auto-queen
-- PGN explorer panel for reviewing continuation nodes
-- Browser Stockfish analysis and eval bar (toggleable in Settings)
-
-## Docs
-
-- Technical docs index: [docs/README.md](docs/README.md)
-- Architecture: [docs/architecture.md](docs/architecture.md)
-- API/session lifecycle: [docs/api-and-session-flow.md](docs/api-and-session-flow.md)
-- Frontend behavior: [docs/frontend-flow.md](docs/frontend-flow.md)
-- Database model: [docs/database-model.md](docs/database-model.md)
+- `apps/web`: React client
+- `apps/api`: Fastify API
+- `packages/chess-core`: PGN parsing and puzzle domain logic
+- `packages/db`: migrations, repositories, DB client
+- `docs`: architecture and flow documentation
+- `assets`: README screenshots
 
 ## Quick Start
 
-1. Copy env:
+1. Copy the env file:
 
 ```bash
 cp .env.example .env
@@ -62,79 +78,97 @@ cp .env.example .env
 npx pnpm@10.5.2 install
 ```
 
-3. Run migrations:
-
-```bash
-npx pnpm@10.5.2 --filter @chess-web/api migrate
-```
-
-4. Import PGN puzzles:
-
-```bash
-npx pnpm@10.5.2 --filter @chess-web/api import:pgn -- --file /path/to/puzzles.pgn --token "$IMPORT_TOKEN"
-```
-
-5. Run both apps in one terminal:
+3. Start the full app:
 
 ```bash
 ./start.sh
 ```
 
-Optional manual mode:
+Default local URLs:
+
+- Web: `http://localhost:5173`
+- API: `http://localhost:3001`
+
+## Database And Puzzle Import
+
+The API supports both:
+
+- local Postgres via `DATABASE_URL`
+- in-memory `pgmem://local` for dev fallback
+
+Run migrations manually:
 
 ```bash
-npx pnpm@10.5.2 --filter @chess-web/api dev
-npx pnpm@10.5.2 --filter @chess-web/web dev
+npx pnpm@10.5.2 --filter @chess-web/api migrate
 ```
 
-- API: `http://localhost:3001`
-- Web: `http://localhost:5173`
-
-## Scripts
-
-From repo root:
+Import a PGN puzzle file:
 
 ```bash
-npx pnpm@10.5.2 install
+npx pnpm@10.5.2 --filter @chess-web/api import:pgn -- --file /path/to/puzzles.pgn --token "$IMPORT_TOKEN"
+```
+
+If `SEED_PGN_FILE` is set and the puzzle table is empty, the API can also seed puzzles automatically on startup.
+
+## Useful Commands
+
+From the repo root:
+
+```bash
 npx pnpm@10.5.2 -r typecheck
 npx pnpm@10.5.2 -r lint
 npx pnpm@10.5.2 -r test
 npx pnpm@10.5.2 -r build
 ```
 
-One-shot build script:
+Run apps separately:
 
 ```bash
-./build.sh
+npx pnpm@10.5.2 --filter @chess-web/api dev
+npx pnpm@10.5.2 --filter @chess-web/web dev
 ```
 
-## API (MVP)
+## API Surface
 
 - `POST /api/v1/session/start`
+- `POST /api/v1/session/load`
 - `POST /api/v1/session/move`
 - `POST /api/v1/session/hint`
 - `POST /api/v1/session/reveal`
 - `POST /api/v1/session/skip-variation`
 - `POST /api/v1/session/next`
 - `POST /api/v1/session/history`
-- `GET /api/v1/session/tree`
-- `POST /api/v1/session/load`
+- `POST /api/v1/session/history/clear`
+- `POST /api/v1/session/tree`
+- `GET /api/v1/puzzles/:publicId/tree` in non-production debug mode
 - `GET /health`
 
-## Licensing and Third-Party Notices
+## Documentation
 
-- See [LICENSE](LICENSE) and [LICENSE.txt](LICENSE.txt) for repository licensing terms and third-party requirements.
-- Bundled asset notices:
-  - `apps/web/public/pieces/cburnett/NOTICE.txt`
+- [docs/README.md](docs/README.md)
+- [docs/architecture.md](docs/architecture.md)
+- [docs/api-and-session-flow.md](docs/api-and-session-flow.md)
+- [docs/frontend-flow.md](docs/frontend-flow.md)
+- [docs/database-model.md](docs/database-model.md)
+
+## Licensing
+
+- Repository licenses: [LICENSE](LICENSE), [LICENSE.txt](LICENSE.txt)
+- Piece asset notice: `apps/web/public/pieces/cburnett/NOTICE.txt`
+- Sound pack notices:
   - `apps/web/public/sounds/lichess-standard/LICENSE.txt`
   - `apps/web/public/sounds/lichess-sfx/LICENSE.txt`
-- Machine-readable dependency license inventory:
-  - `THIRD_PARTY_LICENSES.json`
-  - Regenerate with: `node scripts/generateThirdPartyLicenses.mjs`
-- The app uses the default `lichess-standard` sound pack for runtime audio.
+- Dependency license inventory: [THIRD_PARTY_LICENSES.json](THIRD_PARTY_LICENSES.json)
+
+Regenerate the dependency inventory with:
+
+```bash
+node scripts/generateThirdPartyLicenses.mjs
+```
 
 ## Notes
 
-- Full anti-download prevention is impossible in browsers; this app uses best-effort hardening (rate limits, per-session fetch, no bulk endpoints).
-- File-size limit is enforced in ESLint (`max-lines <= 2000`).
-- Launch deployment target docs: [ops/oracle-cloudflare.md](ops/oracle-cloudflare.md)
+- Browser-side anti-download prevention is only best-effort.
+- The app uses runtime rate limits and avoids bulk download-oriented endpoints.
+- The default runtime audio pack is `lichess-standard`.
+- Deployment notes live in [ops/oracle-cloudflare.md](ops/oracle-cloudflare.md).

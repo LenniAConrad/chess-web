@@ -33,7 +33,7 @@ export function getHistoryDotTone(item: SessionHistoryItem): HistoryDotTone {
 
 export function getHistoryDotSymbol(tone: HistoryDotTone): string {
   if (tone === 'blue') {
-    return '!';
+    return 'A';
   }
 
   if (tone === 'red') {
