@@ -17,13 +17,15 @@ Third-Party Runtime Dependencies
 --------------------------------
 This project includes third-party open-source dependencies with their own licenses.
 
-A machine-readable dependency license inventory is provided at:
+A machine-readable notice inventory for the runtime dependencies we still call out in repository notices is provided at:
 
 - THIRD_PARTY_LICENSES.json
 
 Regenerate that file with:
 
 - node scripts/generateThirdPartyLicenses.mjs
+
+That file intentionally keeps only the production dependency licenses we still need to quote here.
 
 Important copyleft dependencies used in the web app include:
 

@@ -158,9 +158,9 @@ npx pnpm@10.5.2 --filter @chess-web/web dev
 - Sound pack notices:
   - `apps/web/public/sounds/lichess-standard/LICENSE.txt`
   - `apps/web/public/sounds/lichess-sfx/LICENSE.txt`
-- Dependency license inventory: [THIRD_PARTY_LICENSES.json](THIRD_PARTY_LICENSES.json)
+- Curated runtime dependency notices: [THIRD_PARTY_LICENSES.json](THIRD_PARTY_LICENSES.json)
 
-Regenerate the dependency inventory with:
+Regenerate the curated runtime notice file with:
 
 ```bash
 node scripts/generateThirdPartyLicenses.mjs
