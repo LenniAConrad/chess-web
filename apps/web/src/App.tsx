@@ -16,12 +16,14 @@ import { useLocalPrefs } from './hooks/useLocalPrefs.js';
 import { useStockfishEval } from './hooks/useStockfishEval.js';
 import { getHistoryDotLabel, getHistoryDotSymbol, getHistoryDotTone } from './lib/historyDots.js';
 import {
+  cacheLoadedSession,
   getHint,
   loadSession,
   getSessionHistory,
   getSessionTree,
   nextPuzzle,
   playMove,
+  retainLoadedSessions,
   revealSolution,
   skipVariation,
   startSession
@@ -439,12 +441,42 @@ export function App() {
   }, [prefs.darkMode]);
 
   useEffect(() => {
+    if (!sessionId || !puzzle || !state) {
+      return;
+    }
+
+    cacheLoadedSession({
+      sessionId,
+      puzzle,
+      state,
+      ui: {
+        autoNextDefault: prefs.autoNext
+      }
+    });
+  }, [prefs.autoNext, puzzle, sessionId, state]);
+
+  useEffect(() => {
     return () => {
       if (historyPreviewDelayRef.current !== null) {
         window.clearTimeout(historyPreviewDelayRef.current);
       }
     };
   }, []);
+
+  useEffect(() => {
+    const keepSessionIds = new Set(recentHistoryItems.map((item) => item.sessionId));
+    if (sessionId) {
+      keepSessionIds.add(sessionId);
+    }
+
+    retainLoadedSessions(keepSessionIds);
+
+    for (const cachedSessionId of historyPreviewCacheRef.current.keys()) {
+      if (!keepSessionIds.has(cachedSessionId)) {
+        historyPreviewCacheRef.current.delete(cachedSessionId);
+      }
+    }
+  }, [recentHistoryItems, sessionId]);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -499,6 +531,7 @@ export function App() {
 
   const applyStartedSession = useCallback(
     (response: StartSessionResponse, status: string) => {
+      cacheLoadedSession(response);
       setSessionId(response.sessionId);
       setPuzzle(response.puzzle);
       setPuzzleIdInput(response.puzzle.publicId);
@@ -1141,8 +1174,8 @@ export function App() {
       return null;
     }
 
-    const previewWidth = 224;
-    const previewHeight = 284;
+    const previewWidth = 336;
+    const previewHeight = 426;
     const gap = 18;
     const maxLeft = Math.max(gap, window.innerWidth - previewWidth - gap);
     const maxTop = Math.max(gap, window.innerHeight - previewHeight - gap);

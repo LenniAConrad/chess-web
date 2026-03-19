@@ -16,6 +16,8 @@ import type {
  * All requests include credentials so the anon-session cookie stays consistent.
  */
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001';
+const loadedSessionCache = new Map<string, StartSessionResponse>();
+const loadedSessionPromiseCache = new Map<string, Promise<StartSessionResponse>>();
 
 async function requestJson<T>(path: string, body?: Record<string, unknown>): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -35,13 +37,39 @@ async function requestJson<T>(path: string, body?: Record<string, unknown>): Pro
   return (await response.json()) as T;
 }
 
+export function cacheLoadedSession(snapshot: StartSessionResponse): void {
+  loadedSessionPromiseCache.delete(snapshot.sessionId);
+  loadedSessionCache.set(snapshot.sessionId, snapshot);
+}
+
+export function retainLoadedSessions(sessionIds: Iterable<string>): void {
+  const keep = new Set(sessionIds);
+
+  for (const cachedSessionId of loadedSessionCache.keys()) {
+    if (!keep.has(cachedSessionId)) {
+      loadedSessionCache.delete(cachedSessionId);
+    }
+  }
+
+  for (const cachedSessionId of loadedSessionPromiseCache.keys()) {
+    if (!keep.has(cachedSessionId)) {
+      loadedSessionPromiseCache.delete(cachedSessionId);
+    }
+  }
+}
+
 export function startSession(
   mode: VariationMode,
   autoNext: boolean,
   puzzleId?: string,
   source: 'normal' | 'history' = 'normal'
 ): Promise<StartSessionResponse> {
-  return requestJson<StartSessionResponse>('/api/v1/session/start', { mode, autoNext, puzzleId, source });
+  return requestJson<StartSessionResponse>('/api/v1/session/start', { mode, autoNext, puzzleId, source }).then(
+    (response) => {
+      cacheLoadedSession(response);
+      return response;
+    }
+  );
 }
 
 export function playMove(sessionId: string, uciMove: string): Promise<MoveResponse> {
@@ -49,7 +77,28 @@ export function playMove(sessionId: string, uciMove: string): Promise<MoveRespon
 }
 
 export function loadSession(sessionId: string): Promise<StartSessionResponse> {
-  return requestJson<StartSessionResponse>('/api/v1/session/load', { sessionId });
+  const cached = loadedSessionCache.get(sessionId);
+  if (cached) {
+    return Promise.resolve(cached);
+  }
+
+  const inFlight = loadedSessionPromiseCache.get(sessionId);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const request = requestJson<StartSessionResponse>('/api/v1/session/load', { sessionId })
+    .then((response) => {
+      cacheLoadedSession(response);
+      return response;
+    })
+    .catch((error) => {
+      loadedSessionPromiseCache.delete(sessionId);
+      throw error;
+    });
+
+  loadedSessionPromiseCache.set(sessionId, request);
+  return request;
 }
 
 export function getHint(sessionId: string): Promise<HintResponse> {

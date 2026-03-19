@@ -1254,7 +1254,7 @@ button.history-dot:focus-visible {
 .history-preview-card {
   position: fixed;
   z-index: 120;
-  width: 224px;
+  width: 336px;
   padding: 0.7rem;
   border: 1px solid var(--color-panel-border);
   border-radius: 14px;
@@ -1269,20 +1269,26 @@ button.history-dot:focus-visible {
 
 .history-preview-head {
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.6rem;
+  min-width: 0;
 }
 
 .history-preview-state {
   font-size: 0.8rem;
   font-weight: 800;
+  min-width: 0;
 }
 
 .history-preview-id {
   font-size: 0.68rem;
   color: var(--color-meta);
   opacity: 0.8;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: right;
 }
 
 .history-preview-board-wrap {
