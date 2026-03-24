@@ -326,6 +326,21 @@ body {
   line-height: 1;
 }
 
+.app-brand-lockup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.app-brand-meta {
+  margin: 0;
+  color: var(--color-meta);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .app-header-primary {
   display: flex;
   align-items: baseline;

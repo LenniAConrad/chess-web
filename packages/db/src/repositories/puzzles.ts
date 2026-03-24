@@ -123,6 +123,11 @@ export async function getPuzzleNodes(pool: Pool, puzzleId: number): Promise<Puzz
   return result.rows.map((row: Record<string, unknown>) => mapNode(row));
 }
 
+export async function getPuzzleCount(pool: Pool): Promise<number> {
+  const result = await pool.query('SELECT COUNT(*)::int AS count FROM puzzles');
+  return Number(result.rows[0]?.count ?? 0);
+}
+
 export async function getRandomPuzzle(pool: Pool, excludePuzzleId?: number): Promise<PuzzleRecord | null> {
   // Two-stage random key lookup within pre-bucketed rows for index-friendly random fetch.
   const bucket = Math.floor(Math.random() * 1024);

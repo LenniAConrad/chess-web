@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import { getPuzzleCount } from '@chess-web/db';
 import type { Pool } from 'pg';
 import { z } from 'zod';
 import { ensureAnonSession } from '../middleware/anonSession.js';
@@ -77,6 +78,11 @@ export async function registerSessionRoutes(
   }
 ): Promise<void> {
   const { pool, limiter, sessionService } = options;
+
+  app.get('/api/v1/puzzles/count', async (_request, reply) => {
+    const count = await getPuzzleCount(pool);
+    reply.send({ count });
+  });
 
   app.post('/api/v1/session/start', async (request, reply) => {
     const body = startSchema.parse(request.body ?? {});

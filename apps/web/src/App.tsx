@@ -17,6 +17,7 @@ import { useStockfishEval } from './hooks/useStockfishEval.js';
 import { getHistoryDotLabel, getHistoryDotSymbol, getHistoryDotTone } from './lib/historyDots.js';
 import {
   cacheLoadedSession,
+  getPuzzleCount,
   getHint,
   loadSession,
   getSessionHistory,
@@ -53,6 +54,7 @@ const WRONG_MOVE_FEEDBACK_MS = 520;
 const SESSION_HISTORY_FETCH_LIMIT = 100;
 const NO_ANIMATION_DELAY_MS = 180;
 const REPO_URL = 'https://github.com/LenniAConrad/chess-web';
+const COUNT_FORMATTER = new Intl.NumberFormat('en-US');
 
 type PrimaryMoveSoundType = Exclude<MoveSoundType, 'check'>;
 
@@ -287,6 +289,7 @@ export function App() {
   const [statusText, setStatusText] = useState('Loading puzzle...');
   const [correctText, setCorrectText] = useState<string | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [puzzleCount, setPuzzleCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [hintSquare, setHintSquare] = useState<string | null>(null);
@@ -312,6 +315,26 @@ export function App() {
   const historyPreviewDelayRef = useRef<number | null>(null);
   const historyPreviewRequestRef = useRef(0);
   const recentHistoryItems = historyItems;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void getPuzzleCount()
+      .then((response) => {
+        if (!cancelled) {
+          setPuzzleCount(response.count);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPuzzleCount(null);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const reviewNodeId = reviewPath?.at(-1) ?? null;
   const treeNodeMap = useMemo(() => {
@@ -1342,9 +1365,14 @@ export function App() {
         <header className="app-header">
           <div className="app-header-inner">
             <div className="app-header-primary">
-              <a className="app-brand" href="/" aria-label="chess-web home">
-                chess-web
-              </a>
+              <div className="app-brand-lockup">
+                <a className="app-brand" href="/" aria-label="chess-web home">
+                  chess-web
+                </a>
+                <p className="app-brand-meta">
+                  {puzzleCount === null ? 'Live puzzle count unavailable' : `${COUNT_FORMATTER.format(puzzleCount)} puzzles`}
+                </p>
+              </div>
               <details ref={headerSettingsRef} className="app-header-settings settings-panel">
                 <summary className="settings-summary">Settings</summary>
                 <div className="settings-content">

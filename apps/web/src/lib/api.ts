@@ -3,6 +3,7 @@ import type {
   HintResponse,
   MoveResponse,
   NextResponse,
+  PuzzleCountResponse,
   RevealResponse,
   SessionHistoryResponse,
   SessionTreeResponse,
@@ -27,6 +28,20 @@ async function requestJson<T>(path: string, body?: Record<string, unknown>): Pro
       'Content-Type': 'application/json'
     },
     body: body ? JSON.stringify(body) : undefined
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || `API request failed: ${response.status}`);
+  }
+
+  return (await response.json()) as T;
+}
+
+async function requestGetJson<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'GET',
+    credentials: 'include'
   });
 
   if (!response.ok) {
@@ -123,6 +138,10 @@ export function clearSessionHistory(sessionId: string): Promise<SessionHistoryCl
 
 export function getSessionTree(sessionId: string): Promise<SessionTreeResponse> {
   return requestJson<SessionTreeResponse>('/api/v1/session/tree', { sessionId });
+}
+
+export function getPuzzleCount(): Promise<PuzzleCountResponse> {
+  return requestGetJson<PuzzleCountResponse>('/api/v1/puzzles/count');
 }
 
 export function revealSolution(

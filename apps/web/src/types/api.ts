@@ -113,3 +113,7 @@ export interface SessionTreeResponse {
   currentNodeId: number;
   nodes: SessionTreeNode[];
 }
+
+export interface PuzzleCountResponse {
+  count: number;
+}
