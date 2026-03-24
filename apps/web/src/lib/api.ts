@@ -20,6 +20,25 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001
 const loadedSessionCache = new Map<string, StartSessionResponse>();
 const loadedSessionPromiseCache = new Map<string, Promise<StartSessionResponse>>();
 
+async function readErrorMessage(response: Response): Promise<string> {
+  const text = await response.text();
+
+  if (!text) {
+    return `API request failed: ${response.status}`;
+  }
+
+  try {
+    const parsed = JSON.parse(text) as { error?: unknown };
+    if (typeof parsed.error === 'string' && parsed.error.length > 0) {
+      return parsed.error;
+    }
+  } catch {
+    // Fall back to raw text when the response is not JSON.
+  }
+
+  return text;
+}
+
 async function requestJson<T>(path: string, body?: Record<string, unknown>): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
@@ -31,8 +50,7 @@ async function requestJson<T>(path: string, body?: Record<string, unknown>): Pro
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `API request failed: ${response.status}`);
+    throw new Error(await readErrorMessage(response));
   }
 
   return (await response.json()) as T;
@@ -45,8 +63,7 @@ async function requestGetJson<T>(path: string): Promise<T> {
   });
 
   if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || `API request failed: ${response.status}`);
+    throw new Error(await readErrorMessage(response));
   }
 
   return (await response.json()) as T;

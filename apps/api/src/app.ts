@@ -41,7 +41,8 @@ export async function createApp(): Promise<FastifyInstance> {
     secret: env.COOKIE_SECRET,
     parseOptions: {
       path: '/',
-      sameSite: 'lax',
+      sameSite: env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: env.NODE_ENV === 'production',
       httpOnly: true
     }
   });

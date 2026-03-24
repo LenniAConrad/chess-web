@@ -2,12 +2,15 @@ import { randomUUID } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import { upsertAnonSession } from '@chess-web/db';
 import type { Pool } from 'pg';
+import { env } from '../env.js';
 import { sha256 } from '../utils/hash.js';
 
 const COOKIE_NAME = 'anon_sid';
 
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const isProduction = env.NODE_ENV === 'production';
 
 export async function ensureAnonSession(
   request: FastifyRequest,
@@ -28,8 +31,8 @@ export async function ensureAnonSession(
     reply.setCookie(COOKIE_NAME, anonSessionId, {
       path: '/',
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: isProduction,
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: 60 * 60 * 24 * 30
     });
   }
