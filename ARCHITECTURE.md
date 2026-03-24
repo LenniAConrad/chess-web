@@ -58,7 +58,7 @@ chess-web/
 - Wrong moves allow unlimited retries.
 - User can request `Show solution`.
 - Hint system v1 highlights the candidate piece.
-- Auto-next puzzle is enabled by default and can be turned off.
+- Auto-next puzzle is disabled by default and can be turned on.
 - Stockfish evaluation runs client-side in a Web Worker.
 
 ## Maintainability rules

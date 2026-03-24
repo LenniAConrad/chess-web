@@ -20,15 +20,15 @@ export interface UserPreferences {
 }
 
 const DEFAULT_PREFS: UserPreferences = {
-  autoNext: true,
+  autoNext: false,
   oneTryMode: false,
   variationMode: 'explore',
   hintsEnabled: true,
-  autoQueenPromotion: true,
+  autoQueenPromotion: false,
   darkMode: false,
   zenMode: false,
   captureRain: true,
-  boardGlass: true,
+  boardGlass: false,
   autoPlay: false,
   animations: true,
   soundEnabled: true,
