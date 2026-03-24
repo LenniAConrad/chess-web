@@ -1407,8 +1407,9 @@ export function App() {
       return null;
     }
 
-    const previewWidth = 336;
-    const previewHeight = 426;
+    const isMobile = window.innerWidth <= 900;
+    const previewWidth = isMobile ? 214 : 336;
+    const previewHeight = isMobile ? 282 : 426;
     const gap = 18;
     const maxLeft = Math.max(gap, window.innerWidth - previewWidth - gap);
     const maxTop = Math.max(gap, window.innerHeight - previewHeight - gap);

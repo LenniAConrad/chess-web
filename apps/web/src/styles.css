@@ -2098,6 +2098,59 @@ button:disabled {
     align-items: center;
   }
 
+  .history-preview-card {
+    width: 214px;
+    padding: 0.42rem;
+    border-radius: 10px;
+    gap: 0.38rem;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+  }
+
+  .history-preview-head {
+    gap: 0.38rem;
+  }
+
+  .history-preview-state {
+    font-size: 0.63rem;
+  }
+
+  .history-preview-id {
+    font-size: 0.52rem;
+  }
+
+  .history-preview-board-wrap {
+    border-radius: 7px;
+  }
+
+  .history-preview-loading {
+    font-size: 0.62rem;
+  }
+
+  .history-preview-meta {
+    gap: 0.08rem;
+  }
+
+  .history-preview-title {
+    font-size: 0.65rem;
+  }
+
+  .history-preview-time {
+    font-size: 0.56rem;
+  }
+
+  .mini-preview-board-wrap,
+  .mini-preview-board,
+  .mini-preview-board::after,
+  .mini-preview-board cg-board {
+    border-radius: 7px;
+  }
+
+  .mini-preview-board .cg-shapes,
+  .mini-preview-board .cg-custom-svgs {
+    clip-path: inset(0 round 7px);
+    border-radius: 7px;
+  }
+
   .side-column > .pgn-panel {
     order: 4;
   }
