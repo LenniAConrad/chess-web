@@ -21,6 +21,8 @@ interface ChessBoardProps {
   lastMove: [string, string] | null;
   wrongMoveSquare: string | null;
   wrongMoveFlashToken: number;
+  lineCompleteSquare: string | null;
+  lineCompleteFlashToken: number;
   glassEnabled: boolean;
   onMove: (uci: string) => void;
 }
@@ -211,6 +213,8 @@ export function ChessBoard({
   lastMove,
   wrongMoveSquare,
   wrongMoveFlashToken,
+  lineCompleteSquare,
+  lineCompleteFlashToken,
   glassEnabled,
   onMove
 }: ChessBoardProps) {
@@ -238,6 +242,10 @@ export function ChessBoard({
   const wrongMoveLayout = useMemo(
     () => (wrongMoveSquare ? getSquareLayout(wrongMoveSquare, orientation) : null),
     [orientation, wrongMoveSquare]
+  );
+  const lineCompleteLayout = useMemo(
+    () => (lineCompleteSquare ? getSquareLayout(lineCompleteSquare, orientation) : null),
+    [lineCompleteSquare, orientation]
   );
   const coordinateLabels = useMemo<CoordinateLabel[]>(() => {
     const displayFiles = orientation === 'white' ? [...FILES] : [...FILES].reverse();
@@ -536,6 +544,19 @@ export function ChessBoard({
           aria-hidden="true"
         >
           <span className="wrong-move-marker" />
+        </div>
+      ) : null}
+      {lineCompleteLayout ? (
+        <div
+          key={lineCompleteFlashToken}
+          className="line-complete-marker-anchor"
+          style={{
+            left: `${lineCompleteLayout.leftPct}%`,
+            top: `${lineCompleteLayout.topPct}%`
+          }}
+          aria-hidden="true"
+        >
+          <span className="line-complete-marker" />
         </div>
       ) : null}
       {pendingPromotion && promotionLayout ? (

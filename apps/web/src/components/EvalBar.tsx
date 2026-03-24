@@ -9,6 +9,9 @@ const GUIDE_CP_LEVELS = [600, 300, 0, -300, -600];
 
 function normalizeScore(cp: number | null, mate: number | null): number {
   if (mate !== null) {
+    if (mate === 0) {
+      return 0.5;
+    }
     return mate > 0 ? 1 : 0;
   }
 

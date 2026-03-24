@@ -33,7 +33,7 @@ import {
   skipVariation,
   startSession
 } from './lib/api.js';
-import { playMoveSound, type MoveSoundType } from './lib/moveSounds.js';
+import { playMoveSound, primeMoveSounds, type MoveSoundType } from './lib/moveSounds.js';
 import type {
   SessionHistoryItem,
   SessionStatePayload,
@@ -53,10 +53,11 @@ const CORRECT_BREAK_MS = 750;
 const REWIND_STEP_DELAY_MS = 260;
 const REWIND_BREAK_MS = 700;
 const SHORT_STATUS_DELAY_MS = 700;
-const CHECK_SOUND_DELAY_MS = 100;
+const CHECK_SOUND_DELAY_MS = 24;
 const WRONG_MOVE_FEEDBACK_MS = 520;
 const SESSION_HISTORY_FETCH_LIMIT = 100;
 const NO_ANIMATION_DELAY_MS = 180;
+const MOBILE_HISTORY_PREVIEW_HOLD_MS = 260;
 const REPO_URL = 'https://github.com/LenniAConrad/chess-web';
 const COUNT_FORMATTER = new Intl.NumberFormat('en-US');
 
@@ -118,15 +119,10 @@ function wait(ms: number): Promise<void> {
 }
 
 function maybeWait(ms: number, enabled: boolean): Promise<void> {
-  if (ms <= 0) {
+  if (ms <= 0 || !enabled) {
     return Promise.resolve();
   }
-
-  if (enabled) {
-    return wait(ms);
-  }
-
-  return wait(Math.min(ms, NO_ANIMATION_DELAY_MS));
+  return wait(ms);
 }
 
 function applyUciMove(chess: Chess, uciMove: string): boolean {
@@ -271,6 +267,9 @@ function formatEngineSide(cp: number | null, mate: number | null, error: string 
   }
 
   if (mate !== null) {
+    if (mate === 0) {
+      return 'Drawn';
+    }
     return mate > 0 ? 'White winning' : 'Black winning';
   }
 
@@ -317,20 +316,23 @@ export function App() {
   const [reviewPath, setReviewPath] = useState<number[] | null>(null);
   const [wrongMoveSquare, setWrongMoveSquare] = useState<Square | null>(null);
   const [wrongMoveFlashToken, setWrongMoveFlashToken] = useState(0);
+  const [lineCompleteSquare, setLineCompleteSquare] = useState<Square | null>(null);
+  const [lineCompleteFlashToken, setLineCompleteFlashToken] = useState(0);
   const [fallingCapturePieces, setFallingCapturePieces] = useState<FallingCapturePiece[]>([]);
   const [oneTryFailed, setOneTryFailed] = useState(false);
   const [historyPreview, setHistoryPreview] = useState<HistoryPreviewState | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
-  const [isMobileHistoryPeekActive, setIsMobileHistoryPeekActive] = useState(false);
   const headerSettingsRef = useRef<HTMLDetailsElement | null>(null);
   const capturePieceIdRef = useRef(0);
   const historyPreviewCacheRef = useRef(new Map<string, HistoryPreviewData>());
   const historyPreviewDelayRef = useRef<number | null>(null);
   const historyPreviewRequestRef = useRef(0);
+  const mobileHistoryHoldRef = useRef<number | null>(null);
+  const mobileHistoryPreviewSessionRef = useRef<string | null>(null);
+  const suppressHistoryDotClickRef = useRef<string | null>(null);
   const prefetchedNextRef = useRef<PrefetchedNextState | null>(null);
   const prefetchedNextRequestRef = useRef(0);
   const recentHistoryItems = historyItems;
-  const showHistoryPanel = !isMobileViewport || isMobileHistoryPeekActive;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -354,34 +356,6 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (!isMobileViewport && isMobileHistoryPeekActive) {
-      setIsMobileHistoryPeekActive(false);
-    }
-  }, [isMobileHistoryPeekActive, isMobileViewport]);
-
-  useEffect(() => {
-    if (!isMobileHistoryPeekActive || typeof window === 'undefined') {
-      return;
-    }
-
-    const stopPeek = () => {
-      setIsMobileHistoryPeekActive(false);
-    };
-
-    window.addEventListener('pointerup', stopPeek);
-    window.addEventListener('pointercancel', stopPeek);
-    window.addEventListener('touchend', stopPeek);
-    window.addEventListener('touchcancel', stopPeek);
-
-    return () => {
-      window.removeEventListener('pointerup', stopPeek);
-      window.removeEventListener('pointercancel', stopPeek);
-      window.removeEventListener('touchend', stopPeek);
-      window.removeEventListener('touchcancel', stopPeek);
-    };
-  }, [isMobileHistoryPeekActive]);
-
-  useEffect(() => {
     let cancelled = false;
 
     void getPuzzleCount()
@@ -400,6 +374,14 @@ export function App() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!prefs.soundEnabled) {
+      return;
+    }
+
+    primeMoveSounds();
+  }, [prefs.soundEnabled]);
 
   const reviewNodeId = reviewPath?.at(-1) ?? null;
   const treeNodeMap = useMemo(() => {
@@ -695,6 +677,7 @@ export function App() {
       setReviewPath(null);
       setSessionTree(null);
       setWrongMoveSquare(null);
+      setLineCompleteSquare(null);
       setOneTryFailed(false);
       setStatusText(status);
     },
@@ -754,7 +737,7 @@ export function App() {
       currentFen: string,
       animationsEnabled: boolean,
       soundEnabled: boolean
-    ) => {
+    ): Promise<[Square, Square] | null> => {
       const rewindFens = response.rewindFens ?? [];
       let rewindSourceFen = currentFen;
       if (rewindFens.length > 0) {
@@ -771,7 +754,7 @@ export function App() {
 
       if (!response.autoPlayStartFen || response.autoPlayedMoves.length === 0) {
         setDisplayFen(response.nextState.fen);
-        return;
+        return null;
       }
 
       const currentOrRewoundFen = rewindSourceFen;
@@ -782,6 +765,7 @@ export function App() {
 
       setStatusText('Correct. Opponent response...');
       const chess = new Chess(response.autoPlayStartFen);
+      let finalMoveSquares: [Square, Square] | null = null;
       await maybeWait(AUTO_PLAY_DELAY_MS, animationsEnabled);
 
       for (const [index, move] of response.autoPlayedMoves.entries()) {
@@ -794,6 +778,7 @@ export function App() {
         const moveSquares = getMoveSquares(move);
         if (moveSquares) {
           setLastMoveSquares(moveSquares);
+          finalMoveSquares = moveSquares;
         }
         spawnCaptureRainPiece(sourceFen, move);
         playMoveSoundDecision(soundDecision, soundEnabled);
@@ -804,6 +789,7 @@ export function App() {
       }
 
       setDisplayFen(response.nextState.fen);
+      return finalMoveSquares;
     },
     [spawnCaptureRainPiece]
   );
@@ -841,18 +827,6 @@ export function App() {
   const panelControlsDisabled = loading || historyLoading || prefs.autoPlay;
   const boardCanInteract = !prefs.autoPlay && !historyLoading && !isReviewMode && !puzzleIsComplete && !oneTryLocked;
 
-  const handleMobileHistoryPeekStart = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (!isMobileViewport || event.pointerType !== 'touch') {
-      return;
-    }
-
-    setIsMobileHistoryPeekActive(true);
-  }, [isMobileViewport]);
-
-  const handleMobileHistoryPeekEnd = useCallback(() => {
-    setIsMobileHistoryPeekActive(false);
-  }, []);
-
   const handleMove = useCallback(
     async (uciMove: string) => {
       if (
@@ -868,6 +842,7 @@ export function App() {
       }
 
       setWrongMoveSquare(null);
+      setLineCompleteSquare(null);
       const baseFen = displayFen ?? state.fen;
       const moveSoundDecision = getMoveSoundDecision(baseFen, uciMove);
       const optimisticFen = getFenAfterUciMove(baseFen, uciMove);
@@ -940,12 +915,17 @@ export function App() {
           setCorrectText('Correct');
           setStatusText('Correct move');
           await maybeWait(CORRECT_BREAK_MS, prefs.animations);
-          await animateAutoPlay(
-            response,
-            optimisticFen ?? baseFen,
-            prefs.animations,
-            prefs.soundEnabled
-          );
+          const completedLineMove =
+            (await animateAutoPlay(
+              response,
+              optimisticFen ?? baseFen,
+              prefs.animations,
+              prefs.soundEnabled
+            )) ?? optimisticLastMove;
+          if (completedLineMove?.[1]) {
+            setLineCompleteSquare(completedLineMove[1]);
+            setLineCompleteFlashToken((previous) => previous + 1);
+          }
           setStatusText(
             `Correct. Branch ${response.nextState.completedBranches + 1}/${response.nextState.totalLines}`
           );
@@ -954,12 +934,17 @@ export function App() {
           setCorrectText('Correct');
           setStatusText('Correct move');
           await maybeWait(CORRECT_BREAK_MS, prefs.animations);
-          await animateAutoPlay(
-            response,
-            optimisticFen ?? baseFen,
-            prefs.animations,
-            prefs.soundEnabled
-          );
+          const completedLineMove =
+            (await animateAutoPlay(
+              response,
+              optimisticFen ?? baseFen,
+              prefs.animations,
+              prefs.soundEnabled
+            )) ?? optimisticLastMove;
+          if (completedLineMove?.[1]) {
+            setLineCompleteSquare(completedLineMove[1]);
+            setLineCompleteFlashToken((previous) => previous + 1);
+          }
           setStatusText('Puzzle complete');
           if (prefs.autoNext) {
             await maybeWait(SHORT_STATUS_DELAY_MS, prefs.animations);
@@ -1036,6 +1021,7 @@ export function App() {
       setDisplayFen(response.state.fen);
       setLastMoveSquares(null);
       setWrongMoveSquare(null);
+      setLineCompleteSquare(null);
       setStatusText(
         response.pieceFromSquare
           ? nextHintLevel >= 2
@@ -1067,6 +1053,7 @@ export function App() {
         setState(response.nextState);
         setLastBestMove(response.bestMoveUci);
         setWrongMoveSquare(null);
+        setLineCompleteSquare(null);
 
         if (!response.bestMoveUci || !response.afterFen) {
           setDisplayFen(response.nextState.fen);
@@ -1145,6 +1132,7 @@ export function App() {
       setDisplayFen(response.nextState.fen);
       setLastMoveSquares(null);
       setWrongMoveSquare(null);
+      setLineCompleteSquare(null);
       setStatusText(response.skipped ? 'Variation skipped' : 'Nothing to skip');
 
       await loadSessionArtifacts(sessionId);
@@ -1264,6 +1252,10 @@ export function App() {
       window.clearTimeout(historyPreviewDelayRef.current);
       historyPreviewDelayRef.current = null;
     }
+    if (mobileHistoryHoldRef.current !== null) {
+      window.clearTimeout(mobileHistoryHoldRef.current);
+      mobileHistoryHoldRef.current = null;
+    }
     historyPreviewRequestRef.current += 1;
     setHistoryPreview(null);
   }, []);
@@ -1364,6 +1356,48 @@ export function App() {
       openHistoryPreview(item, rect.right, rect.top + rect.height / 2);
     },
     [openHistoryPreview]
+  );
+
+  const clearMobileHistoryHold = useCallback(() => {
+    if (mobileHistoryHoldRef.current !== null) {
+      window.clearTimeout(mobileHistoryHoldRef.current);
+      mobileHistoryHoldRef.current = null;
+    }
+  }, []);
+
+  const handleHistoryDotPointerDown = useCallback(
+    (item: SessionHistoryItem, event: ReactPointerEvent<HTMLButtonElement>) => {
+      if (!isMobileViewport || event.pointerType !== 'touch') {
+        return;
+      }
+
+      clearMobileHistoryHold();
+      mobileHistoryPreviewSessionRef.current = null;
+
+      const rect = event.currentTarget.getBoundingClientRect();
+      mobileHistoryHoldRef.current = window.setTimeout(() => {
+        mobileHistoryHoldRef.current = null;
+        mobileHistoryPreviewSessionRef.current = item.sessionId;
+        suppressHistoryDotClickRef.current = item.sessionId;
+        openHistoryPreview(item, rect.right, rect.top + rect.height / 2);
+      }, MOBILE_HISTORY_PREVIEW_HOLD_MS);
+    },
+    [clearMobileHistoryHold, isMobileViewport, openHistoryPreview]
+  );
+
+  const handleHistoryDotPointerEnd = useCallback(
+    (item: SessionHistoryItem, event: ReactPointerEvent<HTMLButtonElement>) => {
+      if (!isMobileViewport || event.pointerType !== 'touch') {
+        return;
+      }
+
+      clearMobileHistoryHold();
+      if (mobileHistoryPreviewSessionRef.current === item.sessionId) {
+        mobileHistoryPreviewSessionRef.current = null;
+        hideHistoryPreview();
+      }
+    },
+    [clearMobileHistoryHold, hideHistoryPreview, isMobileViewport]
   );
 
   const historyPreviewPosition = useMemo(() => {
@@ -1946,6 +1980,8 @@ export function App() {
                     lastMove={isReviewMode ? reviewLastMoveSquares : lastMoveSquares}
                     wrongMoveSquare={isReviewMode ? null : wrongMoveSquare}
                     wrongMoveFlashToken={wrongMoveFlashToken}
+                    lineCompleteSquare={isReviewMode ? null : lineCompleteSquare}
+                    lineCompleteFlashToken={lineCompleteFlashToken}
                     glassEnabled={prefs.boardGlass}
                     onMove={(uciMove) => void handleMove(uciMove)}
                   />
@@ -1996,58 +2032,54 @@ export function App() {
             </section>
 
             <section
-              className={`rail-block history-strip ${prefs.autoPlay ? 'is-muted' : ''} ${isMobileViewport ? 'is-mobile' : ''} ${showHistoryPanel ? 'is-mobile-open' : ''}`}
+              className={`rail-block history-strip ${prefs.autoPlay ? 'is-muted' : ''} ${isMobileViewport ? 'is-mobile' : ''}`}
               id="history"
               aria-label="Recent game history"
             >
               <div className="history-head">
                 <p className="history-title">Recent games</p>
-                {isMobileViewport ? (
-                  <button
-                    type="button"
-                    className={`history-hold-trigger ${showHistoryPanel ? 'is-active' : ''}`}
-                    onPointerDown={handleMobileHistoryPeekStart}
-                    onPointerUp={handleMobileHistoryPeekEnd}
-                    onPointerCancel={handleMobileHistoryPeekEnd}
-                    onPointerLeave={handleMobileHistoryPeekEnd}
-                  >
-                    Hold for recent games
-                  </button>
-                ) : null}
                 <p className="history-meta">Last {recentHistoryItems.length}</p>
               </div>
-              <div className="history-panel-content">
-                <div className="history-list">
-                  {recentHistoryItems.map((item) => {
-                    const tone = getHistoryDotTone(item);
-                    const label = getHistoryDotLabel(tone);
-                    const symbol = getHistoryDotSymbol(tone);
-                    const selected = item.sessionId === sessionId;
-                    return (
-                      <div
-                        key={item.sessionId}
-                        className="history-dot-slot"
-                        onMouseEnter={(event) => handleHistoryDotMouseEnter(item, event)}
-                        onMouseMove={handleHistoryDotMouseMove}
-                        onMouseLeave={hideHistoryPreview}
-                        onFocus={(event) => handleHistoryDotFocus(item, event)}
-                        onBlur={hideHistoryPreview}
+              <div className="history-list">
+                {recentHistoryItems.map((item) => {
+                  const tone = getHistoryDotTone(item);
+                  const label = getHistoryDotLabel(tone);
+                  const symbol = getHistoryDotSymbol(tone);
+                  const selected = item.sessionId === sessionId;
+                  return (
+                    <div
+                      key={item.sessionId}
+                      className="history-dot-slot"
+                      onMouseEnter={(event) => handleHistoryDotMouseEnter(item, event)}
+                      onMouseMove={handleHistoryDotMouseMove}
+                      onMouseLeave={hideHistoryPreview}
+                      onFocus={(event) => handleHistoryDotFocus(item, event)}
+                      onBlur={hideHistoryPreview}
+                    >
+                      <button
+                        type="button"
+                        className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
+                        onPointerDown={(event) => handleHistoryDotPointerDown(item, event)}
+                        onPointerUp={(event) => handleHistoryDotPointerEnd(item, event)}
+                        onPointerCancel={(event) => handleHistoryDotPointerEnd(item, event)}
+                        onPointerLeave={(event) => handleHistoryDotPointerEnd(item, event)}
+                        onClick={() => {
+                          if (suppressHistoryDotClickRef.current === item.sessionId) {
+                            suppressHistoryDotClickRef.current = null;
+                            return;
+                          }
+                          void handleLoadHistorySession(item.sessionId);
+                        }}
+                        disabled={panelControlsDisabled}
+                        aria-label={`${selected ? 'Current' : label} puzzle ${item.puzzlePublicId} from history`}
                       >
-                        <button
-                          type="button"
-                          className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
-                          onClick={() => void handleLoadHistorySession(item.sessionId)}
-                          disabled={panelControlsDisabled}
-                          aria-label={`${selected ? 'Current' : label} puzzle ${item.puzzlePublicId} from history`}
-                        >
-                          {symbol}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-                {historyError ? <p className="error">{historyError}</p> : null}
+                        {symbol}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
+              {historyError ? <p className="error">{historyError}</p> : null}
             </section>
 
             <section className="rail-block pgn-panel" id="explorer">

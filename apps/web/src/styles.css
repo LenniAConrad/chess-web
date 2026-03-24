@@ -1049,6 +1049,69 @@ body {
   }
 }
 
+.line-complete-marker-anchor {
+  position: absolute;
+  width: 12.5%;
+  height: 12.5%;
+  pointer-events: none;
+  z-index: 18;
+}
+
+.line-complete-marker {
+  position: absolute;
+  top: -12%;
+  right: -12%;
+  width: 46%;
+  aspect-ratio: 1 / 1;
+  border-radius: 999px;
+  background: #3dbd68;
+  border: 2px solid #ffffff;
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.38);
+  animation: line-complete-pop 320ms ease-out;
+}
+
+.line-complete-marker::before,
+.line-complete-marker::after {
+  content: '';
+  position: absolute;
+  background: #ffffff;
+  border-radius: 999px;
+  transform-origin: center;
+}
+
+.line-complete-marker::before {
+  left: 23%;
+  top: 52%;
+  width: 20%;
+  height: 12%;
+  transform: rotate(45deg);
+}
+
+.line-complete-marker::after {
+  left: 34%;
+  top: 45%;
+  width: 38%;
+  height: 12%;
+  transform: rotate(-45deg);
+}
+
+@keyframes line-complete-pop {
+  0% {
+    transform: scale(0.25);
+    opacity: 0;
+  }
+
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .promotion-backdrop {
   position: absolute;
   inset: 0;
@@ -1207,23 +1270,6 @@ body {
   max-height: none;
   overflow: visible;
   align-content: flex-start;
-}
-
-.history-panel-content {
-  display: grid;
-  gap: 0.72rem;
-}
-
-.history-hold-trigger {
-  display: none;
-  min-width: fit-content;
-  touch-action: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.history-hold-trigger.is-active {
-  background: var(--color-button-bg-hover);
 }
 
 .history-dot-slot {
@@ -2065,23 +2111,7 @@ button:disabled {
   }
 
   .history-strip.is-mobile .history-head {
-    flex-wrap: wrap;
     align-items: center;
-  }
-
-  .history-strip.is-mobile .history-hold-trigger {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding-inline: 0.72rem;
-  }
-
-  .history-strip.is-mobile .history-panel-content {
-    display: none;
-  }
-
-  .history-strip.is-mobile.is-mobile-open .history-panel-content {
-    display: grid;
   }
 
   .side-column > .pgn-panel {

@@ -57,6 +57,12 @@ function playBaseSound(type: BaseSoundType): void {
   });
 }
 
+export function primeMoveSounds(): void {
+  getSoundPool('move');
+  getSoundPool('capture');
+  getSoundPool('check');
+}
+
 export function playMoveSound(type: MoveSoundType): void {
   if (type === 'castle') {
     playBaseSound('move');
