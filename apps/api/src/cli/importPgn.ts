@@ -1,16 +1,9 @@
 import './loadEnv.js';
 import { readFile } from 'node:fs/promises';
 import { basename } from 'node:path';
-import { split } from '@mliebelt/pgn-parser';
-import { parsePuzzlePgn } from '@chess-web/chess-core';
-import {
-  createDbPool,
-  insertPuzzle,
-  insertPuzzleNode,
-  setPuzzleRootNode,
-  runMigrations
-} from '@chess-web/db';
+import { createDbPool, runMigrations } from '@chess-web/db';
 import { z } from 'zod';
+import { importPgnText } from '../services/pgnImport.js';
 
 const argsSchema = z.object({
   file: z.string().min(1),
@@ -56,78 +49,9 @@ async function main(): Promise<void> {
   await runMigrations(pool);
 
   const sourceText = await readFile(args.file, 'utf-8');
-  const games = split(sourceText);
-
-  let success = 0;
-  let failed = 0;
-
   const sourceFile = basename(args.file);
-  const jobInsert = await pool.query(
-    `INSERT INTO puzzle_import_jobs(source_file, total, status)
-     VALUES ($1, $2, 'running')
-     RETURNING id`,
-    [sourceFile, games.length]
-  );
-
-  const jobId = Number(jobInsert.rows[0].id);
-
-  for (const game of games) {
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-
-      const parsed = parsePuzzlePgn(game.all, sourceFile);
-      const puzzle = await insertPuzzle(client, {
-        title: parsed.title,
-        startFen: parsed.startFen,
-        source: parsed.source,
-        randomBucket: Math.floor(Math.random() * 1024),
-        randomKey: Math.random()
-      });
-
-      const idMap = new Map<number, number>();
-      for (const node of parsed.nodes) {
-        const inserted = await insertPuzzleNode(client, {
-          puzzleId: puzzle.id,
-          parentId: node.parentId === null ? null : idMap.get(node.parentId) ?? null,
-          ply: node.ply,
-          san: node.san,
-          uci: node.uci,
-          fenAfter: node.fenAfter,
-          isMainline: node.isMainline,
-          siblingOrder: node.siblingOrder,
-          actor: node.actor
-        });
-        idMap.set(node.id, inserted.id);
-      }
-
-      const rootNodeId = idMap.get(parsed.rootNode.id);
-      if (!rootNodeId) {
-        throw new Error('Root node insert failed');
-      }
-
-      await setPuzzleRootNode(client, puzzle.id, rootNodeId);
-      await client.query('COMMIT');
-      success += 1;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      failed += 1;
-      console.error('Failed to import puzzle game:', error);
-    } finally {
-      client.release();
-    }
-  }
-
-  await pool.query(
-    `UPDATE puzzle_import_jobs
-     SET success = $2,
-         failed = $3,
-         status = $4,
-         finished_at = now()
-     WHERE id = $1`,
-    [jobId, success, failed, failed > 0 ? 'completed_with_errors' : 'completed']
-  );
-  console.log(`Import completed. success=${success} failed=${failed}`);
+  const result = await importPgnText(pool, sourceText, sourceFile);
+  console.log(`Import completed. success=${result.success} failed=${result.failed}`);
   await pool.end();
 }
 

@@ -1,9 +1,13 @@
-import type { FastifyInstance } from 'fastify';
+import { readFile } from 'node:fs/promises';
+import { basename, resolve } from 'node:path';
+import type { FastifyInstance, FastifyReply } from 'fastify';
 import { getPuzzleCount } from '@chess-web/db';
 import type { Pool } from 'pg';
 import { z } from 'zod';
+import { env } from '../env.js';
 import { ensureAnonSession } from '../middleware/anonSession.js';
 import { enforceRateLimit } from '../middleware/rateLimit.js';
+import { importPgnText, type PgnImportProgress } from '../services/pgnImport.js';
 import type { InMemoryRateLimiter } from '../services/rateLimiter.js';
 import { SessionService } from '../services/sessionService.js';
 
@@ -44,6 +48,10 @@ const nextSchema = z.object({
   autoNext: z.boolean().optional().default(true)
 });
 
+const adminImportSchema = z.object({
+  replaceExisting: z.boolean().optional().default(true)
+});
+
 const startPolicy = {
   burstLimit: 100,
   burstWindowMs: 1000,
@@ -57,6 +65,44 @@ const actionPolicy = {
   sustainedLimit: 300,
   sustainedWindowMs: 60_000
 };
+
+interface AdminImportStatus {
+  state: 'idle' | 'running' | 'completed' | 'failed';
+  sourceFile: string | null;
+  total: number;
+  success: number;
+  failed: number;
+  startedAt: string | null;
+  finishedAt: string | null;
+  error: string | null;
+}
+
+const adminImportStatus: AdminImportStatus = {
+  state: 'idle',
+  sourceFile: null,
+  total: 0,
+  success: 0,
+  failed: 0,
+  startedAt: null,
+  finishedAt: null,
+  error: null
+};
+
+let activeAdminImport: Promise<void> | null = null;
+const bundledImportFile = resolve(process.cwd(), 'puzzle_exports/stack_min_2plies_256k.pgn');
+
+function requireImportToken(
+  request: { headers: Record<string, unknown> },
+  reply: FastifyReply
+): boolean {
+  const token = request.headers['x-import-token'];
+  if (token !== env.IMPORT_TOKEN) {
+    reply.code(401).send({ error: 'Invalid import token' });
+    return false;
+  }
+
+  return true;
+}
 
 /**
  * Register all puzzle session routes.
@@ -82,6 +128,68 @@ export async function registerSessionRoutes(
   app.get('/api/v1/puzzles/count', async (_request, reply) => {
     const count = await getPuzzleCount(pool);
     reply.send({ count });
+  });
+
+  app.get('/api/v1/admin/import-status', async (request, reply) => {
+    if (!requireImportToken(request, reply)) {
+      return;
+    }
+    reply.send(adminImportStatus);
+  });
+
+  app.post('/api/v1/admin/import-bundled', async (request, reply) => {
+    if (!requireImportToken(request, reply)) {
+      return;
+    }
+
+    if (activeAdminImport) {
+      reply.code(409).send({ error: 'Import already running', status: adminImportStatus });
+      return;
+    }
+
+    const body = adminImportSchema.parse(request.body ?? {});
+    const sourceFile = bundledImportFile;
+
+    adminImportStatus.state = 'running';
+    adminImportStatus.sourceFile = sourceFile;
+    adminImportStatus.total = 0;
+    adminImportStatus.success = 0;
+    adminImportStatus.failed = 0;
+    adminImportStatus.startedAt = new Date().toISOString();
+    adminImportStatus.finishedAt = null;
+    adminImportStatus.error = null;
+
+    activeAdminImport = (async () => {
+      try {
+        const text = await readFile(sourceFile, 'utf-8');
+        const result = await importPgnText(pool, text, basename(sourceFile), {
+          replaceExisting: body.replaceExisting,
+          onProgress: (progress: PgnImportProgress) => {
+            adminImportStatus.total = progress.total;
+            adminImportStatus.success = progress.success;
+            adminImportStatus.failed = progress.failed;
+          }
+        });
+
+        adminImportStatus.state = 'completed';
+        adminImportStatus.total = result.total;
+        adminImportStatus.success = result.success;
+        adminImportStatus.failed = result.failed;
+        adminImportStatus.finishedAt = new Date().toISOString();
+      } catch (error) {
+        adminImportStatus.state = 'failed';
+        adminImportStatus.error = error instanceof Error ? error.message : 'Unknown import error';
+        adminImportStatus.finishedAt = new Date().toISOString();
+      } finally {
+        activeAdminImport = null;
+      }
+    })();
+
+    reply.code(202).send({
+      status: 'started',
+      sourceFile,
+      replaceExisting: body.replaceExisting
+    });
   });
 
   app.post('/api/v1/session/start', async (request, reply) => {

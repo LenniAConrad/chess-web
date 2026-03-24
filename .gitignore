@@ -28,6 +28,8 @@ yarn-error.log*
 *.pgn
 *.pgn.gz
 *.epd
+puzzle_exports/*
+!puzzle_exports/stack_min_2plies_256k.pgn
 tmp-test-puzzles.pgn
 data/
 tmp/
