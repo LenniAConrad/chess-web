@@ -1195,7 +1195,9 @@ body {
   height: var(--eval-fill, 50%);
   background: var(--color-eval-fill-bg);
   z-index: 1;
-  transition: height 140ms ease, width 140ms ease;
+  transition:
+    height 460ms cubic-bezier(0.22, 1, 0.36, 1) 100ms,
+    width 460ms cubic-bezier(0.22, 1, 0.36, 1) 100ms;
 }
 
 .eval-guides {
