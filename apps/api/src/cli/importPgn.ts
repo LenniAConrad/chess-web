@@ -1,9 +1,7 @@
 import './loadEnv.js';
-import { readFile } from 'node:fs/promises';
-import { basename } from 'node:path';
 import { createDbPool, runMigrations } from '@chess-web/db';
 import { z } from 'zod';
-import { importPgnText } from '../services/pgnImport.js';
+import { importPgnFile } from '../services/pgnImport.js';
 
 const argsSchema = z.object({
   file: z.string().min(1),
@@ -48,9 +46,7 @@ async function main(): Promise<void> {
   const pool = createDbPool(env.DATABASE_URL);
   await runMigrations(pool);
 
-  const sourceText = await readFile(args.file, 'utf-8');
-  const sourceFile = basename(args.file);
-  const result = await importPgnText(pool, sourceText, sourceFile);
+  const result = await importPgnFile(pool, args.file);
   console.log(`Import completed. success=${result.success} failed=${result.failed}`);
   await pool.end();
 }

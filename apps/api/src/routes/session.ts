@@ -1,5 +1,4 @@
-import { readFile } from 'node:fs/promises';
-import { basename, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import type { FastifyInstance, FastifyReply } from 'fastify';
 import { getPuzzleCount } from '@chess-web/db';
 import type { Pool } from 'pg';
@@ -7,7 +6,7 @@ import { z } from 'zod';
 import { env } from '../env.js';
 import { ensureAnonSession } from '../middleware/anonSession.js';
 import { enforceRateLimit } from '../middleware/rateLimit.js';
-import { importPgnText, type PgnImportProgress } from '../services/pgnImport.js';
+import { importPgnFile, type PgnImportProgress } from '../services/pgnImport.js';
 import type { InMemoryRateLimiter } from '../services/rateLimiter.js';
 import { SessionService } from '../services/sessionService.js';
 
@@ -90,6 +89,7 @@ const adminImportStatus: AdminImportStatus = {
 
 let activeAdminImport: Promise<void> | null = null;
 const bundledImportFile = resolve(process.cwd(), 'puzzle_exports/stack_min_2plies_256k.pgn');
+const bundledImportTotal = 256000;
 
 function requireImportToken(
   request: { headers: Record<string, unknown> },
@@ -152,7 +152,7 @@ export async function registerSessionRoutes(
 
     adminImportStatus.state = 'running';
     adminImportStatus.sourceFile = sourceFile;
-    adminImportStatus.total = 0;
+    adminImportStatus.total = bundledImportTotal;
     adminImportStatus.success = 0;
     adminImportStatus.failed = 0;
     adminImportStatus.startedAt = new Date().toISOString();
@@ -161,9 +161,9 @@ export async function registerSessionRoutes(
 
     activeAdminImport = (async () => {
       try {
-        const text = await readFile(sourceFile, 'utf-8');
-        const result = await importPgnText(pool, text, basename(sourceFile), {
+        const result = await importPgnFile(pool, sourceFile, {
           replaceExisting: body.replaceExisting,
+          totalHint: bundledImportTotal,
           onProgress: (progress: PgnImportProgress) => {
             adminImportStatus.total = progress.total;
             adminImportStatus.success = progress.success;
