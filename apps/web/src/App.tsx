@@ -919,7 +919,7 @@ export function App() {
           setCorrectText('Correct');
           setStatusText('Correct move');
           await maybeWait(CORRECT_BREAK_MS, prefs.animations);
-          if (optimisticLastMove?.[1]) {
+          if (response.rewindFens.length > 0 && optimisticLastMove?.[1]) {
             setLineCompleteSquare(optimisticLastMove[1]);
             setLineCompleteFlashToken((previous) => previous + 1);
           }
