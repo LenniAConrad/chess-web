@@ -53,7 +53,7 @@ const CORRECT_BREAK_MS = 750;
 const REWIND_STEP_DELAY_MS = 260;
 const REWIND_BREAK_MS = 700;
 const SHORT_STATUS_DELAY_MS = 700;
-const CHECK_SOUND_DELAY_MS = 24;
+const CHECK_SOUND_DELAY_MS = 0;
 const WRONG_MOVE_FEEDBACK_MS = 520;
 const SESSION_HISTORY_FETCH_LIMIT = 100;
 const NO_ANIMATION_DELAY_MS = 180;
@@ -173,7 +173,11 @@ function playMoveSoundDecision(decision: MoveSoundDecision, enabled: boolean): v
     playMoveSound(decision.primary);
   }
   if (decision.isCheck) {
-    setTimeout(() => {
+    if (CHECK_SOUND_DELAY_MS <= 0) {
+      playMoveSound('check');
+      return;
+    }
+    window.setTimeout(() => {
       playMoveSound('check');
     }, CHECK_SOUND_DELAY_MS);
   }
@@ -915,17 +919,16 @@ export function App() {
           setCorrectText('Correct');
           setStatusText('Correct move');
           await maybeWait(CORRECT_BREAK_MS, prefs.animations);
-          const completedLineMove =
-            (await animateAutoPlay(
-              response,
-              optimisticFen ?? baseFen,
-              prefs.animations,
-              prefs.soundEnabled
-            )) ?? optimisticLastMove;
-          if (completedLineMove?.[1]) {
-            setLineCompleteSquare(completedLineMove[1]);
+          if (optimisticLastMove?.[1]) {
+            setLineCompleteSquare(optimisticLastMove[1]);
             setLineCompleteFlashToken((previous) => previous + 1);
           }
+          await animateAutoPlay(
+            response,
+            optimisticFen ?? baseFen,
+            prefs.animations,
+            prefs.soundEnabled
+          );
           setStatusText(
             `Correct. Branch ${response.nextState.completedBranches + 1}/${response.nextState.totalLines}`
           );
@@ -934,17 +937,16 @@ export function App() {
           setCorrectText('Correct');
           setStatusText('Correct move');
           await maybeWait(CORRECT_BREAK_MS, prefs.animations);
-          const completedLineMove =
-            (await animateAutoPlay(
-              response,
-              optimisticFen ?? baseFen,
-              prefs.animations,
-              prefs.soundEnabled
-            )) ?? optimisticLastMove;
-          if (completedLineMove?.[1]) {
-            setLineCompleteSquare(completedLineMove[1]);
+          if (optimisticLastMove?.[1]) {
+            setLineCompleteSquare(optimisticLastMove[1]);
             setLineCompleteFlashToken((previous) => previous + 1);
           }
+          await animateAutoPlay(
+            response,
+            optimisticFen ?? baseFen,
+            prefs.animations,
+            prefs.soundEnabled
+          );
           setStatusText('Puzzle complete');
           if (prefs.autoNext) {
             await maybeWait(SHORT_STATUS_DELAY_MS, prefs.animations);
