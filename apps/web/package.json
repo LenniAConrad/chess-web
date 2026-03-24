@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.app.json && vite build",
+    "build": "node ../../scripts/copy-stockfish-assets.mjs && tsc -p tsconfig.app.json && vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc -p tsconfig.app.json --noEmit",

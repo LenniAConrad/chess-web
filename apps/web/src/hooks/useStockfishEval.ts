@@ -20,6 +20,7 @@ const INITIAL_STATE: EvalState = {
 
 const MAX_SEARCH_DEPTH = 25;
 const SEARCH_TIMEOUT_MS = 2500;
+const STOCKFISH_DIR = `${import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`}vendor/stockfish`;
 
 function parseInfoLine(line: string): { cp: number | null; mate: number | null; depth: number } | null {
   const match = /info depth (\d+).*score (cp|mate) (-?\d+)/.exec(line);
@@ -84,7 +85,7 @@ export function useStockfishEval(fen: string | null, enabled = true) {
     }
 
     try {
-      const worker = new Worker(new URL('stockfish/src/stockfish-nnue-16-single.js', import.meta.url), {
+      const worker = new Worker(`${STOCKFISH_DIR}/stockfish-nnue-16-single.js`, {
         type: 'classic'
       });
 
