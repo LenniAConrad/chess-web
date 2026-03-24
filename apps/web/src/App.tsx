@@ -7,7 +7,8 @@ import {
   useState,
   type CSSProperties,
   type FocusEvent as ReactFocusEvent,
-  type MouseEvent as ReactMouseEvent
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent
 } from 'react';
 import { Chess, type PieceSymbol, type Square } from 'chess.js';
 import { ChessBoard } from './components/ChessBoard.js';
@@ -319,6 +320,8 @@ export function App() {
   const [fallingCapturePieces, setFallingCapturePieces] = useState<FallingCapturePiece[]>([]);
   const [oneTryFailed, setOneTryFailed] = useState(false);
   const [historyPreview, setHistoryPreview] = useState<HistoryPreviewState | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isMobileHistoryPeekActive, setIsMobileHistoryPeekActive] = useState(false);
   const headerSettingsRef = useRef<HTMLDetailsElement | null>(null);
   const capturePieceIdRef = useRef(0);
   const historyPreviewCacheRef = useRef(new Map<string, HistoryPreviewData>());
@@ -327,6 +330,56 @@ export function App() {
   const prefetchedNextRef = useRef<PrefetchedNextState | null>(null);
   const prefetchedNextRequestRef = useRef(0);
   const recentHistoryItems = historyItems;
+  const showHistoryPanel = !isMobileViewport || isMobileHistoryPeekActive;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const media = window.matchMedia('(max-width: 900px)');
+    const syncViewport = () => {
+      setIsMobileViewport(media.matches);
+    };
+
+    syncViewport();
+
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', syncViewport);
+      return () => media.removeEventListener('change', syncViewport);
+    }
+
+    media.addListener(syncViewport);
+    return () => media.removeListener(syncViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileViewport && isMobileHistoryPeekActive) {
+      setIsMobileHistoryPeekActive(false);
+    }
+  }, [isMobileHistoryPeekActive, isMobileViewport]);
+
+  useEffect(() => {
+    if (!isMobileHistoryPeekActive || typeof window === 'undefined') {
+      return;
+    }
+
+    const stopPeek = () => {
+      setIsMobileHistoryPeekActive(false);
+    };
+
+    window.addEventListener('pointerup', stopPeek);
+    window.addEventListener('pointercancel', stopPeek);
+    window.addEventListener('touchend', stopPeek);
+    window.addEventListener('touchcancel', stopPeek);
+
+    return () => {
+      window.removeEventListener('pointerup', stopPeek);
+      window.removeEventListener('pointercancel', stopPeek);
+      window.removeEventListener('touchend', stopPeek);
+      window.removeEventListener('touchcancel', stopPeek);
+    };
+  }, [isMobileHistoryPeekActive]);
 
   useEffect(() => {
     let cancelled = false;
@@ -787,6 +840,18 @@ export function App() {
   const oneTryLocked = prefs.oneTryMode && oneTryFailed;
   const panelControlsDisabled = loading || historyLoading || prefs.autoPlay;
   const boardCanInteract = !prefs.autoPlay && !historyLoading && !isReviewMode && !puzzleIsComplete && !oneTryLocked;
+
+  const handleMobileHistoryPeekStart = useCallback((event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (!isMobileViewport || event.pointerType !== 'touch') {
+      return;
+    }
+
+    setIsMobileHistoryPeekActive(true);
+  }, [isMobileViewport]);
+
+  const handleMobileHistoryPeekEnd = useCallback(() => {
+    setIsMobileHistoryPeekActive(false);
+  }, []);
 
   const handleMove = useCallback(
     async (uciMove: string) => {
@@ -1931,44 +1996,58 @@ export function App() {
             </section>
 
             <section
-              className={`rail-block history-strip ${prefs.autoPlay ? 'is-muted' : ''}`}
+              className={`rail-block history-strip ${prefs.autoPlay ? 'is-muted' : ''} ${isMobileViewport ? 'is-mobile' : ''} ${showHistoryPanel ? 'is-mobile-open' : ''}`}
               id="history"
               aria-label="Recent game history"
             >
               <div className="history-head">
                 <p className="history-title">Recent games</p>
+                {isMobileViewport ? (
+                  <button
+                    type="button"
+                    className={`history-hold-trigger ${showHistoryPanel ? 'is-active' : ''}`}
+                    onPointerDown={handleMobileHistoryPeekStart}
+                    onPointerUp={handleMobileHistoryPeekEnd}
+                    onPointerCancel={handleMobileHistoryPeekEnd}
+                    onPointerLeave={handleMobileHistoryPeekEnd}
+                  >
+                    Hold for recent games
+                  </button>
+                ) : null}
                 <p className="history-meta">Last {recentHistoryItems.length}</p>
               </div>
-              <div className="history-list">
-                {recentHistoryItems.map((item) => {
-                  const tone = getHistoryDotTone(item);
-                  const label = getHistoryDotLabel(tone);
-                  const symbol = getHistoryDotSymbol(tone);
-                  const selected = item.sessionId === sessionId;
-                  return (
-                    <div
-                      key={item.sessionId}
-                      className="history-dot-slot"
-                      onMouseEnter={(event) => handleHistoryDotMouseEnter(item, event)}
-                      onMouseMove={handleHistoryDotMouseMove}
-                      onMouseLeave={hideHistoryPreview}
-                      onFocus={(event) => handleHistoryDotFocus(item, event)}
-                      onBlur={hideHistoryPreview}
-                    >
-                      <button
-                        type="button"
-                        className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
-                        onClick={() => void handleLoadHistorySession(item.sessionId)}
-                        disabled={panelControlsDisabled}
-                        aria-label={`${selected ? 'Current' : label} puzzle ${item.puzzlePublicId} from history`}
+              <div className="history-panel-content">
+                <div className="history-list">
+                  {recentHistoryItems.map((item) => {
+                    const tone = getHistoryDotTone(item);
+                    const label = getHistoryDotLabel(tone);
+                    const symbol = getHistoryDotSymbol(tone);
+                    const selected = item.sessionId === sessionId;
+                    return (
+                      <div
+                        key={item.sessionId}
+                        className="history-dot-slot"
+                        onMouseEnter={(event) => handleHistoryDotMouseEnter(item, event)}
+                        onMouseMove={handleHistoryDotMouseMove}
+                        onMouseLeave={hideHistoryPreview}
+                        onFocus={(event) => handleHistoryDotFocus(item, event)}
+                        onBlur={hideHistoryPreview}
                       >
-                        {symbol}
-                      </button>
-                    </div>
-                  );
-                })}
+                        <button
+                          type="button"
+                          className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
+                          onClick={() => void handleLoadHistorySession(item.sessionId)}
+                          disabled={panelControlsDisabled}
+                          aria-label={`${selected ? 'Current' : label} puzzle ${item.puzzlePublicId} from history`}
+                        >
+                          {symbol}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+                {historyError ? <p className="error">{historyError}</p> : null}
               </div>
-              {historyError ? <p className="error">{historyError}</p> : null}
             </section>
 
             <section className="rail-block pgn-panel" id="explorer">
