@@ -5,9 +5,9 @@
   --page-vertical-space: 10vh;
   --chrome-offset: 8rem;
   --color-text: #121212;
-  --color-bg: #f0f0ee;
-  --color-bg-grad-top: rgba(255, 255, 255, 0.74);
-  --color-bg-grad-bottom: rgba(231, 231, 231, 0.44);
+  --color-bg: #e7dfd2;
+  --color-bg-grad-top: #f5f0e7;
+  --color-bg-grad-bottom: #ddd3c3;
   --color-bg-glow: rgba(255, 255, 255, 0.28);
   --color-panel-bg: rgba(255, 255, 255, 0.5);
   --color-panel-border: rgba(80, 80, 80, 0.22);
@@ -95,9 +95,9 @@
 
 :root[data-theme='dark'] {
   --color-text: #ededed;
-  --color-bg: #171717;
-  --color-bg-grad-top: rgba(130, 130, 130, 0.08);
-  --color-bg-grad-bottom: rgba(0, 0, 0, 0.18);
+  --color-bg: #151311;
+  --color-bg-grad-top: #28231f;
+  --color-bg-grad-bottom: #12100e;
   --color-bg-glow: rgba(200, 200, 200, 0.06);
   --color-panel-bg: rgba(34, 34, 34, 0.5);
   --color-panel-border: rgba(255, 255, 255, 0.12);
@@ -183,11 +183,9 @@ body {
   min-height: 100vh;
   color: var(--color-text);
   background-color: var(--color-bg);
-  background-image:
-    radial-gradient(1080px 500px at 12% -14%, var(--color-bg-glow), transparent 78%),
-    radial-gradient(920px 420px at 88% 116%, var(--color-bg-glow), transparent 80%),
-    linear-gradient(180deg, var(--color-bg-grad-top), var(--color-bg-grad-bottom));
-  background-attachment: fixed;
+  background-image: linear-gradient(180deg, var(--color-bg-grad-top) 0%, var(--color-bg-grad-bottom) 100%);
+  background-repeat: no-repeat;
+  background-size: cover;
   transition: background-color 180ms ease, color 180ms ease, background-image 180ms ease;
   overflow: hidden;
 }
@@ -1852,7 +1850,9 @@ button:disabled {
     background: color-mix(in srgb, var(--color-bg) 94%, transparent);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     z-index: 120;
   }
@@ -1881,8 +1881,8 @@ button:disabled {
     flex-direction: column;
     width: 100%;
     max-width: 100%;
-    flex: 1 1 auto;
-    min-height: 0;
+    flex: 0 0 auto;
+    min-height: auto;
     margin-top: 0;
     padding:
       1rem
@@ -1895,15 +1895,13 @@ button:disabled {
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
+    overflow: visible;
     box-sizing: border-box;
   }
 
   .app-header-settings[open] .settings-content-body {
     width: 100%;
-    margin-block: auto;
+    margin-block: 0;
   }
 
   .app-footer-inner {
