@@ -22,6 +22,11 @@ export async function createApp(): Promise<FastifyInstance> {
   try {
     await runMigrations(pool);
   } catch (error) {
+    if (env.NODE_ENV === 'production') {
+      app.log.error({ error }, 'Primary database unavailable in production.');
+      throw error;
+    }
+
     app.log.warn(
       { error },
       'Primary database unavailable. Falling back to in-memory pg-mem for local development.'
