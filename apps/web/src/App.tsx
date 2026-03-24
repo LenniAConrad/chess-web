@@ -332,6 +332,8 @@ export function App() {
   const historyPreviewDelayRef = useRef<number | null>(null);
   const historyPreviewRequestRef = useRef(0);
   const mobileHistoryHoldRef = useRef<number | null>(null);
+  const mobileHistoryPointerIdRef = useRef<number | null>(null);
+  const mobileHistoryPendingSessionRef = useRef<string | null>(null);
   const mobileHistoryPreviewSessionRef = useRef<string | null>(null);
   const suppressHistoryDotClickRef = useRef<string | null>(null);
   const prefetchedNextRef = useRef<PrefetchedNextState | null>(null);
@@ -459,6 +461,10 @@ export function App() {
       .map((nodeId) => treeNodeMap.get(nodeId)?.san ?? null)
       .filter((san): san is string => Boolean(san));
   }, [reviewPath, treeNodeMap]);
+  const recentHistoryItemMap = useMemo(
+    () => new Map(recentHistoryItems.map((item) => [item.sessionId, item])),
+    [recentHistoryItems]
+  );
 
   const engineEval = useStockfishEval(boardFen, prefs.showEngineEval);
   const checkColor = (() => {
@@ -1272,15 +1278,15 @@ export function App() {
   }, []);
 
   const openHistoryPreview = useCallback(
-    (item: SessionHistoryItem, x: number, y: number) => {
+    (item: SessionHistoryItem, x: number, y: number, immediate = false) => {
       if (historyPreviewDelayRef.current !== null) {
         window.clearTimeout(historyPreviewDelayRef.current);
       }
 
-      historyPreviewDelayRef.current = window.setTimeout(() => {
-        historyPreviewDelayRef.current = null;
+      const showPreview = () => {
         const tone = getHistoryDotTone(item);
         const label = getHistoryDotLabel(tone);
+        const requestId = ++historyPreviewRequestRef.current;
         const cached = historyPreviewCacheRef.current.get(item.sessionId);
         if (cached) {
           setHistoryPreview({
@@ -1306,7 +1312,6 @@ export function App() {
           loading: true
         });
 
-        const requestId = ++historyPreviewRequestRef.current;
         void loadSession(item.sessionId)
           .then((response) => {
             if (historyPreviewRequestRef.current !== requestId) {
@@ -1341,6 +1346,17 @@ export function App() {
               current?.sessionId === item.sessionId ? { ...current, loading: false } : current
             );
           });
+      };
+
+      if (immediate) {
+        historyPreviewDelayRef.current = null;
+        showPreview();
+        return;
+      }
+
+      historyPreviewDelayRef.current = window.setTimeout(() => {
+        historyPreviewDelayRef.current = null;
+        showPreview();
       }, HISTORY_PREVIEW_DELAY_MS);
     },
     []
@@ -1370,7 +1386,48 @@ export function App() {
       window.clearTimeout(mobileHistoryHoldRef.current);
       mobileHistoryHoldRef.current = null;
     }
+    mobileHistoryPendingSessionRef.current = null;
   }, []);
+
+  const queueMobileHistoryPreview = useCallback(
+    (item: SessionHistoryItem, x: number, y: number) => {
+      clearMobileHistoryHold();
+      mobileHistoryPendingSessionRef.current = item.sessionId;
+      mobileHistoryHoldRef.current = window.setTimeout(() => {
+        mobileHistoryHoldRef.current = null;
+        if (mobileHistoryPendingSessionRef.current !== item.sessionId) {
+          return;
+        }
+        mobileHistoryPendingSessionRef.current = null;
+        mobileHistoryPreviewSessionRef.current = item.sessionId;
+        suppressHistoryDotClickRef.current = item.sessionId;
+        openHistoryPreview(item, x, y, true);
+      }, MOBILE_HISTORY_PREVIEW_HOLD_MS);
+    },
+    [clearMobileHistoryHold, openHistoryPreview]
+  );
+
+  const getHistoryItemAtPoint = useCallback(
+    (x: number, y: number) => {
+      if (typeof document === 'undefined') {
+        return null;
+      }
+
+      const target = document.elementFromPoint(x, y);
+      if (!(target instanceof Element)) {
+        return null;
+      }
+
+      const button = target.closest('button.history-dot[data-history-session-id]');
+      const sessionId = button?.getAttribute('data-history-session-id');
+      if (!sessionId) {
+        return null;
+      }
+
+      return recentHistoryItemMap.get(sessionId) ?? null;
+    },
+    [recentHistoryItemMap]
+  );
 
   const handleHistoryDotPointerDown = useCallback(
     (item: SessionHistoryItem, event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -1378,34 +1435,103 @@ export function App() {
         return;
       }
 
-      clearMobileHistoryHold();
+      mobileHistoryPointerIdRef.current = event.pointerId;
       mobileHistoryPreviewSessionRef.current = null;
-
-      const rect = event.currentTarget.getBoundingClientRect();
-      mobileHistoryHoldRef.current = window.setTimeout(() => {
-        mobileHistoryHoldRef.current = null;
-        mobileHistoryPreviewSessionRef.current = item.sessionId;
-        suppressHistoryDotClickRef.current = item.sessionId;
-        openHistoryPreview(item, rect.right, rect.top + rect.height / 2);
-      }, MOBILE_HISTORY_PREVIEW_HOLD_MS);
+      queueMobileHistoryPreview(item, event.clientX, event.clientY);
     },
-    [clearMobileHistoryHold, isMobileViewport, openHistoryPreview]
+    [isMobileViewport, queueMobileHistoryPreview]
   );
 
   const handleHistoryDotPointerEnd = useCallback(
-    (item: SessionHistoryItem, event: ReactPointerEvent<HTMLButtonElement>) => {
+    (_item: SessionHistoryItem, event: ReactPointerEvent<HTMLButtonElement>) => {
       if (!isMobileViewport || event.pointerType !== 'touch') {
         return;
       }
 
+      if (mobileHistoryPointerIdRef.current !== null && event.pointerId !== mobileHistoryPointerIdRef.current) {
+        return;
+      }
+
+      mobileHistoryPointerIdRef.current = null;
       clearMobileHistoryHold();
-      if (mobileHistoryPreviewSessionRef.current === item.sessionId) {
+      if (mobileHistoryPreviewSessionRef.current !== null) {
         mobileHistoryPreviewSessionRef.current = null;
         hideHistoryPreview();
       }
     },
     [clearMobileHistoryHold, hideHistoryPreview, isMobileViewport]
   );
+
+  useEffect(() => {
+    if (!isMobileViewport) {
+      mobileHistoryPointerIdRef.current = null;
+      clearMobileHistoryHold();
+      mobileHistoryPreviewSessionRef.current = null;
+      return;
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== 'touch' || event.pointerId !== mobileHistoryPointerIdRef.current) {
+        return;
+      }
+
+      const item = getHistoryItemAtPoint(event.clientX, event.clientY);
+      if (!item) {
+        clearMobileHistoryHold();
+        if (mobileHistoryPreviewSessionRef.current !== null) {
+          mobileHistoryPreviewSessionRef.current = null;
+          hideHistoryPreview();
+        }
+        return;
+      }
+
+      if (mobileHistoryPreviewSessionRef.current === item.sessionId) {
+        updateHistoryPreviewPosition(event.clientX, event.clientY);
+        return;
+      }
+
+      if (mobileHistoryPreviewSessionRef.current !== null) {
+        mobileHistoryPreviewSessionRef.current = item.sessionId;
+        suppressHistoryDotClickRef.current = item.sessionId;
+        openHistoryPreview(item, event.clientX, event.clientY, true);
+        return;
+      }
+
+      if (mobileHistoryPendingSessionRef.current !== item.sessionId) {
+        queueMobileHistoryPreview(item, event.clientX, event.clientY);
+      }
+    };
+
+    const handlePointerFinish = (event: PointerEvent) => {
+      if (event.pointerType !== 'touch' || event.pointerId !== mobileHistoryPointerIdRef.current) {
+        return;
+      }
+
+      mobileHistoryPointerIdRef.current = null;
+      clearMobileHistoryHold();
+      if (mobileHistoryPreviewSessionRef.current !== null) {
+        mobileHistoryPreviewSessionRef.current = null;
+        hideHistoryPreview();
+      }
+    };
+
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerFinish);
+    document.addEventListener('pointercancel', handlePointerFinish);
+    return () => {
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerFinish);
+      document.removeEventListener('pointercancel', handlePointerFinish);
+    };
+  }, [
+    clearMobileHistoryHold,
+    getHistoryItemAtPoint,
+    hideHistoryPreview,
+    isMobileViewport,
+    openHistoryPreview,
+    queueMobileHistoryPreview,
+    updateHistoryPreviewPosition
+  ]);
 
   const historyPreviewPosition = useMemo(() => {
     if (!historyPreview || typeof window === 'undefined') {
@@ -2067,6 +2193,7 @@ export function App() {
                       <button
                         type="button"
                         className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
+                        data-history-session-id={item.sessionId}
                         onPointerDown={(event) => handleHistoryDotPointerDown(item, event)}
                         onPointerUp={(event) => handleHistoryDotPointerEnd(item, event)}
                         onPointerCancel={(event) => handleHistoryDotPointerEnd(item, event)}
