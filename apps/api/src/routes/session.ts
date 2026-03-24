@@ -459,6 +459,35 @@ export async function registerSessionRoutes(
     reply.send(result);
   });
 
+  app.post('/api/v1/session/prefetch-next', async (request, reply) => {
+    const body = nextSchema.parse(request.body ?? {});
+    const anonSessionId = await ensureAnonSession(request, reply, pool);
+
+    const allowed = await enforceRateLimit({
+      request,
+      reply,
+      pool,
+      limiter,
+      key: `prefetch-next:${body.sessionId}`,
+      policy: actionPolicy,
+      route: '/api/v1/session/prefetch-next',
+      anonSessionId
+    });
+
+    if (!allowed) {
+      return;
+    }
+
+    const result = await sessionService.prefetchNext({
+      sessionId: body.sessionId,
+      anonSessionId,
+      mode: body.mode,
+      autoNext: body.autoNext
+    });
+
+    reply.send(result);
+  });
+
   if (options.enableDebugTreeRoute) {
     app.get('/api/v1/puzzles/:publicId/tree', async (request, reply) => {
       const params = z.object({ publicId: z.string().uuid() }).parse(request.params);

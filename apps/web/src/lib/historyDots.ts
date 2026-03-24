@@ -8,14 +8,6 @@ export function getHistoryDotTone(item: SessionHistoryItem): HistoryDotTone {
   }
 
   if (item.solved) {
-    if (item.wrongMoveCount > 0) {
-      return 'orange';
-    }
-
-    if (item.hintCount > 0) {
-      return 'yellow';
-    }
-
     return 'green';
   }
 
@@ -52,7 +44,7 @@ export function getHistoryDotLabel(tone: HistoryDotTone): string {
     case 'blue':
       return 'Autoplay';
     case 'green':
-      return 'Solved clean';
+      return 'Completed';
     case 'yellow':
       return 'Solved with hints';
     case 'orange':

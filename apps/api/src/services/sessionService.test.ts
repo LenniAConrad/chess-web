@@ -309,4 +309,53 @@ describe('SessionService', () => {
       await ctx.pool.end();
     }
   });
+
+  it('prefetches one next session and consumes it on next', async () => {
+    const ctx = await createServiceContext();
+    try {
+      const current = await ctx.service.startRandomSession({
+        anonSessionId: ctx.anonSessionId,
+        mode: 'explore',
+        autoNext: false
+      });
+
+      const prefetched = await ctx.service.prefetchNext({
+        sessionId: current.sessionId,
+        anonSessionId: ctx.anonSessionId,
+        mode: 'explore',
+        autoNext: false
+      });
+
+      expect(prefetched.sessionId).not.toBe(current.sessionId);
+
+      const prefetchedAgain = await ctx.service.prefetchNext({
+        sessionId: current.sessionId,
+        anonSessionId: ctx.anonSessionId,
+        mode: 'explore',
+        autoNext: false
+      });
+
+      expect(prefetchedAgain.sessionId).toBe(prefetched.sessionId);
+
+      const next = await ctx.service.startNext({
+        sessionId: current.sessionId,
+        anonSessionId: ctx.anonSessionId,
+        mode: 'explore',
+        autoNext: false
+      });
+
+      expect(next.newSessionId).toBe(prefetched.sessionId);
+
+      const history = await ctx.service.getSessionHistory({
+        sessionId: next.newSessionId,
+        anonSessionId: ctx.anonSessionId,
+        limit: 20,
+        includeCurrent: true
+      });
+
+      expect(history.items.some((item) => item.sessionId === prefetched.sessionId)).toBe(true);
+    } finally {
+      await ctx.pool.end();
+    }
+  });
 });

@@ -31,7 +31,7 @@ describe('history dot classification', () => {
     ).toBe('blue');
   });
 
-  it('maps solved sessions to green/yellow/orange', () => {
+  it('maps solved sessions to green', () => {
     expect(
       getHistoryDotTone(
         createHistoryItem({
@@ -50,7 +50,7 @@ describe('history dot classification', () => {
           hintCount: 2
         })
       )
-    ).toBe('yellow');
+    ).toBe('green');
 
     expect(
       getHistoryDotTone(
@@ -60,7 +60,7 @@ describe('history dot classification', () => {
           hintCount: 0
         })
       )
-    ).toBe('orange');
+    ).toBe('green');
   });
 
   it('maps unsolved sessions to gray/red', () => {
@@ -106,7 +106,7 @@ describe('history dot classification', () => {
     expect(getHistoryDotSymbol('gray')).toBe('\u2013');
 
     expect(getHistoryDotLabel('blue')).toBe('Autoplay');
-    expect(getHistoryDotLabel('green')).toBe('Solved clean');
+    expect(getHistoryDotLabel('green')).toBe('Completed');
     expect(getHistoryDotLabel('yellow')).toBe('Solved with hints');
     expect(getHistoryDotLabel('orange')).toBe('Solved with errors');
     expect(getHistoryDotLabel('red')).toBe('Failed');

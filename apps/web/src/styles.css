@@ -196,7 +196,8 @@ body {
   --layout-side-width: 720px;
   --layout-gap: 2rem;
   --layout-eval-width: 80px;
-  --layout-eval-gap: 0.8rem;
+  --layout-eval-gap: var(--layout-gap);
+  --zen-controls-height: 0px;
   --frame-height: calc(100dvh - var(--chrome-offset) - (var(--page-vertical-space) * 2));
   --board-size: max(
     0px,
@@ -219,6 +220,29 @@ body {
 
 .app-shell.is-zen-mode {
   --chrome-offset: 0rem;
+  --page-vertical-space: 1rem;
+  --zen-controls-height: 12rem;
+}
+
+.app-shell.is-zen-mode.has-eval {
+  --board-size: max(
+    0px,
+    min(
+      calc(var(--frame-height) - var(--zen-controls-height)),
+      calc(100vw - 2rem - var(--layout-eval-width) - var(--layout-eval-gap))
+    )
+  );
+}
+
+.app-shell.is-zen-mode.no-eval {
+  --board-size: max(
+    0px,
+    min(calc(var(--frame-height) - var(--zen-controls-height)), calc(100vw - 2rem))
+  );
+}
+
+.app-shell.is-zen-mode.has-eval .board-stack {
+  transform: translateX(calc((var(--layout-eval-width) + var(--layout-eval-gap)) / -2));
 }
 
 .capture-rain-layer {
@@ -426,9 +450,24 @@ body {
   width: var(--board-size);
 }
 
+.zen-controls {
+  width: var(--board-size);
+  margin-left: calc(var(--layout-eval-width) + var(--layout-eval-gap));
+  display: grid;
+  gap: 0.75rem;
+}
+
+.zen-controls.no-eval {
+  margin-left: 0;
+}
+
+.app-shell.is-zen-mode .zen-controls .button-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .board-stage {
   display: flex;
-  gap: 0.8rem;
+  gap: var(--layout-eval-gap);
   height: var(--board-size);
   align-items: stretch;
 }
@@ -475,6 +514,11 @@ body {
 
 .side-column > .rail-block {
   flex: 0 0 auto;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .app-footer {
@@ -1575,6 +1619,11 @@ button.toggle-chip.autoplay-chip.is-on .toggle-chip-track {
   margin-top: 0.72rem;
 }
 
+.settings-content-body {
+  display: grid;
+  gap: inherit;
+}
+
 .settings-section {
   display: grid;
   gap: 0.55rem;
@@ -1722,13 +1771,25 @@ button:disabled {
   .app-shell {
     --board-size: 100%;
     --frame-height: auto;
+    --layout-eval-gap: 1rem;
     height: auto;
     min-height: 100dvh;
     overflow: visible;
   }
 
+  .app-shell.is-zen-mode {
+    --zen-exit-hint-space: max(2.8rem, calc(env(safe-area-inset-bottom) + 2.4rem));
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
+  }
+
   body {
     overflow: auto;
+  }
+
+  body:has(.app-header-settings[open]) {
+    overflow: hidden;
   }
 
   .app-header {
@@ -1758,10 +1819,74 @@ button:disabled {
     flex: 0 0 auto;
   }
 
+  .app-header-settings[open] {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    background: color-mix(in srgb, var(--color-bg) 94%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    overflow: hidden;
+    overscroll-behavior: contain;
+    z-index: 120;
+  }
+
+  .app-header-settings[open] .settings-summary {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    width: 100%;
+    box-sizing: border-box;
+    padding:
+      max(1rem, env(safe-area-inset-top))
+      max(var(--mobile-page-gutter), env(safe-area-inset-right))
+      0.9rem
+      max(var(--mobile-page-gutter), env(safe-area-inset-left));
+    background: color-mix(in srgb, var(--color-bg) 97%, transparent);
+    color: var(--color-status);
+  }
+
   .app-header-settings[open] .settings-content {
+    position: relative;
+    top: auto;
+    right: auto;
     left: auto;
-    right: 0;
-    width: min(420px, calc(100vw - (var(--mobile-page-gutter) * 2)));
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin-top: 0;
+    padding:
+      1rem
+      max(var(--mobile-page-gutter), env(safe-area-inset-right))
+      max(1rem, env(safe-area-inset-bottom))
+      max(var(--mobile-page-gutter), env(safe-area-inset-left));
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    box-sizing: border-box;
+  }
+
+  .app-header-settings[open] .settings-content-body {
+    width: 100%;
+    margin-block: auto;
   }
 
   .app-footer-inner {
@@ -1796,9 +1921,20 @@ button:disabled {
     gap: 1rem;
   }
 
+  .app-shell.is-zen-mode .split-layout {
+    min-height: 100%;
+    height: 100%;
+    align-content: center;
+    justify-items: stretch;
+  }
+
   .board-column {
     height: auto;
     min-height: 0;
+  }
+
+  .app-shell.is-zen-mode .board-column {
+    width: 100%;
   }
 
   .board-stage {
@@ -1811,9 +1947,32 @@ button:disabled {
     width: 100%;
   }
 
+  .app-shell.is-zen-mode .board-stack {
+    width: min(100%, calc(100vw - (var(--mobile-page-gutter) * 2)));
+    margin: 0 auto;
+  }
+
+  .app-shell.is-zen-mode.has-eval .board-stack {
+    transform: none;
+  }
+
+  .zen-controls {
+    width: 100%;
+    margin-left: 0;
+  }
+
   .layout {
     padding-inline: var(--mobile-page-gutter);
     overflow: visible;
+  }
+
+  .app-shell.is-zen-mode .layout {
+    padding-bottom: var(--zen-exit-hint-space);
+    overflow: hidden;
+  }
+
+  .app-shell.is-zen-mode .zen-exit-hint {
+    bottom: max(0.9rem, env(safe-area-inset-bottom));
   }
 
   .app-footer {
@@ -1872,6 +2031,22 @@ button:disabled {
     overflow: visible;
     padding-inline: 0;
     scrollbar-gutter: auto;
+  }
+
+  .side-column > .rail-actions {
+    order: 1;
+  }
+
+  .side-column > .rail-status {
+    order: 2;
+  }
+
+  .side-column > .history-strip {
+    order: 3;
+  }
+
+  .side-column > .pgn-panel {
+    order: 4;
   }
 
   .pgn-move-list {

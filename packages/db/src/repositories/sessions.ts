@@ -21,6 +21,7 @@ function mapSession(row: Record<string, unknown>): PuzzleSessionRecord {
     node_id: row.node_id === null ? null : Number(row.node_id),
     branch_cursor: (row.branch_cursor ?? {}) as Record<string, unknown>,
     started_from_history: Boolean(row.started_from_history),
+    prefetched: Boolean(row.prefetched),
     solved: Boolean(row.solved),
     revealed: Boolean(row.revealed),
     autoplay_used: Boolean(row.autoplay_used),
@@ -72,14 +73,15 @@ export async function createPuzzleSession(
     nodeId: number;
     branchCursor: Record<string, unknown>;
     startedFromHistory?: boolean;
+    prefetched?: boolean;
   }
 ): Promise<PuzzleSessionRecord> {
   const sessionId = randomUUID();
   const result = await pool.query(
     `INSERT INTO puzzle_sessions(
-      id, anon_session_id, puzzle_id, mode, node_id, branch_cursor, started_from_history
+      id, anon_session_id, puzzle_id, mode, node_id, branch_cursor, started_from_history, prefetched
     )
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
     [
       sessionId,
@@ -88,7 +90,8 @@ export async function createPuzzleSession(
       input.mode,
       input.nodeId,
       JSON.stringify(input.branchCursor),
-      input.startedFromHistory ?? false
+      input.startedFromHistory ?? false,
+      input.prefetched ?? false
     ]
   );
 
@@ -111,6 +114,7 @@ export async function getOldestUntouchedPuzzleSession(
      WHERE ps.anon_session_id = $1
        AND ps.solved = false
        AND ps.revealed = false
+       AND ps.prefetched = false
        AND ps.autoplay_used = false
        AND ps.wrong_move_count = 0
        AND ps.hint_count = 0
@@ -138,6 +142,7 @@ export async function updatePuzzleSession(
     sessionId: string;
     nodeId: number;
     branchCursor: Record<string, unknown>;
+    prefetched?: boolean;
     solved: boolean;
     revealed: boolean;
     autoplayUsed: boolean;
@@ -149,11 +154,12 @@ export async function updatePuzzleSession(
     `UPDATE puzzle_sessions
      SET node_id = $2,
          branch_cursor = $3,
-         solved = $4,
-         revealed = $5,
-         autoplay_used = $6,
-         wrong_move_count = $7,
-         hint_count = $8,
+         prefetched = $4,
+         solved = $5,
+         revealed = $6,
+         autoplay_used = $7,
+         wrong_move_count = $8,
+         hint_count = $9,
          updated_at = now()
      WHERE id = $1
      RETURNING *`,
@@ -161,6 +167,7 @@ export async function updatePuzzleSession(
       input.sessionId,
       input.nodeId,
       JSON.stringify(input.branchCursor),
+      input.prefetched ?? false,
       input.solved,
       input.revealed,
       input.autoplayUsed,
@@ -170,6 +177,53 @@ export async function updatePuzzleSession(
   );
 
   return mapSession(result.rows[0] as Record<string, unknown>);
+}
+
+export async function setPuzzleSessionPrefetched(
+  pool: Pool,
+  input: {
+    sessionId: string;
+    prefetched: boolean;
+  }
+): Promise<PuzzleSessionRecord> {
+  const result = await pool.query(
+    `UPDATE puzzle_sessions
+     SET prefetched = $2,
+         updated_at = now()
+     WHERE id = $1
+     RETURNING *`,
+    [input.sessionId, input.prefetched]
+  );
+
+  return mapSession(result.rows[0] as Record<string, unknown>);
+}
+
+export async function getOldestPrefetchedPuzzleSession(
+  pool: Pool,
+  anonSessionId: string,
+  mode: VariationMode,
+  excludeSessionId?: string
+): Promise<PuzzleSessionRecord | null> {
+  const baseQuery = `SELECT *
+     FROM puzzle_sessions ps
+     WHERE ps.anon_session_id = $1
+       AND ps.mode = $2
+       AND ps.prefetched = true`;
+
+  const withExcludeQuery = `${baseQuery}
+       AND ps.id <> $3
+     ORDER BY ps.created_at ASC
+     LIMIT 1`;
+
+  const withoutExcludeQuery = `${baseQuery}
+     ORDER BY ps.created_at ASC
+     LIMIT 1`;
+
+  const result = excludeSessionId
+    ? await pool.query(withExcludeQuery, [anonSessionId, mode, excludeSessionId])
+    : await pool.query(withoutExcludeQuery, [anonSessionId, mode]);
+
+  return result.rowCount ? mapSession(result.rows[0] as Record<string, unknown>) : null;
 }
 
 export async function listPuzzleSessionHistory(
@@ -192,6 +246,7 @@ export async function listPuzzleSessionHistory(
      FROM puzzle_sessions ps
      INNER JOIN puzzles p ON p.id = ps.puzzle_id
      WHERE ps.anon_session_id = $1
+       AND ps.prefetched = false
        AND (
          ps.started_from_history = false
          OR ps.solved = true

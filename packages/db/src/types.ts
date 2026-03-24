@@ -33,6 +33,7 @@ export interface PuzzleSessionRecord {
   node_id: number | null;
   branch_cursor: Record<string, unknown>;
   started_from_history: boolean;
+  prefetched: boolean;
   solved: boolean;
   revealed: boolean;
   autoplay_used: boolean;

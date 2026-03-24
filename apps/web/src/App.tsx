@@ -1,4 +1,5 @@
 import {
+  type AnimationEvent as ReactAnimationEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -20,9 +21,11 @@ import {
   getPuzzleCount,
   getHint,
   loadSession,
+  refreshSession,
   getSessionHistory,
   getSessionTree,
   nextPuzzle,
+  prefetchNextPuzzle,
   playMove,
   retainLoadedSessions,
   revealSolution,
@@ -96,6 +99,13 @@ interface HistoryPreviewState extends HistoryPreviewData {
   x: number;
   y: number;
   loading: boolean;
+}
+
+interface PrefetchedNextState {
+  sourceSessionId: string;
+  mode: StartSessionResponse['state']['variationMode'];
+  autoNext: boolean;
+  response: StartSessionResponse;
 }
 
 const HISTORY_PREVIEW_DELAY_MS = 110;
@@ -314,6 +324,8 @@ export function App() {
   const historyPreviewCacheRef = useRef(new Map<string, HistoryPreviewData>());
   const historyPreviewDelayRef = useRef<number | null>(null);
   const historyPreviewRequestRef = useRef(0);
+  const prefetchedNextRef = useRef<PrefetchedNextState | null>(null);
+  const prefetchedNextRequestRef = useRef(0);
   const recentHistoryItems = historyItems;
 
   useEffect(() => {
@@ -478,6 +490,30 @@ export function App() {
     });
   }, [prefs.autoNext, puzzle, sessionId, state]);
 
+  const takePrefetchedNextSession = useCallback(
+    (sourceSessionId: string, mode: StartSessionResponse['state']['variationMode'], autoNext: boolean) => {
+      const prefetched = prefetchedNextRef.current;
+      if (
+        !prefetched ||
+        prefetched.sourceSessionId !== sourceSessionId ||
+        prefetched.mode !== mode ||
+        prefetched.autoNext !== autoNext
+      ) {
+        return null;
+      }
+
+      prefetchedNextRef.current = null;
+      return prefetched.response;
+    },
+    []
+  );
+
+  const activatePrefetchedSession = useCallback((nextSessionId: string) => {
+    void refreshSession(nextSessionId).catch(() => {
+      // Prefetched activation is best-effort; normal interaction routes still recover by activating on demand.
+    });
+  }, []);
+
   useEffect(() => {
     return () => {
       if (historyPreviewDelayRef.current !== null) {
@@ -552,9 +588,47 @@ export function App() {
     void loadSessionArtifacts(sessionId);
   }, [loadSessionArtifacts, sessionId]);
 
+  useEffect(() => {
+    if (!sessionId || !state || loading || historyLoading) {
+      return;
+    }
+
+    const prefetched = prefetchedNextRef.current;
+    if (
+      prefetched &&
+      prefetched.sourceSessionId === sessionId &&
+      prefetched.mode === prefs.variationMode &&
+      prefetched.autoNext === prefs.autoNext
+    ) {
+      return;
+    }
+
+    const requestId = ++prefetchedNextRequestRef.current;
+    void prefetchNextPuzzle(sessionId, prefs.variationMode, prefs.autoNext)
+      .then((response) => {
+        if (prefetchedNextRequestRef.current !== requestId) {
+          return;
+        }
+
+        prefetchedNextRef.current = {
+          sourceSessionId: sessionId,
+          mode: prefs.variationMode,
+          autoNext: prefs.autoNext,
+          response
+        };
+      })
+      .catch(() => {
+        if (prefetchedNextRequestRef.current === requestId) {
+          prefetchedNextRef.current = null;
+        }
+      });
+  }, [historyLoading, loading, prefs.autoNext, prefs.variationMode, sessionId, state]);
+
   const applyStartedSession = useCallback(
     (response: StartSessionResponse, status: string) => {
       cacheLoadedSession(response);
+      prefetchedNextRequestRef.current += 1;
+      prefetchedNextRef.current = null;
       setSessionId(response.sessionId);
       setPuzzle(response.puzzle);
       setPuzzleIdInput(response.puzzle.publicId);
@@ -573,6 +647,10 @@ export function App() {
     },
     [resetHints]
   );
+
+  const removeCaptureRainPiece = useCallback((id: number) => {
+    setFallingCapturePieces((previous) => previous.filter((entry) => entry.id !== id));
+  }, []);
 
   const spawnCaptureRainPiece = useCallback(
     (fen: string, uciMove: string) => {
@@ -602,12 +680,19 @@ export function App() {
       } satisfies FallingCapturePiece;
 
       setFallingCapturePieces((previous) => [...previous.slice(-11), piece]);
-
-      window.setTimeout(() => {
-        setFallingCapturePieces((previous) => previous.filter((entry) => entry.id !== id));
-      }, fallDurationMs + 220);
     },
     [prefs.captureRain]
+  );
+
+  const handleCaptureRainPieceAnimationEnd = useCallback(
+    (event: ReactAnimationEvent<HTMLDivElement>, id: number) => {
+      if (event.target !== event.currentTarget || event.animationName !== 'capture-piece-fall') {
+        return;
+      }
+
+      removeCaptureRainPiece(id);
+    },
+    [removeCaptureRainPiece]
   );
 
   const animateAutoPlay = useCallback(
@@ -756,17 +841,24 @@ export function App() {
             if (prefs.autoNext) {
               setStatusText('Incorrect. Next puzzle...');
               await maybeWait(SHORT_STATUS_DELAY_MS, prefs.animations);
-              const next = await nextPuzzle(sessionId, prefs.variationMode, prefs.autoNext);
-              applyStartedSession(
-                {
-                  sessionId: next.newSessionId,
-                  puzzle: next.puzzle,
-                  state: next.state,
-                  ui: { autoNextDefault: prefs.autoNext }
-                },
-                'Incorrect. Next puzzle loaded'
-              );
-              artifactSessionId = next.newSessionId;
+              const prefetchedNext = takePrefetchedNextSession(sessionId, prefs.variationMode, prefs.autoNext);
+              if (prefetchedNext) {
+                applyStartedSession(prefetchedNext, 'Incorrect. Next puzzle loaded');
+                activatePrefetchedSession(prefetchedNext.sessionId);
+                artifactSessionId = prefetchedNext.sessionId;
+              } else {
+                const next = await nextPuzzle(sessionId, prefs.variationMode, prefs.autoNext);
+                applyStartedSession(
+                  {
+                    sessionId: next.newSessionId,
+                    puzzle: next.puzzle,
+                    state: next.state,
+                    ui: { autoNextDefault: prefs.autoNext }
+                  },
+                  'Incorrect. Next puzzle loaded'
+                );
+                artifactSessionId = next.newSessionId;
+              }
             } else {
               setStatusText('Incorrect. Press Next puzzle');
             }
@@ -806,17 +898,24 @@ export function App() {
           setStatusText('Puzzle complete');
           if (prefs.autoNext) {
             await maybeWait(SHORT_STATUS_DELAY_MS, prefs.animations);
-            const next = await nextPuzzle(sessionId, prefs.variationMode, prefs.autoNext);
-            applyStartedSession(
-              {
-                sessionId: next.newSessionId,
-                puzzle: next.puzzle,
-                state: next.state,
-                ui: { autoNextDefault: prefs.autoNext }
-              },
-              'Next puzzle loaded'
-            );
-            artifactSessionId = next.newSessionId;
+            const prefetchedNext = takePrefetchedNextSession(sessionId, prefs.variationMode, prefs.autoNext);
+            if (prefetchedNext) {
+              applyStartedSession(prefetchedNext, 'Next puzzle loaded');
+              activatePrefetchedSession(prefetchedNext.sessionId);
+              artifactSessionId = prefetchedNext.sessionId;
+            } else {
+              const next = await nextPuzzle(sessionId, prefs.variationMode, prefs.autoNext);
+              applyStartedSession(
+                {
+                  sessionId: next.newSessionId,
+                  puzzle: next.puzzle,
+                  state: next.state,
+                  ui: { autoNextDefault: prefs.autoNext }
+                },
+                'Next puzzle loaded'
+              );
+              artifactSessionId = next.newSessionId;
+            }
           }
         }
 
@@ -847,6 +946,8 @@ export function App() {
       sessionId,
       spawnCaptureRainPiece,
       state,
+      activatePrefetchedSession,
+      takePrefetchedNextSession,
       oneTryLocked
     ]
   );
@@ -998,16 +1099,22 @@ export function App() {
     setErrorText(null);
 
     try {
-      const next = await nextPuzzle(sessionId, prefs.variationMode, prefs.autoNext);
-      applyStartedSession(
-        {
-          sessionId: next.newSessionId,
-          puzzle: next.puzzle,
-          state: next.state,
-          ui: { autoNextDefault: prefs.autoNext }
-        },
-        'New puzzle loaded'
-      );
+      const prefetchedNext = takePrefetchedNextSession(sessionId, prefs.variationMode, prefs.autoNext);
+      if (prefetchedNext) {
+        applyStartedSession(prefetchedNext, 'New puzzle loaded');
+        activatePrefetchedSession(prefetchedNext.sessionId);
+      } else {
+        const next = await nextPuzzle(sessionId, prefs.variationMode, prefs.autoNext);
+        applyStartedSession(
+          {
+            sessionId: next.newSessionId,
+            puzzle: next.puzzle,
+            state: next.state,
+            ui: { autoNextDefault: prefs.autoNext }
+          },
+          'New puzzle loaded'
+        );
+      }
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : 'Failed to load next puzzle');
     } finally {
@@ -1019,7 +1126,9 @@ export function App() {
     historyLoading,
     prefs.autoNext,
     prefs.variationMode,
-    sessionId
+    sessionId,
+    activatePrefetchedSession,
+    takePrefetchedNextSession
   ]);
 
   const handleRestartPuzzle = useCallback(async () => {
@@ -1334,14 +1443,95 @@ export function App() {
   }
 
   const interactive = boardCanInteract;
+  const isZenMode = prefs.zenMode;
+  const shellClassName = ['app-shell', isZenMode ? 'is-zen-mode' : null, prefs.showEngineEval ? 'has-eval' : 'no-eval']
+    .filter(Boolean)
+    .join(' ');
   const footerLinks: AppChromeLink[] = [
     { href: REPO_URL, label: 'GitHub', external: true }
   ];
+  const puzzleActionButtons = (
+    <>
+      <button
+        type="button"
+        className="btn-secondary"
+        disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled}
+        onClick={() => void handleHint()}
+      >
+        Hint
+      </button>
+      <button
+        type="button"
+        className="btn-secondary"
+        disabled={panelControlsDisabled || isReviewMode}
+        onClick={() => void handleReveal()}
+      >
+        Show solution
+      </button>
+      {puzzleIsComplete ? (
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={panelControlsDisabled || isReviewMode}
+          onClick={() => void handleRestartPuzzle()}
+        >
+          Restart puzzle
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={panelControlsDisabled || isReviewMode}
+          onClick={() => void handleSkipVariation()}
+        >
+          Skip variation
+        </button>
+      )}
+      <button
+        type="button"
+        className="btn-primary"
+        disabled={panelControlsDisabled}
+        onClick={() => void handleNextPuzzle()}
+      >
+        Next puzzle
+      </button>
+    </>
+  );
+  const reviewNavigationButtons = (
+    <>
+      <button type="button" disabled={panelControlsDisabled || !isReviewMode} onClick={handleReviewBackOne}>
+        Back one move
+      </button>
+      <button type="button" disabled={panelControlsDisabled || !isReviewMode} onClick={handleBackToLive}>
+        Back to live puzzle
+      </button>
+    </>
+  );
+  const zenReviewNavigationButtons = (
+    <>
+      <button
+        type="button"
+        className="btn-secondary"
+        disabled={panelControlsDisabled || !isReviewMode}
+        onClick={handleReviewBackOne}
+      >
+        Back one move
+      </button>
+      <button
+        type="button"
+        className="btn-secondary"
+        disabled={panelControlsDisabled || !isReviewMode}
+        onClick={handleBackToLive}
+      >
+        Back to live puzzle
+      </button>
+    </>
+  );
 
   return (
     <>
-      <div className={`app-shell ${prefs.zenMode ? 'is-zen-mode' : ''}`}>
-        {prefs.zenMode ? (
+      <div className={shellClassName}>
+        {isZenMode ? (
           <button
             type="button"
             className="zen-exit-hint"
@@ -1357,7 +1547,12 @@ export function App() {
         ) : null}
         <div className="capture-rain-layer" aria-hidden="true">
           {fallingCapturePieces.map((piece) => (
-            <div key={piece.id} className="capture-rain-piece" style={piece.style}>
+            <div
+              key={piece.id}
+              className="capture-rain-piece"
+              style={piece.style}
+              onAnimationEnd={(event) => handleCaptureRainPieceAnimationEnd(event, piece.id)}
+            >
               <img className="capture-rain-piece-spin" src={piece.src} alt="" />
             </div>
           ))}
@@ -1376,6 +1571,7 @@ export function App() {
               <details ref={headerSettingsRef} className="app-header-settings settings-panel">
                 <summary className="settings-summary">Settings</summary>
                 <div className="settings-content">
+                  <div className="settings-content-body">
                   <section className="settings-section" aria-labelledby="settings-gameplay">
                     <div className="settings-section-head">
                       <span className="settings-section-title" id="settings-gameplay">
@@ -1657,6 +1853,7 @@ export function App() {
                       </button>
                     </div>
                   </section>
+                  </div>
                 </div>
               </details>
             </div>
@@ -1689,10 +1886,19 @@ export function App() {
                   />
                 </div>
               </div>
+              {isZenMode ? (
+                <div className={`zen-controls ${prefs.showEngineEval ? '' : 'no-eval'}`}>
+                  <div className="button-row">
+                    {puzzleActionButtons}
+                    {zenReviewNavigationButtons}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </section>
 
-          <aside className="side-column panel">
+          {!isZenMode ? (
+            <aside className="side-column panel">
             <section className="rail-block header rail-status">
               <p className={`subtitle rail-title ${!puzzle.title ? 'is-untitled' : ''}`}>
                 {puzzle.title || 'Untitled Puzzle'}
@@ -1719,49 +1925,7 @@ export function App() {
 
             <section className="rail-block rail-actions">
               <div className="button-row">
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled}
-                  onClick={() => void handleHint()}
-                >
-                  Hint
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  disabled={panelControlsDisabled || isReviewMode}
-                  onClick={() => void handleReveal()}
-                >
-                  Show solution
-                </button>
-                {puzzleIsComplete ? (
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    disabled={panelControlsDisabled || isReviewMode}
-                    onClick={() => void handleRestartPuzzle()}
-                  >
-                    Restart puzzle
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    disabled={panelControlsDisabled || isReviewMode}
-                    onClick={() => void handleSkipVariation()}
-                  >
-                    Skip variation
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="btn-primary"
-                  disabled={panelControlsDisabled}
-                  onClick={() => void handleNextPuzzle()}
-                >
-                  Next puzzle
-                </button>
+                {puzzleActionButtons}
               </div>
 
             </section>
@@ -1810,22 +1974,7 @@ export function App() {
             <section className="rail-block pgn-panel" id="explorer">
               <div className="pgn-header-row">
                 <p className="pgn-title">PGN Explorer</p>
-                <div className="pgn-actions">
-                  <button
-                    type="button"
-                    disabled={panelControlsDisabled || !isReviewMode}
-                    onClick={handleReviewBackOne}
-                  >
-                    Back one move
-                  </button>
-                  <button
-                    type="button"
-                    disabled={panelControlsDisabled || !isReviewMode}
-                    onClick={handleBackToLive}
-                  >
-                    Back to live puzzle
-                  </button>
-                </div>
+                <div className="pgn-actions">{reviewNavigationButtons}</div>
               </div>
 
               <p className="meta pgn-path">
@@ -1857,7 +2006,8 @@ export function App() {
                 )}
               </div>
             </section>
-          </aside>
+            </aside>
+          ) : null}
         </main>
         {historyPreview && historyPreviewPosition ? (
           <aside

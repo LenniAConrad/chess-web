@@ -9,10 +9,12 @@ import {
   getPuzzleById,
   getPuzzleByPublicId,
   getPuzzleNodes,
+  getOldestPrefetchedPuzzleSession,
   getOldestUntouchedPuzzleSession,
   getPuzzleSession,
   getRandomPuzzle,
   listPuzzleSessionHistory,
+  setPuzzleSessionPrefetched,
   updatePuzzleSession,
   type PuzzleSessionHistoryRecord,
   type PuzzleNodeRecord,
@@ -132,6 +134,7 @@ export class SessionService {
     mode: VariationMode;
     autoNext: boolean;
     startedFromHistory?: boolean;
+    prefetched?: boolean;
     puzzle: PuzzleRecord;
   }): Promise<{
     sessionId: string;
@@ -156,10 +159,13 @@ export class SessionService {
       mode: input.mode,
       nodeId: snapshot.nodeId,
       branchCursor: initialCursor as unknown as Record<string, unknown>,
-      startedFromHistory: input.startedFromHistory ?? false
+      startedFromHistory: input.startedFromHistory ?? false,
+      prefetched: input.prefetched ?? false
     });
 
-    await this.incrementDailyMetric('puzzles_started');
+    if (!input.prefetched) {
+      await this.incrementDailyMetric('puzzles_started');
+    }
 
     return {
       sessionId: dbSession.id,
@@ -181,6 +187,7 @@ export class SessionService {
     autoNext: boolean;
     excludePuzzleId?: number;
     startedFromHistory?: boolean;
+    prefetched?: boolean;
   }): Promise<{
     sessionId: string;
     puzzle: { publicId: string; startFen: string; title: string };
@@ -197,6 +204,7 @@ export class SessionService {
       mode: input.mode,
       autoNext: input.autoNext,
       startedFromHistory: input.startedFromHistory,
+      prefetched: input.prefetched,
       puzzle
     });
   }
@@ -207,6 +215,7 @@ export class SessionService {
     autoNext: boolean;
     publicId: string;
     startedFromHistory?: boolean;
+    prefetched?: boolean;
   }): Promise<{
     sessionId: string;
     puzzle: { publicId: string; startFen: string; title: string };
@@ -219,8 +228,23 @@ export class SessionService {
       mode: input.mode,
       autoNext: input.autoNext,
       startedFromHistory: input.startedFromHistory,
+      prefetched: input.prefetched,
       puzzle
     });
+  }
+
+  private async activatePrefetchedSession(session: PuzzleSessionRecord): Promise<PuzzleSessionRecord> {
+    if (!session.prefetched) {
+      return session;
+    }
+
+    const activated = await setPuzzleSessionPrefetched(this.pool, {
+      sessionId: session.id,
+      prefetched: false
+    });
+
+    await this.incrementDailyMetric('puzzles_started');
+    return activated;
   }
 
   /**
@@ -237,6 +261,7 @@ export class SessionService {
     totalBranches: number;
   }> {
     const context = await this.loadContext(input.sessionId);
+    context.dbSession = await this.activatePrefetchedSession(context.dbSession);
     const cursor = context.engine.normalizeCursor(context.dbSession.branch_cursor);
     const step = context.engine.playUserMove(cursor, input.uciMove);
 
@@ -244,6 +269,7 @@ export class SessionService {
       sessionId: context.dbSession.id,
       nodeId: step.snapshot.nodeId,
       branchCursor: step.cursor as unknown as Record<string, unknown>,
+      prefetched: false,
       solved: step.solved,
       revealed: context.dbSession.revealed,
       autoplayUsed: context.dbSession.autoplay_used,
@@ -276,6 +302,7 @@ export class SessionService {
     state: SessionStatePayload;
   }> {
     const context = await this.loadContext(input.sessionId);
+    context.dbSession = await this.activatePrefetchedSession(context.dbSession);
     const cursor = context.engine.normalizeCursor(context.dbSession.branch_cursor);
     const result = context.engine.hint(cursor);
 
@@ -283,6 +310,7 @@ export class SessionService {
       sessionId: context.dbSession.id,
       nodeId: result.snapshot.nodeId,
       branchCursor: cursor as unknown as Record<string, unknown>,
+      prefetched: false,
       solved: context.dbSession.solved,
       revealed: context.dbSession.revealed,
       autoplayUsed: context.dbSession.autoplay_used,
@@ -314,6 +342,7 @@ export class SessionService {
     nextState: SessionStatePayload;
   }> {
     const context = await this.loadContext(input.sessionId);
+    context.dbSession = await this.activatePrefetchedSession(context.dbSession);
     const cursor = context.engine.normalizeCursor(context.dbSession.branch_cursor);
     const result = context.engine.reveal(cursor);
 
@@ -321,6 +350,7 @@ export class SessionService {
       sessionId: context.dbSession.id,
       nodeId: result.snapshot.nodeId,
       branchCursor: result.cursor as unknown as Record<string, unknown>,
+      prefetched: false,
       solved: result.solved,
       revealed: true,
       autoplayUsed: context.dbSession.autoplay_used || input.source === 'auto',
@@ -353,6 +383,7 @@ export class SessionService {
     remainingBranches: number;
   }> {
     const context = await this.loadContext(input.sessionId);
+    context.dbSession = await this.activatePrefetchedSession(context.dbSession);
     const cursor = context.engine.normalizeCursor(context.dbSession.branch_cursor);
     const result = context.engine.skipVariation(cursor);
 
@@ -360,6 +391,7 @@ export class SessionService {
       sessionId: context.dbSession.id,
       nodeId: result.snapshot.nodeId,
       branchCursor: result.cursor as unknown as Record<string, unknown>,
+      prefetched: false,
       solved: result.solved,
       revealed: context.dbSession.revealed,
       autoplayUsed: context.dbSession.autoplay_used,
@@ -397,6 +429,25 @@ export class SessionService {
       throw new Error('Session not found');
     }
 
+    const mode = input.mode ?? existing.mode;
+    const prefetched = await getOldestPrefetchedPuzzleSession(
+      this.pool,
+      input.anonSessionId,
+      mode,
+      input.sessionId
+    );
+    if (prefetched) {
+      const loaded = await this.loadSession({
+        sessionId: prefetched.id,
+        anonSessionId: input.anonSessionId
+      });
+      return {
+        newSessionId: loaded.sessionId,
+        puzzle: loaded.puzzle,
+        state: loaded.state
+      };
+    }
+
     if (input.autoNext) {
       const pending = await getOldestUntouchedPuzzleSession(this.pool, input.anonSessionId, input.sessionId);
       if (pending) {
@@ -412,7 +463,6 @@ export class SessionService {
       }
     }
 
-    const mode = input.mode ?? existing.mode;
     const next = await this.startRandomSession({
       anonSessionId: input.anonSessionId,
       mode,
@@ -427,10 +477,66 @@ export class SessionService {
     };
   }
 
+  async prefetchNext(input: {
+    sessionId: string;
+    anonSessionId: string;
+    mode?: VariationMode;
+    autoNext: boolean;
+  }): Promise<{
+    sessionId: string;
+    puzzle: { publicId: string; startFen: string; title: string };
+    state: SessionStatePayload;
+    ui: { autoNextDefault: boolean };
+  }> {
+    const existing = await getPuzzleSession(this.pool, input.sessionId);
+    if (!existing || existing.anon_session_id !== input.anonSessionId) {
+      throw new Error('Session not found');
+    }
+
+    const mode = input.mode ?? existing.mode;
+
+    if (input.autoNext) {
+      const pending = await getOldestUntouchedPuzzleSession(this.pool, input.anonSessionId, input.sessionId);
+      if (pending) {
+        return this.loadSession({
+          sessionId: pending.id,
+          anonSessionId: input.anonSessionId,
+          activatePrefetched: false,
+          autoNextDefault: input.autoNext
+        });
+      }
+    }
+
+    const prefetched = await getOldestPrefetchedPuzzleSession(
+      this.pool,
+      input.anonSessionId,
+      mode,
+      input.sessionId
+    );
+    if (prefetched) {
+      return this.loadSession({
+        sessionId: prefetched.id,
+        anonSessionId: input.anonSessionId,
+        activatePrefetched: false,
+        autoNextDefault: input.autoNext
+      });
+    }
+
+    return this.startRandomSession({
+      anonSessionId: input.anonSessionId,
+      mode,
+      autoNext: input.autoNext,
+      excludePuzzleId: existing.puzzle_id,
+      prefetched: true
+    });
+  }
+
   /** Load an existing session owned by the calling anon session id. */
   async loadSession(input: {
     sessionId: string;
     anonSessionId: string;
+    activatePrefetched?: boolean;
+    autoNextDefault?: boolean;
   }): Promise<{
     sessionId: string;
     puzzle: { publicId: string; startFen: string; title: string };
@@ -438,6 +544,9 @@ export class SessionService {
     ui: { autoNextDefault: boolean };
   }> {
     const context = await this.loadContext(input.sessionId, input.anonSessionId);
+    if (input.activatePrefetched ?? true) {
+      context.dbSession = await this.activatePrefetchedSession(context.dbSession);
+    }
     const cursor = context.engine.normalizeCursor(context.dbSession.branch_cursor);
     const snapshot = context.engine.buildSnapshot(cursor, context.dbSession.solved);
 
@@ -450,7 +559,7 @@ export class SessionService {
       },
       state: toStatePayload(snapshot),
       ui: {
-        autoNextDefault: true
+        autoNextDefault: input.autoNextDefault ?? true
       }
     };
   }

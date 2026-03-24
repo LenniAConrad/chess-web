@@ -133,6 +133,13 @@ export function loadSession(sessionId: string): Promise<StartSessionResponse> {
   return request;
 }
 
+export function refreshSession(sessionId: string): Promise<StartSessionResponse> {
+  return requestJson<StartSessionResponse>('/api/v1/session/load', { sessionId }).then((response) => {
+    cacheLoadedSession(response);
+    return response;
+  });
+}
+
 export function getHint(sessionId: string): Promise<HintResponse> {
   return requestJson<HintResponse>('/api/v1/session/hint', { sessionId });
 }
@@ -178,4 +185,17 @@ export function nextPuzzle(
   autoNext: boolean
 ): Promise<NextResponse> {
   return requestJson<NextResponse>('/api/v1/session/next', { sessionId, mode, autoNext });
+}
+
+export function prefetchNextPuzzle(
+  sessionId: string,
+  mode: VariationMode,
+  autoNext: boolean
+): Promise<StartSessionResponse> {
+  return requestJson<StartSessionResponse>('/api/v1/session/prefetch-next', { sessionId, mode, autoNext }).then(
+    (response) => {
+      cacheLoadedSession(response);
+      return response;
+    }
+  );
 }
