@@ -747,6 +747,7 @@ export function App() {
       if (rewindFens.length > 0) {
         setStatusText('Correct. Rewinding for next variation...');
         await maybeWait(CORRECT_BREAK_MS, animationsEnabled);
+        setLineCompleteSquare(null);
         for (const fen of rewindFens) {
           setLastMoveSquares(getMoveSquaresBetweenFens(fen, rewindSourceFen));
           setDisplayFen(fen);
@@ -869,13 +870,13 @@ export function App() {
         let artifactSessionId = sessionId;
 
         if (response.result === 'incorrect') {
-          playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
           const fallbackWrongSquare = uciMove.length >= 4 ? (uciMove.slice(2, 4) as Square) : null;
           const markerSquare = optimisticLastMove?.[1] ?? fallbackWrongSquare;
           if (markerSquare && !prefs.oneTryMode) {
             setWrongMoveSquare(markerSquare);
             setWrongMoveFlashToken((previous) => previous + 1);
           }
+          playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
           if (prefs.oneTryMode) {
             setDisplayFen(response.nextState.fen);
             setLastMoveSquares(null);
@@ -915,13 +916,15 @@ export function App() {
             setStatusText('Try again');
           }
         } else if (response.result === 'correct') {
-          playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
-          setCorrectText('Correct');
-          setStatusText('Correct move');
-          await maybeWait(CORRECT_BREAK_MS, prefs.animations);
           if (response.rewindFens.length > 0 && optimisticLastMove?.[1]) {
             setLineCompleteSquare(optimisticLastMove[1]);
             setLineCompleteFlashToken((previous) => previous + 1);
+          }
+          playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
+          setCorrectText('Correct');
+          setStatusText('Correct move');
+          if (response.rewindFens.length === 0) {
+            await maybeWait(CORRECT_BREAK_MS, prefs.animations);
           }
           await animateAutoPlay(
             response,
@@ -933,13 +936,15 @@ export function App() {
             `Correct. Branch ${response.nextState.completedBranches + 1}/${response.nextState.totalLines}`
           );
         } else {
-          playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
-          setCorrectText('Correct');
-          setStatusText('Correct move');
-          await maybeWait(CORRECT_BREAK_MS, prefs.animations);
           if (optimisticLastMove?.[1]) {
             setLineCompleteSquare(optimisticLastMove[1]);
             setLineCompleteFlashToken((previous) => previous + 1);
+          }
+          playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
+          setCorrectText('Correct');
+          setStatusText('Correct move');
+          if (response.rewindFens.length === 0) {
+            await maybeWait(CORRECT_BREAK_MS, prefs.animations);
           }
           await animateAutoPlay(
             response,
