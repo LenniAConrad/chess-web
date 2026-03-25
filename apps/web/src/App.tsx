@@ -696,6 +696,7 @@ export function App() {
 
   useEffect(() => {
     document.documentElement.lang = i18n.language;
+    document.documentElement.dir = i18n.language === 'ar' || i18n.language === 'he' ? 'rtl' : 'ltr';
   }, [i18n.language]);
 
   useEffect(() => {
@@ -2165,7 +2166,7 @@ export function App() {
                                 }
                               }}
                             >
-                              {i18n.languageNames[option.code]}
+                              {option.label}
                             </button>
                           ))}
                         </div>

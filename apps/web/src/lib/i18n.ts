@@ -1,6 +1,6 @@
 import type { HistoryDotTone } from './historyDots.js';
 
-export type LanguageCode = 'en' | 'de' | 'zh' | 'es' | 'fr' | 'ru';
+export type LanguageCode = 'en' | 'de' | 'zh' | 'es' | 'fr' | 'ru' | 'he' | 'ar' | 'ja' | 'ko';
 export type PromotionPieceCode = 'q' | 'r' | 'b' | 'n';
 
 export interface FrontendI18n {
@@ -119,12 +119,25 @@ export interface FrontendI18n {
   pathMoves: (moves: string) => string;
 }
 
-const I18N: Record<LanguageCode, FrontendI18n> = {
+const LANGUAGE_NAMES: Record<LanguageCode, string> = {
+  en: 'English English',
+  de: 'German Deutsch',
+  zh: 'Chinese 中文',
+  es: 'Spanish Español',
+  fr: 'French Français',
+  ru: 'Russian Русский',
+  he: 'Hebrew עברית',
+  ar: 'Arabic العربية',
+  ja: 'Japanese 日本語',
+  ko: 'Korean 한국어'
+};
+
+const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
   en: {
     language: 'en',
     locale: 'en-US',
     languageLabel: 'Language',
-    languageNames: { en: 'English', de: 'Deutsch', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' },
+    languageNames: LANGUAGE_NAMES,
     loading: 'Loading...',
     loadingPuzzle: 'Loading puzzle...',
     whiteToMove: 'White to move',
@@ -254,7 +267,7 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
     language: 'de',
     locale: 'de-DE',
     languageLabel: 'Sprache',
-    languageNames: { en: 'English', de: 'Deutsch', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' },
+    languageNames: LANGUAGE_NAMES,
     loading: 'Laden...',
     loadingPuzzle: 'Aufgabe wird geladen...',
     whiteToMove: 'Weiß am Zug',
@@ -384,7 +397,7 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
     language: 'zh',
     locale: 'zh-CN',
     languageLabel: '语言',
-    languageNames: { en: 'English', de: 'Deutsch', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' },
+    languageNames: LANGUAGE_NAMES,
     loading: '加载中...',
     loadingPuzzle: '正在加载题目...',
     whiteToMove: '白方走棋',
@@ -514,7 +527,7 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
     language: 'es',
     locale: 'es-ES',
     languageLabel: 'Idioma',
-    languageNames: { en: 'English', de: 'Deutsch', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' },
+    languageNames: LANGUAGE_NAMES,
     loading: 'Cargando...',
     loadingPuzzle: 'Cargando problema...',
     whiteToMove: 'Juegan blancas',
@@ -644,7 +657,7 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
     language: 'fr',
     locale: 'fr-FR',
     languageLabel: 'Langue',
-    languageNames: { en: 'English', de: 'Deutsch', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' },
+    languageNames: LANGUAGE_NAMES,
     loading: 'Chargement...',
     loadingPuzzle: 'Chargement du problème...',
     whiteToMove: 'Aux blancs de jouer',
@@ -774,7 +787,7 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
     language: 'ru',
     locale: 'ru-RU',
     languageLabel: 'Язык',
-    languageNames: { en: 'English', de: 'Deutsch', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' },
+    languageNames: LANGUAGE_NAMES,
     loading: 'Загрузка...',
     loadingPuzzle: 'Загрузка задачи...',
     whiteToMove: 'Ход белых',
@@ -902,15 +915,61 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
   }
 };
 
+const ENGLISH_I18N = I18N.en as FrontendI18n;
+
+I18N.he = {
+  ...ENGLISH_I18N,
+  language: 'he',
+  locale: 'he-IL',
+  languageLabel: 'שפה',
+  languageNames: LANGUAGE_NAMES,
+  loading: 'טוען...',
+  loadingPuzzle: 'טוען חידה...'
+};
+
+I18N.ar = {
+  ...ENGLISH_I18N,
+  language: 'ar',
+  locale: 'ar',
+  languageLabel: 'اللغة',
+  languageNames: LANGUAGE_NAMES,
+  loading: 'جارٍ التحميل...',
+  loadingPuzzle: 'جارٍ تحميل اللغز...'
+};
+
+I18N.ja = {
+  ...ENGLISH_I18N,
+  language: 'ja',
+  locale: 'ja-JP',
+  languageLabel: '言語',
+  languageNames: LANGUAGE_NAMES,
+  loading: '読み込み中...',
+  loadingPuzzle: '問題を読み込み中...'
+};
+
+I18N.ko = {
+  ...ENGLISH_I18N,
+  language: 'ko',
+  locale: 'ko-KR',
+  languageLabel: '언어',
+  languageNames: LANGUAGE_NAMES,
+  loading: '불러오는 중...',
+  loadingPuzzle: '퍼즐 불러오는 중...'
+};
+
 export const LANGUAGE_OPTIONS: Array<{ code: LanguageCode; label: string }> = [
-  { code: 'en', label: 'English' },
-  { code: 'de', label: 'Deutsch' },
-  { code: 'zh', label: '中文' },
-  { code: 'es', label: 'Español' },
-  { code: 'fr', label: 'Français' },
-  { code: 'ru', label: 'Русский' }
+  { code: 'en', label: LANGUAGE_NAMES.en },
+  { code: 'de', label: LANGUAGE_NAMES.de },
+  { code: 'zh', label: LANGUAGE_NAMES.zh },
+  { code: 'es', label: LANGUAGE_NAMES.es },
+  { code: 'fr', label: LANGUAGE_NAMES.fr },
+  { code: 'ru', label: LANGUAGE_NAMES.ru },
+  { code: 'he', label: LANGUAGE_NAMES.he },
+  { code: 'ar', label: LANGUAGE_NAMES.ar },
+  { code: 'ja', label: LANGUAGE_NAMES.ja },
+  { code: 'ko', label: LANGUAGE_NAMES.ko }
 ];
 
 export function getI18n(language: LanguageCode): FrontendI18n {
-  return I18N[language];
+  return I18N[language] ?? ENGLISH_I18N;
 }
