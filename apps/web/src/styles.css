@@ -1737,7 +1737,7 @@ button.toggle-chip.autoplay-chip.is-on .toggle-chip-track {
 .pgn-empty-state {
   margin: 0;
   justify-content: flex-start;
-  color: var(--color-meta) !important;
+  color: var(--color-button-text) !important;
 }
 
 button.pgn-move {

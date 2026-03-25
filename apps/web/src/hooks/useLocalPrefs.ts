@@ -1,13 +1,17 @@
 import { useEffect, useState } from 'react';
+import type { LanguageCode } from '../lib/i18n.js';
 import type { VariationMode } from '../types/api.js';
 
 const STORAGE_KEY = 'chess-web-prefs';
 
 export interface UserPreferences {
+  language: LanguageCode;
   autoNext: boolean;
   oneTryMode: boolean;
   variationMode: VariationMode;
+  skipSimilarVariations: boolean;
   hintsEnabled: boolean;
+  fastMode: boolean;
   autoQueenPromotion: boolean;
   darkMode: boolean;
   zenMode: boolean;
@@ -20,10 +24,13 @@ export interface UserPreferences {
 }
 
 const DEFAULT_PREFS: UserPreferences = {
+  language: 'en',
   autoNext: false,
   oneTryMode: false,
   variationMode: 'explore',
+  skipSimilarVariations: true,
   hintsEnabled: true,
+  fastMode: false,
   autoQueenPromotion: false,
   darkMode: false,
   zenMode: false,
@@ -45,10 +52,13 @@ export function useLocalPrefs() {
     try {
       const parsed = JSON.parse(raw) as Partial<UserPreferences>;
       return {
+        language: parsed.language ?? DEFAULT_PREFS.language,
         autoNext: parsed.autoNext ?? DEFAULT_PREFS.autoNext,
         oneTryMode: parsed.oneTryMode ?? DEFAULT_PREFS.oneTryMode,
         variationMode: parsed.variationMode ?? DEFAULT_PREFS.variationMode,
+        skipSimilarVariations: parsed.skipSimilarVariations ?? DEFAULT_PREFS.skipSimilarVariations,
         hintsEnabled: parsed.hintsEnabled ?? DEFAULT_PREFS.hintsEnabled,
+        fastMode: parsed.fastMode ?? DEFAULT_PREFS.fastMode,
         autoQueenPromotion: parsed.autoQueenPromotion ?? DEFAULT_PREFS.autoQueenPromotion,
         darkMode: parsed.darkMode ?? DEFAULT_PREFS.darkMode,
         zenMode: parsed.zenMode ?? DEFAULT_PREFS.zenMode,

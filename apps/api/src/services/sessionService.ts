@@ -250,12 +250,13 @@ export class SessionService {
   /**
    * Validate and apply a user move for an existing session.
    */
-  async playMove(input: { sessionId: string; uciMove: string }): Promise<{
+  async playMove(input: { sessionId: string; uciMove: string; skipSimilarVariations?: boolean }): Promise<{
     result: 'correct' | 'incorrect' | 'completed';
     bestMoveUci?: string;
     autoPlayedMoves: string[];
     autoPlayStartFen: string | null;
     rewindFens: string[];
+    skippedSimilarVariations: number;
     nextState: SessionStatePayload;
     completedBranches: number;
     totalBranches: number;
@@ -263,7 +264,9 @@ export class SessionService {
     const context = await this.loadContext(input.sessionId);
     context.dbSession = await this.activatePrefetchedSession(context.dbSession);
     const cursor = context.engine.normalizeCursor(context.dbSession.branch_cursor);
-    const step = context.engine.playUserMove(cursor, input.uciMove);
+    const step = context.engine.playUserMove(cursor, input.uciMove, {
+      skipSimilarVariations: input.skipSimilarVariations
+    });
 
     await updatePuzzleSession(this.pool, {
       sessionId: context.dbSession.id,
@@ -287,6 +290,7 @@ export class SessionService {
       autoPlayedMoves: step.autoPlayedMoves,
       autoPlayStartFen: step.autoPlayStartFen ?? null,
       rewindFens: step.rewindFens ?? [],
+      skippedSimilarVariations: step.skippedSimilarVariations,
       nextState: toStatePayload(step.snapshot),
       completedBranches: step.snapshot.completedBranches,
       totalBranches: step.snapshot.totalLines
@@ -332,19 +336,22 @@ export class SessionService {
   /**
    * Force-apply the best move and return autoplay continuation metadata.
    */
-  async reveal(input: { sessionId: string; source?: 'manual' | 'auto' }): Promise<{
+  async reveal(input: { sessionId: string; source?: 'manual' | 'auto'; skipSimilarVariations?: boolean }): Promise<{
     bestMoveUci: string | null;
     bestMoveSan: string | null;
     afterFen: string | null;
     autoPlayedMoves: string[];
     autoPlayStartFen: string | null;
     rewindFens: string[];
+    skippedSimilarVariations: number;
     nextState: SessionStatePayload;
   }> {
     const context = await this.loadContext(input.sessionId);
     context.dbSession = await this.activatePrefetchedSession(context.dbSession);
     const cursor = context.engine.normalizeCursor(context.dbSession.branch_cursor);
-    const result = context.engine.reveal(cursor);
+    const result = context.engine.reveal(cursor, {
+      skipSimilarVariations: input.skipSimilarVariations
+    });
 
     await updatePuzzleSession(this.pool, {
       sessionId: context.dbSession.id,
@@ -367,6 +374,7 @@ export class SessionService {
       autoPlayedMoves: result.autoPlayedMoves,
       autoPlayStartFen: result.autoPlayStartFen,
       rewindFens: result.rewindFens,
+      skippedSimilarVariations: result.skippedSimilarVariations,
       nextState: toStatePayload(result.snapshot)
     };
   }
@@ -374,18 +382,21 @@ export class SessionService {
   /**
    * Skip current explore-variation branch and continue from next branch.
    */
-  async skipVariation(input: { sessionId: string }): Promise<{
+  async skipVariation(input: { sessionId: string; skipSimilarVariations?: boolean }): Promise<{
     skipped: boolean;
     autoPlayedMoves: string[];
     autoPlayStartFen: string | null;
     rewindFens: string[];
+    skippedSimilarVariations: number;
     nextState: SessionStatePayload;
     remainingBranches: number;
   }> {
     const context = await this.loadContext(input.sessionId);
     context.dbSession = await this.activatePrefetchedSession(context.dbSession);
     const cursor = context.engine.normalizeCursor(context.dbSession.branch_cursor);
-    const result = context.engine.skipVariation(cursor);
+    const result = context.engine.skipVariation(cursor, {
+      skipSimilarVariations: input.skipSimilarVariations
+    });
 
     await updatePuzzleSession(this.pool, {
       sessionId: context.dbSession.id,
@@ -404,6 +415,7 @@ export class SessionService {
       autoPlayedMoves: result.autoPlayedMoves,
       autoPlayStartFen: result.autoPlayStartFen,
       rewindFens: result.rewindFens,
+      skippedSimilarVariations: result.skippedSimilarVariations,
       nextState: toStatePayload(result.snapshot),
       remainingBranches: result.remainingBranches
     };

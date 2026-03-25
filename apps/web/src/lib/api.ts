@@ -16,7 +16,10 @@ import type {
  * Thin API client used by the React app.
  * All requests include credentials so the anon-session cookie stays consistent.
  */
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3001';
+const API_BASE_URL =
+  typeof import.meta.env.VITE_API_BASE_URL === 'string' && import.meta.env.VITE_API_BASE_URL.length > 0
+    ? import.meta.env.VITE_API_BASE_URL.replace(/\/+$/, '')
+    : '';
 const loadedSessionCache = new Map<string, StartSessionResponse>();
 const loadedSessionPromiseCache = new Map<string, Promise<StartSessionResponse>>();
 
@@ -104,8 +107,12 @@ export function startSession(
   );
 }
 
-export function playMove(sessionId: string, uciMove: string): Promise<MoveResponse> {
-  return requestJson<MoveResponse>('/api/v1/session/move', { sessionId, uciMove });
+export function playMove(
+  sessionId: string,
+  uciMove: string,
+  skipSimilarVariations = false
+): Promise<MoveResponse> {
+  return requestJson<MoveResponse>('/api/v1/session/move', { sessionId, uciMove, skipSimilarVariations });
 }
 
 export function loadSession(sessionId: string): Promise<StartSessionResponse> {
@@ -170,13 +177,14 @@ export function getPuzzleCount(): Promise<PuzzleCountResponse> {
 
 export function revealSolution(
   sessionId: string,
-  source: 'manual' | 'auto' = 'manual'
+  source: 'manual' | 'auto' = 'manual',
+  skipSimilarVariations = false
 ): Promise<RevealResponse> {
-  return requestJson<RevealResponse>('/api/v1/session/reveal', { sessionId, source });
+  return requestJson<RevealResponse>('/api/v1/session/reveal', { sessionId, source, skipSimilarVariations });
 }
 
-export function skipVariation(sessionId: string): Promise<SkipVariationResponse> {
-  return requestJson<SkipVariationResponse>('/api/v1/session/skip-variation', { sessionId });
+export function skipVariation(sessionId: string, skipSimilarVariations = false): Promise<SkipVariationResponse> {
+  return requestJson<SkipVariationResponse>('/api/v1/session/skip-variation', { sessionId, skipSimilarVariations });
 }
 
 export function nextPuzzle(

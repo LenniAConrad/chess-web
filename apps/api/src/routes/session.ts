@@ -23,16 +23,23 @@ const startSchema = z.object({
 
 const moveSchema = z.object({
   sessionId: z.string().uuid(),
-  uciMove: z.string().regex(/^[a-h][1-8][a-h][1-8][qrbn]?$/i)
+  uciMove: z.string().regex(/^[a-h][1-8][a-h][1-8][qrbn]?$/i),
+  skipSimilarVariations: z.boolean().optional().default(false)
 });
 
 const sessionSchema = z.object({
   sessionId: z.string().uuid()
 });
 
+const actionSessionSchema = z.object({
+  sessionId: z.string().uuid(),
+  skipSimilarVariations: z.boolean().optional().default(false)
+});
+
 const revealSchema = z.object({
   sessionId: z.string().uuid(),
-  source: z.enum(['manual', 'auto']).optional().default('manual')
+  source: z.enum(['manual', 'auto']).optional().default('manual'),
+  skipSimilarVariations: z.boolean().optional().default(false)
 });
 
 const historySchema = z.object({
@@ -249,7 +256,8 @@ export async function registerSessionRoutes(
 
     const result = await sessionService.playMove({
       sessionId: body.sessionId,
-      uciMove: body.uciMove
+      uciMove: body.uciMove,
+      skipSimilarVariations: body.skipSimilarVariations
     });
 
     reply.send(result);
@@ -403,12 +411,16 @@ export async function registerSessionRoutes(
       return;
     }
 
-    const result = await sessionService.reveal({ sessionId: body.sessionId, source: body.source });
+    const result = await sessionService.reveal({
+      sessionId: body.sessionId,
+      source: body.source,
+      skipSimilarVariations: body.skipSimilarVariations
+    });
     reply.send(result);
   });
 
   app.post('/api/v1/session/skip-variation', async (request, reply) => {
-    const body = sessionSchema.parse(request.body ?? {});
+    const body = actionSessionSchema.parse(request.body ?? {});
     const anonSessionId = await ensureAnonSession(request, reply, pool);
 
     const allowed = await enforceRateLimit({
@@ -426,7 +438,10 @@ export async function registerSessionRoutes(
       return;
     }
 
-    const result = await sessionService.skipVariation({ sessionId: body.sessionId });
+    const result = await sessionService.skipVariation({
+      sessionId: body.sessionId,
+      skipSimilarVariations: body.skipSimilarVariations
+    });
     reply.send(result);
   });
 

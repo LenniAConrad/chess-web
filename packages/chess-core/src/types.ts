@@ -6,6 +6,9 @@
 export type VariationMode = 'explore' | 'mainline';
 export type MoveActor = 'user' | 'opponent';
 export type SessionStepResult = 'correct' | 'incorrect' | 'completed';
+export interface SessionAdvanceOptions {
+  skipSimilarVariations?: boolean;
+}
 
 /** Normalized puzzle tree node used by the session engine. */
 export interface PuzzleNode {
@@ -67,5 +70,6 @@ export interface MoveResponse {
   autoPlayedMoves: string[];
   autoPlayStartFen?: string | null;
   rewindFens?: string[];
+  skippedSimilarVariations: number;
   snapshot: SessionSnapshot;
 }

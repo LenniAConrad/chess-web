@@ -24,6 +24,9 @@ interface ChessBoardProps {
   lineCompleteSquare: string | null;
   lineCompleteFlashToken: number;
   glassEnabled: boolean;
+  promotionDialogLabel: string;
+  cancelPromotionLabel: string;
+  promotionPieceLabels: Record<PromotionPiece, string>;
   onMove: (uci: string) => void;
 }
 
@@ -58,13 +61,6 @@ interface CoordinateLabel {
 const PROMOTION_PIECES: PromotionPiece[] = ['q', 'n', 'r', 'b'];
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;
 const RANKS_ASC = ['1', '2', '3', '4', '5', '6', '7', '8'] as const;
-
-const PIECE_LABELS: Record<PromotionPiece, string> = {
-  q: 'queen',
-  n: 'knight',
-  r: 'rook',
-  b: 'bishop'
-};
 
 const PIECE_FILE_SUFFIX: Record<PromotionPiece, 'Q' | 'N' | 'R' | 'B'> = {
   q: 'Q',
@@ -216,6 +212,9 @@ export function ChessBoard({
   lineCompleteSquare,
   lineCompleteFlashToken,
   glassEnabled,
+  promotionDialogLabel,
+  cancelPromotionLabel,
+  promotionPieceLabels,
   onMove
 }: ChessBoardProps) {
   const boardWrapRef = useRef<HTMLDivElement | null>(null);
@@ -560,8 +559,8 @@ export function ChessBoard({
         </div>
       ) : null}
       {pendingPromotion && promotionLayout ? (
-        <div role="dialog" aria-label="Choose promotion piece">
-          <button type="button" className="promotion-backdrop" aria-label="Cancel promotion" onClick={cancelPromotion} />
+        <div role="dialog" aria-label={promotionDialogLabel}>
+          <button type="button" className="promotion-backdrop" aria-label={cancelPromotionLabel} onClick={cancelPromotion} />
           <div
             className={`promotion-menu ${promotionLayout.fromTop ? 'from-top' : 'from-bottom'}`}
             style={{
@@ -575,7 +574,7 @@ export function ChessBoard({
                 type="button"
                 className="promotion-option"
                 onClick={() => applyPromotion(piece)}
-                aria-label={`Promote to ${PIECE_LABELS[piece]}`}
+                aria-label={promotionPieceLabels[piece]}
               >
                 <img src={promotionImageSrc(piece, pendingPromotion.color)} alt="" className="promotion-piece-img" />
               </button>

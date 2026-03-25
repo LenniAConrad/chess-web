@@ -29,6 +29,7 @@ export interface MoveResponse {
   autoPlayedMoves: string[];
   autoPlayStartFen: string | null;
   rewindFens: string[];
+  skippedSimilarVariations: number;
   nextState: SessionStatePayload;
   completedBranches: number;
   totalBranches: number;
@@ -47,6 +48,7 @@ export interface RevealResponse {
   autoPlayedMoves: string[];
   autoPlayStartFen: string | null;
   rewindFens: string[];
+  skippedSimilarVariations: number;
   nextState: SessionStatePayload;
 }
 
@@ -55,6 +57,7 @@ export interface SkipVariationResponse {
   autoPlayedMoves: string[];
   autoPlayStartFen: string | null;
   rewindFens: string[];
+  skippedSimilarVariations: number;
   nextState: SessionStatePayload;
   remainingBranches: number;
 }

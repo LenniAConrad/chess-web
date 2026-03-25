@@ -1,4 +1,11 @@
-import type { MoveResponse, PuzzleNode, SessionCursor, SessionSnapshot, VariationMode } from './types.js';
+import type {
+  MoveResponse,
+  PuzzleNode,
+  SessionAdvanceOptions,
+  SessionCursor,
+  SessionSnapshot,
+  VariationMode
+} from './types.js';
 
 /**
  * Lightweight FEN helper used to decide whose turn it is at a node.
@@ -143,7 +150,7 @@ export class PuzzleSessionEngine {
     };
   }
 
-  reveal(cursorInput: SessionCursor): {
+  reveal(cursorInput: SessionCursor, options: SessionAdvanceOptions = {}): {
     cursor: SessionCursor;
     solved: boolean;
     bestMoveUci: string | null;
@@ -152,9 +159,10 @@ export class PuzzleSessionEngine {
     autoPlayedMoves: string[];
     autoPlayStartFen: string | null;
     rewindFens: string[];
+    skippedSimilarVariations: number;
     snapshot: SessionSnapshot;
   } {
-    const synced = this.sync(cursorInput);
+    const synced = this.sync(cursorInput, options);
     let cursor = synced.cursor;
     const autoPlayedMoves = [...synced.autoPlayedMoves];
 
@@ -168,6 +176,7 @@ export class PuzzleSessionEngine {
         autoPlayedMoves,
         autoPlayStartFen: null,
         rewindFens: [],
+        skippedSimilarVariations: synced.skippedSimilarVariations,
         snapshot: this.buildSnapshot(cursor, true)
       };
     }
@@ -183,12 +192,13 @@ export class PuzzleSessionEngine {
         autoPlayedMoves,
         autoPlayStartFen: null,
         rewindFens: [],
+        skippedSimilarVariations: synced.skippedSimilarVariations,
         snapshot: this.buildSnapshot(cursor, true)
       };
     }
 
     cursor = { ...cursor, cursorIndex: cursor.cursorIndex + 1 };
-    const postMoveSync = this.sync(cursor);
+    const postMoveSync = this.sync(cursor, options);
     cursor = postMoveSync.cursor;
     autoPlayedMoves.push(...postMoveSync.autoPlayedMoves);
 
@@ -201,11 +211,12 @@ export class PuzzleSessionEngine {
       autoPlayedMoves,
       autoPlayStartFen: postMoveSync.autoPlayStartFen,
       rewindFens: postMoveSync.rewindFens,
+      skippedSimilarVariations: postMoveSync.skippedSimilarVariations,
       snapshot: this.buildSnapshot(cursor, postMoveSync.solved)
     };
   }
 
-  skipVariation(cursorInput: SessionCursor): {
+  skipVariation(cursorInput: SessionCursor, options: SessionAdvanceOptions = {}): {
     skipped: boolean;
     cursor: SessionCursor;
     solved: boolean;
@@ -213,12 +224,13 @@ export class PuzzleSessionEngine {
     autoPlayedMoves: string[];
     autoPlayStartFen: string | null;
     rewindFens: string[];
+    skippedSimilarVariations: number;
     remainingBranches: number;
   } {
     let cursor = this.normalizeCursor(cursorInput);
 
     if (this.mode === 'mainline' || this.lines.length <= 1) {
-      const synced = this.sync(cursor);
+      const synced = this.sync(cursor, options);
       return {
         skipped: false,
         cursor: synced.cursor,
@@ -227,11 +239,18 @@ export class PuzzleSessionEngine {
         autoPlayedMoves: synced.autoPlayedMoves,
         autoPlayStartFen: synced.autoPlayStartFen,
         rewindFens: synced.rewindFens,
+        skippedSimilarVariations: synced.skippedSimilarVariations,
         remainingBranches: Math.max(0, this.lines.length - (synced.cursor.lineIndex + 1))
       };
     }
 
-    if (cursor.lineIndex >= this.lines.length - 1) {
+    const transition = this.getNextLineTransition(
+      cursor.lineIndex,
+      cursor.cursorIndex,
+      options.skipSimilarVariations ?? false
+    );
+
+    if (transition.nextLineIndex === null) {
       const snapshot = this.buildSnapshot(cursor, true);
       return {
         skipped: true,
@@ -240,18 +259,18 @@ export class PuzzleSessionEngine {
         snapshot,
         autoPlayedMoves: [],
         autoPlayStartFen: null,
-        rewindFens: [],
+        rewindFens: transition.rewindFens,
+        skippedSimilarVariations: transition.skippedSimilarVariations,
         remainingBranches: 0
       };
     }
 
-    const previousLine = this.lines[cursor.lineIndex] ?? [this.rootNodeId];
-    cursor = { ...cursor, lineIndex: cursor.lineIndex + 1 };
-    const nextLine = this.lines[cursor.lineIndex] ?? [this.rootNodeId];
-    const lcp = commonPrefixLength(previousLine, nextLine);
-    cursor.cursorIndex = Math.max(0, lcp - 1);
-
-    const synced = this.sync(cursor);
+    cursor = {
+      ...cursor,
+      lineIndex: transition.nextLineIndex,
+      cursorIndex: transition.targetCursorIndex
+    };
+    const synced = this.sync(cursor, options);
     return {
       skipped: true,
       cursor: synced.cursor,
@@ -259,13 +278,18 @@ export class PuzzleSessionEngine {
       snapshot: this.buildSnapshot(synced.cursor, synced.solved),
       autoPlayedMoves: synced.autoPlayedMoves,
       autoPlayStartFen: synced.autoPlayStartFen,
-      rewindFens: synced.rewindFens,
+      rewindFens: [...transition.rewindFens, ...synced.rewindFens],
+      skippedSimilarVariations: transition.skippedSimilarVariations + synced.skippedSimilarVariations,
       remainingBranches: Math.max(0, this.lines.length - (synced.cursor.lineIndex + 1))
     };
   }
 
-  playUserMove(cursorInput: SessionCursor, uciMove: string): { cursor: SessionCursor; solved: boolean } & MoveResponse {
-    const synced = this.sync(cursorInput);
+  playUserMove(
+    cursorInput: SessionCursor,
+    uciMove: string,
+    options: SessionAdvanceOptions = {}
+  ): { cursor: SessionCursor; solved: boolean } & MoveResponse {
+    const synced = this.sync(cursorInput, options);
     let cursor = synced.cursor;
     const autoPlayedMoves = [...synced.autoPlayedMoves];
 
@@ -277,6 +301,7 @@ export class PuzzleSessionEngine {
         autoPlayedMoves,
         autoPlayStartFen: null,
         rewindFens: [],
+        skippedSimilarVariations: synced.skippedSimilarVariations,
         snapshot: this.buildSnapshot(cursor, true)
       };
     }
@@ -290,6 +315,7 @@ export class PuzzleSessionEngine {
         autoPlayedMoves,
         autoPlayStartFen: null,
         rewindFens: [],
+        skippedSimilarVariations: synced.skippedSimilarVariations,
         snapshot: this.buildSnapshot(cursor, true)
       };
     }
@@ -303,13 +329,14 @@ export class PuzzleSessionEngine {
         autoPlayedMoves,
         autoPlayStartFen: null,
         rewindFens: [],
+        skippedSimilarVariations: synced.skippedSimilarVariations,
         snapshot: this.buildSnapshot(cursor, false)
       };
     }
 
     cursor = { ...cursor, cursorIndex: cursor.cursorIndex + 1 };
 
-    const postMoveSync = this.sync(cursor);
+    const postMoveSync = this.sync(cursor, options);
     autoPlayedMoves.push(...postMoveSync.autoPlayedMoves);
 
     return {
@@ -319,6 +346,7 @@ export class PuzzleSessionEngine {
       autoPlayedMoves,
       autoPlayStartFen: postMoveSync.autoPlayStartFen,
       rewindFens: postMoveSync.rewindFens,
+      skippedSimilarVariations: postMoveSync.skippedSimilarVariations,
       snapshot: this.buildSnapshot(postMoveSync.cursor, postMoveSync.solved)
     };
   }
@@ -392,12 +420,98 @@ export class PuzzleSessionEngine {
     return this.nodeMap.get(nextNodeId) ?? null;
   }
 
-  private sync(inputCursor: SessionCursor): {
+  private lineAt(lineIndex: number): number[] {
+    return this.lines[lineIndex] ?? [this.rootNodeId];
+  }
+
+  private remainingUserMoveSignature(line: number[], cursorIndex: number): string {
+    const moves: string[] = [];
+
+    for (let index = cursorIndex + 1; index < line.length; index += 1) {
+      const nodeId = line[index];
+      if (!nodeId) {
+        continue;
+      }
+
+      const node = this.nodeMap.get(nodeId);
+      if (node?.actor === 'user' && node.uci) {
+        moves.push(node.uci.toLowerCase());
+      }
+    }
+
+    return moves.join('|');
+  }
+
+  private getNextLineTransition(
+    referenceLineIndex: number,
+    previousCursorIndex: number,
+    skipSimilarVariations: boolean
+  ): {
+    nextLineIndex: number | null;
+    targetCursorIndex: number;
+    rewindFens: string[];
+    skippedSimilarVariations: number;
+  } {
+    const referenceLine = this.lineAt(referenceLineIndex);
+    let candidateLineIndex = referenceLineIndex + 1;
+    let skippedSimilarVariations = 0;
+
+    while (skipSimilarVariations && candidateLineIndex < this.lines.length) {
+      const candidateLine = this.lineAt(candidateLineIndex);
+      const targetCursorIndex = Math.max(0, commonPrefixLength(referenceLine, candidateLine) - 1);
+      const referenceSignature = this.remainingUserMoveSignature(referenceLine, targetCursorIndex);
+      const candidateSignature = this.remainingUserMoveSignature(candidateLine, targetCursorIndex);
+
+      if (referenceSignature !== candidateSignature) {
+        break;
+      }
+
+      skippedSimilarVariations += 1;
+      candidateLineIndex += 1;
+    }
+
+    if (candidateLineIndex >= this.lines.length) {
+      return {
+        nextLineIndex: null,
+        targetCursorIndex: previousCursorIndex,
+        rewindFens: [],
+        skippedSimilarVariations
+      };
+    }
+
+    const nextLine = this.lineAt(candidateLineIndex);
+    const targetCursorIndex = Math.max(0, commonPrefixLength(referenceLine, nextLine) - 1);
+    const rewindFens: string[] = [];
+
+    if (previousCursorIndex > targetCursorIndex) {
+      for (let index = previousCursorIndex - 1; index >= targetCursorIndex; index -= 1) {
+        const nodeId = referenceLine[index];
+        if (!nodeId) {
+          continue;
+        }
+
+        const node = this.nodeMap.get(nodeId);
+        if (node) {
+          rewindFens.push(node.fenAfter);
+        }
+      }
+    }
+
+    return {
+      nextLineIndex: candidateLineIndex,
+      targetCursorIndex,
+      rewindFens,
+      skippedSimilarVariations
+    };
+  }
+
+  private sync(inputCursor: SessionCursor, options: SessionAdvanceOptions = {}): {
     cursor: SessionCursor;
     solved: boolean;
     autoPlayedMoves: string[];
     autoPlayStartFen: string | null;
     rewindFens: string[];
+    skippedSimilarVariations: number;
   } {
     /**
      * Sync cursor to the next user decision:
@@ -409,13 +523,14 @@ export class PuzzleSessionEngine {
     const autoPlayedMoves: string[] = [];
     let autoPlayStartFen: string | null = null;
     const rewindFens: string[] = [];
+    let skippedSimilarVariations = 0;
 
     while (true) {
       const line = this.lines[cursor.lineIndex] ?? [this.rootNodeId];
       const currentNodeId = line[cursor.cursorIndex] ?? this.rootNodeId;
       const currentNode = this.nodeMap.get(currentNodeId);
       if (!currentNode) {
-        return { cursor, solved: true, autoPlayedMoves, autoPlayStartFen, rewindFens };
+        return { cursor, solved: true, autoPlayedMoves, autoPlayStartFen, rewindFens, skippedSimilarVariations };
       }
 
       let progressedOpponent = false;
@@ -452,37 +567,27 @@ export class PuzzleSessionEngine {
       const activeLine = this.lines[cursor.lineIndex] ?? [this.rootNodeId];
       const atLineEnd = cursor.cursorIndex >= activeLine.length - 1;
       if (!atLineEnd) {
-        return { cursor, solved: false, autoPlayedMoves, autoPlayStartFen, rewindFens };
+        return { cursor, solved: false, autoPlayedMoves, autoPlayStartFen, rewindFens, skippedSimilarVariations };
       }
 
-      if (cursor.lineIndex >= this.lines.length - 1) {
-        return { cursor, solved: true, autoPlayedMoves, autoPlayStartFen, rewindFens };
-      }
-
-      const previousLine = activeLine;
       const previousCursorIndex = cursor.cursorIndex;
-      cursor.lineIndex += 1;
-      const nextLine = this.lines[cursor.lineIndex] ?? [this.rootNodeId];
-      const lcp = commonPrefixLength(previousLine, nextLine);
-      const targetCursorIndex = Math.max(0, lcp - 1);
+      const transition = this.getNextLineTransition(
+        cursor.lineIndex,
+        previousCursorIndex,
+        options.skipSimilarVariations ?? false
+      );
+      skippedSimilarVariations += transition.skippedSimilarVariations;
 
-      if (previousCursorIndex > targetCursorIndex) {
-        for (let index = previousCursorIndex - 1; index >= targetCursorIndex; index -= 1) {
-          const nodeId = previousLine[index];
-          if (!nodeId) {
-            continue;
-          }
-          const node = this.nodeMap.get(nodeId);
-          if (node) {
-            rewindFens.push(node.fenAfter);
-          }
-        }
+      if (transition.nextLineIndex === null) {
+        return { cursor, solved: true, autoPlayedMoves, autoPlayStartFen, rewindFens, skippedSimilarVariations };
       }
 
-      cursor.cursorIndex = targetCursorIndex;
+      rewindFens.push(...transition.rewindFens);
+      cursor.lineIndex = transition.nextLineIndex;
+      cursor.cursorIndex = transition.targetCursorIndex;
 
       if (!progressedOpponent && this.lines.length === 1) {
-        return { cursor, solved: true, autoPlayedMoves, autoPlayStartFen, rewindFens };
+        return { cursor, solved: true, autoPlayedMoves, autoPlayStartFen, rewindFens, skippedSimilarVariations };
       }
     }
   }
