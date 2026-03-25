@@ -7,8 +7,12 @@ export function getHistoryDotTone(item: SessionHistoryItem): HistoryDotTone {
     return 'blue';
   }
 
-  if (item.solved) {
+  if (item.status === 'correct') {
     return 'green';
+  }
+
+  if (item.status === 'half') {
+    return item.wrongMoveCount > 0 ? 'orange' : 'yellow';
   }
 
   if (

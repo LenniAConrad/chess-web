@@ -31,36 +31,56 @@ describe('history dot classification', () => {
     ).toBe('blue');
   });
 
-  it('maps solved sessions to green', () => {
+  it('maps clean solved sessions to green', () => {
     expect(
       getHistoryDotTone(
         createHistoryItem({
+          status: 'correct',
           solved: true,
           wrongMoveCount: 0,
           hintCount: 0
         })
       )
     ).toBe('green');
+  });
 
+  it('maps solved with hints to yellow', () => {
     expect(
       getHistoryDotTone(
         createHistoryItem({
+          status: 'half',
           solved: true,
           wrongMoveCount: 0,
           hintCount: 2
         })
       )
-    ).toBe('green');
+    ).toBe('yellow');
+  });
 
+  it('maps solved with errors to orange', () => {
     expect(
       getHistoryDotTone(
         createHistoryItem({
+          status: 'half',
           solved: true,
           wrongMoveCount: 1,
           hintCount: 0
         })
       )
-    ).toBe('green');
+    ).toBe('orange');
+  });
+
+  it('prefers orange when a solved session has both hints and errors', () => {
+    expect(
+      getHistoryDotTone(
+        createHistoryItem({
+          status: 'half',
+          solved: true,
+          wrongMoveCount: 1,
+          hintCount: 2
+        })
+      )
+    ).toBe('orange');
   });
 
   it('maps unsolved sessions to gray/red', () => {
