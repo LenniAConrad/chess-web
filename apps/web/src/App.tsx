@@ -1318,6 +1318,10 @@ export function App() {
         const moveSquares = getMoveSquares(response.bestMoveUci);
         if (moveSquares) {
           setLastMoveSquares(moveSquares);
+          if (mode === 'auto') {
+            setLineCompleteSquare(moveSquares[1]);
+            setLineCompleteFlashToken((previous) => previous + 1);
+          }
         }
 
         const moveSoundDecision = getMoveSoundDecision(baseFen, response.bestMoveUci);
