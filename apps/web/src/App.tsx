@@ -1998,25 +1998,27 @@ export function App() {
                             {i18n.languageLabel}
                           </span>
                         </div>
-                        <label className="settings-select-wrap">
-                          <span className="settings-select-label">{i18n.languageNames[prefs.language]}</span>
-                          <select
-                            className="settings-select"
-                            value={prefs.language}
-                            onChange={(event) =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                language: event.target.value as (typeof LANGUAGE_OPTIONS)[number]['code']
-                              }))
-                            }
-                          >
-                            {LANGUAGE_OPTIONS.map((option) => (
-                              <option key={option.code} value={option.code}>
-                                {i18n.languageNames[option.code]}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
+                        <div className="language-option-grid" role="group" aria-label={i18n.languageLabel}>
+                          {LANGUAGE_OPTIONS.map((option) => (
+                            <button
+                              key={option.code}
+                              type="button"
+                              className={`language-option ${prefs.language === option.code ? 'is-active' : ''}`}
+                              aria-pressed={prefs.language === option.code}
+                              onClick={() => {
+                                setPrefs((previous) => ({
+                                  ...previous,
+                                  language: option.code
+                                }));
+                                if (headerLanguageRef.current) {
+                                  headerLanguageRef.current.open = false;
+                                }
+                              }}
+                            >
+                              {i18n.languageNames[option.code]}
+                            </button>
+                          ))}
+                        </div>
                       </section>
                     </div>
                   </div>
