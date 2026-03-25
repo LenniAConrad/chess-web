@@ -59,6 +59,7 @@ const WRONG_MOVE_FEEDBACK_MS = 220;
 const SESSION_HISTORY_FETCH_LIMIT = 100;
 const NO_ANIMATION_DELAY_MS = 120;
 const MOBILE_HISTORY_PREVIEW_HOLD_MS = 260;
+const CAPTURE_RAIN_MAX_PIECES = 64;
 const REPO_URL = 'https://github.com/LenniAConrad/chess-web';
 
 type PrimaryMoveSoundType = Exclude<MoveSoundType, 'check'>;
@@ -913,7 +914,7 @@ export function App() {
         }
       } satisfies FallingCapturePiece;
 
-      setFallingCapturePieces((previous) => [...previous.slice(-11), piece]);
+      setFallingCapturePieces((previous) => [...previous.slice(-(CAPTURE_RAIN_MAX_PIECES - 1)), piece]);
     },
     [prefs.captureRain]
   );
