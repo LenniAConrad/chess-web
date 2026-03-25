@@ -373,6 +373,26 @@ function appendSimilarVariationStatus(
   return `${base}. ${i18n.similarVariationsSkipped(skippedSimilarVariations)}`;
 }
 
+type UiMessage =
+  | { kind: 'literal'; value: string }
+  | { kind: 'translated'; resolve: (i18n: FrontendI18n) => string };
+
+function literalUiMessage(value: string): UiMessage {
+  return { kind: 'literal', value };
+}
+
+function translatedUiMessage(resolve: (i18n: FrontendI18n) => string): UiMessage {
+  return { kind: 'translated', resolve };
+}
+
+function resolveUiMessage(message: UiMessage | null, i18n: FrontendI18n): string | null {
+  if (!message) {
+    return null;
+  }
+
+  return message.kind === 'literal' ? message.value : message.resolve(i18n);
+}
+
 export function App() {
   /**
    * `App` is the session orchestrator for the full UI:
@@ -388,9 +408,11 @@ export function App() {
   const [puzzle, setPuzzle] = useState<PuzzleHeader | null>(null);
   const [state, setState] = useState<SessionStatePayload | null>(null);
   const [displayFen, setDisplayFen] = useState<string | null>(null);
-  const [statusText, setStatusText] = useState(() => i18n.loadingPuzzle);
-  const [correctText, setCorrectText] = useState<string | null>(null);
-  const [errorText, setErrorText] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<UiMessage>(() =>
+    translatedUiMessage((copy) => copy.loadingPuzzle)
+  );
+  const [correctMessage, setCorrectMessage] = useState<UiMessage | null>(null);
+  const [errorMessage, setErrorMessage] = useState<UiMessage | null>(null);
   const [puzzleCount, setPuzzleCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -402,9 +424,9 @@ export function App() {
   const [lastMoveSquares, setLastMoveSquares] = useState<[Square, Square] | null>(null);
   const [puzzleIdInput, setPuzzleIdInput] = useState('');
   const [historyItems, setHistoryItems] = useState<SessionHistoryItem[]>([]);
-  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historyErrorMessage, setHistoryErrorMessage] = useState<UiMessage | null>(null);
   const [sessionTree, setSessionTree] = useState<SessionTreeResponse | null>(null);
-  const [treeError, setTreeError] = useState<string | null>(null);
+  const [treeErrorMessage, setTreeErrorMessage] = useState<UiMessage | null>(null);
   const [reviewPath, setReviewPath] = useState<number[] | null>(null);
   const [wrongMoveSquare, setWrongMoveSquare] = useState<Square | null>(null);
   const [wrongMoveFlashToken, setWrongMoveFlashToken] = useState(0);
@@ -489,6 +511,27 @@ export function App() {
       current ? { ...current, label: i18n.historyDotLabels[current.tone] ?? i18n.historyDotLabels.unknown } : current
     );
   }, [i18n]);
+
+  const statusText = useMemo(
+    () => resolveUiMessage(statusMessage, i18n) ?? '\u00A0',
+    [i18n, statusMessage]
+  );
+  const correctText = useMemo(
+    () => resolveUiMessage(correctMessage, i18n),
+    [correctMessage, i18n]
+  );
+  const errorText = useMemo(
+    () => resolveUiMessage(errorMessage, i18n),
+    [errorMessage, i18n]
+  );
+  const historyError = useMemo(
+    () => resolveUiMessage(historyErrorMessage, i18n),
+    [historyErrorMessage, i18n]
+  );
+  const treeError = useMemo(
+    () => resolveUiMessage(treeErrorMessage, i18n),
+    [treeErrorMessage, i18n]
+  );
 
   const reviewNodeId = reviewPath?.at(-1) ?? null;
   const treeNodeMap = useMemo(() => {
@@ -620,17 +663,20 @@ export function App() {
       }
 
       setHistoryItems(history.items);
-      setHistoryError(null);
+      setHistoryErrorMessage(null);
       setSessionTree(tree);
-      setTreeError(null);
+      setTreeErrorMessage(null);
     } catch (error) {
       if (sessionArtifactsRequestRef.current !== requestId) {
         return;
       }
 
-      const message = error instanceof Error ? error.message : i18n.failedToLoadPuzzleMetadata;
-      setTreeError(message);
-      setHistoryError(message);
+      const message =
+        error instanceof Error
+          ? literalUiMessage(error.message)
+          : translatedUiMessage((copy) => copy.failedToLoadPuzzleMetadata);
+      setTreeErrorMessage(message);
+      setHistoryErrorMessage(message);
     }
   }, [i18n.failedToLoadPuzzleMetadata]);
 
@@ -811,7 +857,7 @@ export function App() {
   }, [historyLoading, loading, prefs.autoNext, prefs.variationMode, sessionId, state]);
 
   const applyStartedSession = useCallback(
-    (response: StartSessionResponse, status: string) => {
+    (response: StartSessionResponse, status: UiMessage) => {
       cacheLoadedSession(response);
       prefetchedNextRequestRef.current += 1;
       prefetchedNextRef.current = null;
@@ -824,13 +870,13 @@ export function App() {
       setLastMoveSquares(null);
       resetHints();
       setLastBestMove(null);
-      setCorrectText(null);
+      setCorrectMessage(null);
       setReviewPath(null);
       setSessionTree(null);
       setWrongMoveSquare(null);
       setLineCompleteSquare(null);
       setOneTryFailed(false);
-      setStatusText(status);
+      setStatusMessage(status);
     },
     [resetHints]
   );
@@ -892,7 +938,7 @@ export function App() {
       const rewindFens = response.rewindFens ?? [];
       let rewindSourceFen = currentFen;
       if (rewindFens.length > 0) {
-        setStatusText(i18n.correctRewinding);
+        setStatusMessage(translatedUiMessage((copy) => copy.correctRewinding));
         await maybeWait(getDelay(CORRECT_BREAK_MS), animationsEnabled);
         setLineCompleteSquare(null);
         for (const fen of rewindFens) {
@@ -915,7 +961,7 @@ export function App() {
         await maybeWait(getDelay(REWIND_STEP_DELAY_MS), animationsEnabled);
       }
 
-      setStatusText(i18n.correctOpponentResponse);
+      setStatusMessage(translatedUiMessage((copy) => copy.correctOpponentResponse));
       const chess = new Chess(response.autoPlayStartFen);
       let finalMoveSquares: [Square, Square] | null = null;
       await maybeWait(getDelay(AUTO_PLAY_DELAY_MS), animationsEnabled);
@@ -949,9 +995,9 @@ export function App() {
   const loadInitial = useCallback(async () => {
     const currentI18n = i18nRef.current;
     setLoading(true);
-    setErrorText(null);
-    setHistoryError(null);
-    setTreeError(null);
+    setErrorMessage(null);
+    setHistoryErrorMessage(null);
+    setTreeErrorMessage(null);
     resetHints();
     setLastBestMove(null);
     setLastMoveSquares(null);
@@ -959,10 +1005,14 @@ export function App() {
 
     try {
       const response = await startSession(prefs.variationMode, prefs.autoNext);
-      applyStartedSession(response, '\u00A0');
+      applyStartedSession(response, literalUiMessage('\u00A0'));
     } catch (error) {
-      setErrorText(error instanceof Error ? error.message : currentI18n.failedToLoadPuzzle);
-      setStatusText(currentI18n.failedToLoadPuzzle);
+      setErrorMessage(
+        error instanceof Error
+          ? literalUiMessage(error.message)
+          : translatedUiMessage((copy) => copy.failedToLoadPuzzle)
+      );
+      setStatusMessage(translatedUiMessage((copy) => copy.failedToLoadPuzzle));
     } finally {
       setLoading(false);
     }
@@ -1005,13 +1055,13 @@ export function App() {
 
       setLoading(true);
       resetHints();
-      setErrorText(null);
+      setErrorMessage(null);
 
       try {
         const response = await playMove(sessionId, uciMove, prefs.skipSimilarVariations);
         setState(response.nextState);
         setLastBestMove(response.bestMoveUci ?? null);
-        setCorrectText(null);
+        setCorrectMessage(null);
         let artifactSessionId = sessionId;
 
         if (response.result === 'incorrect') {
@@ -1029,11 +1079,11 @@ export function App() {
             setOneTryFailed(true);
 
             if (prefs.autoNext) {
-              setStatusText(i18n.incorrectNextPuzzle);
+              setStatusMessage(translatedUiMessage((copy) => copy.incorrectNextPuzzle));
               await maybeWait(getDelay(SHORT_STATUS_DELAY_MS), prefs.animations);
               const prefetchedNext = takePrefetchedNextSession(sessionId, prefs.variationMode, prefs.autoNext);
               if (prefetchedNext) {
-                applyStartedSession(prefetchedNext, i18n.incorrectNextPuzzle);
+                applyStartedSession(prefetchedNext, translatedUiMessage((copy) => copy.incorrectNextPuzzle));
                 activatePrefetchedSession(prefetchedNext.sessionId);
                 artifactSessionId = prefetchedNext.sessionId;
               } else {
@@ -1045,20 +1095,20 @@ export function App() {
                     state: next.state,
                     ui: { autoNextDefault: prefs.autoNext }
                   },
-                  i18n.incorrectNextPuzzle
+                  translatedUiMessage((copy) => copy.incorrectNextPuzzle)
                 );
                 artifactSessionId = next.newSessionId;
               }
             } else {
-              setStatusText(i18n.incorrectPressNextPuzzle);
+              setStatusMessage(translatedUiMessage((copy) => copy.incorrectPressNextPuzzle));
             }
           } else {
-            setStatusText(i18n.incorrect);
+            setStatusMessage(translatedUiMessage((copy) => copy.incorrect));
             await maybeWait(getDelay(WRONG_MOVE_FEEDBACK_MS), prefs.animations);
             setDisplayFen(response.nextState.fen);
             setLastMoveSquares(null);
             setWrongMoveSquare(null);
-            setStatusText(i18n.tryAgain);
+            setStatusMessage(translatedUiMessage((copy) => copy.tryAgain));
           }
         } else if (response.result === 'correct') {
           if (response.rewindFens.length > 0 && optimisticLastMove?.[1]) {
@@ -1066,8 +1116,8 @@ export function App() {
             setLineCompleteFlashToken((previous) => previous + 1);
           }
           playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
-          setCorrectText(i18n.correct);
-          setStatusText(i18n.correctMove);
+          setCorrectMessage(translatedUiMessage((copy) => copy.correct));
+          setStatusMessage(translatedUiMessage((copy) => copy.correctMove));
           if (response.rewindFens.length === 0) {
             await maybeWait(getDelay(CORRECT_BREAK_MS), prefs.animations);
           }
@@ -1077,11 +1127,16 @@ export function App() {
             prefs.animations,
             prefs.soundEnabled
           );
-          setStatusText(
-            appendSimilarVariationStatus(
-              i18n.correctBranchStatus(response.nextState.completedBranches + 1, response.nextState.totalLines),
-              response.skippedSimilarVariations,
-              i18n
+          setStatusMessage(
+            translatedUiMessage((copy) =>
+              appendSimilarVariationStatus(
+                copy.correctBranchStatus(
+                  response.nextState.completedBranches + 1,
+                  response.nextState.totalLines
+                ),
+                response.skippedSimilarVariations,
+                copy
+              )
             )
           );
         } else {
@@ -1090,8 +1145,8 @@ export function App() {
             setLineCompleteFlashToken((previous) => previous + 1);
           }
           playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
-          setCorrectText(i18n.correct);
-          setStatusText(i18n.correctMove);
+          setCorrectMessage(translatedUiMessage((copy) => copy.correct));
+          setStatusMessage(translatedUiMessage((copy) => copy.correctMove));
           if (response.rewindFens.length === 0) {
             await maybeWait(getDelay(CORRECT_BREAK_MS), prefs.animations);
           }
@@ -1101,12 +1156,20 @@ export function App() {
             prefs.animations,
             prefs.soundEnabled
           );
-          setStatusText(appendSimilarVariationStatus(i18n.puzzleComplete, response.skippedSimilarVariations, i18n));
+          setStatusMessage(
+            translatedUiMessage((copy) =>
+              appendSimilarVariationStatus(
+                copy.puzzleComplete,
+                response.skippedSimilarVariations,
+                copy
+              )
+            )
+          );
           if (prefs.autoNext) {
             await maybeWait(getDelay(SHORT_STATUS_DELAY_MS), prefs.animations);
             const prefetchedNext = takePrefetchedNextSession(sessionId, prefs.variationMode, prefs.autoNext);
             if (prefetchedNext) {
-              applyStartedSession(prefetchedNext, i18n.newPuzzleLoaded);
+              applyStartedSession(prefetchedNext, translatedUiMessage((copy) => copy.newPuzzleLoaded));
               activatePrefetchedSession(prefetchedNext.sessionId);
               artifactSessionId = prefetchedNext.sessionId;
             } else {
@@ -1118,7 +1181,7 @@ export function App() {
                   state: next.state,
                   ui: { autoNextDefault: prefs.autoNext }
                 },
-                i18n.newPuzzleLoaded
+                translatedUiMessage((copy) => copy.newPuzzleLoaded)
               );
               artifactSessionId = next.newSessionId;
             }
@@ -1128,7 +1191,11 @@ export function App() {
         void loadSessionArtifacts(artifactSessionId);
       } catch (error) {
         setWrongMoveSquare(null);
-        setErrorText(error instanceof Error ? error.message : i18n.moveFailed);
+        setErrorMessage(
+          error instanceof Error
+            ? literalUiMessage(error.message)
+            : translatedUiMessage((copy) => copy.moveFailed)
+        );
         setLoading(false);
         return;
       }
@@ -1167,7 +1234,7 @@ export function App() {
     }
 
     setLoading(true);
-    setErrorText(null);
+    setErrorMessage(null);
     try {
       const response = await getHint(sessionId);
       const nextHintLevel = response.pieceFromSquare ? Math.min(hintLevel + 1, 2) : 0;
@@ -1181,17 +1248,23 @@ export function App() {
       setLastMoveSquares(null);
       setWrongMoveSquare(null);
       setLineCompleteSquare(null);
-      setStatusText(
-        response.pieceFromSquare
-          ? nextHintLevel >= 2
-            ? i18n.hintShownPieceAndArrow
-            : i18n.hintShownPiece
-          : i18n.noHintAvailable
+      setStatusMessage(
+        translatedUiMessage((copy) =>
+          response.pieceFromSquare
+            ? nextHintLevel >= 2
+              ? copy.hintShownPieceAndArrow
+              : copy.hintShownPiece
+            : copy.noHintAvailable
+        )
       );
 
       void loadSessionArtifacts(sessionId);
     } catch (error) {
-      setErrorText(error instanceof Error ? error.message : i18n.hintFailed);
+      setErrorMessage(
+        error instanceof Error
+          ? literalUiMessage(error.message)
+          : translatedUiMessage((copy) => copy.hintFailed)
+      );
     } finally {
       setLoading(false);
     }
@@ -1205,7 +1278,7 @@ export function App() {
 
       const baseFen = displayFen ?? state.fen;
       setLoading(true);
-      setErrorText(null);
+      setErrorMessage(null);
       resetHints();
       try {
         const response = await revealSolution(sessionId, mode, prefs.skipSimilarVariations);
@@ -1217,8 +1290,10 @@ export function App() {
         if (!response.bestMoveUci || !response.afterFen) {
           setDisplayFen(response.nextState.fen);
           setLastMoveSquares(null);
-          setStatusText(
-            isPuzzleSolved(response.nextState) ? i18n.puzzleComplete : i18n.noMoveToReveal
+          setStatusMessage(
+            translatedUiMessage((copy) =>
+              isPuzzleSolved(response.nextState) ? copy.puzzleComplete : copy.noMoveToReveal
+            )
           );
           void loadSessionArtifacts(sessionId);
           return;
@@ -1232,38 +1307,55 @@ export function App() {
         const moveSoundDecision = getMoveSoundDecision(baseFen, response.bestMoveUci);
         spawnCaptureRainPiece(baseFen, response.bestMoveUci);
         playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
+        const revealedMove = response.bestMoveUci;
 
         setDisplayFen(response.afterFen);
-        setStatusText(
-          mode === 'auto' ? i18n.autoplayMove(response.bestMoveUci) : i18n.bestMove(response.bestMoveUci)
+        setStatusMessage(
+          translatedUiMessage((copy) =>
+            mode === 'auto' ? copy.autoplayMove(revealedMove) : copy.bestMove(revealedMove)
+          )
         );
         await maybeWait(getDelay(CORRECT_BREAK_MS), prefs.animations);
 
         await animateAutoPlay(response, response.afterFen, prefs.animations, prefs.soundEnabled);
 
         if (isPuzzleSolved(response.nextState)) {
-          setStatusText(appendSimilarVariationStatus(i18n.puzzleComplete, response.skippedSimilarVariations, i18n));
+          setStatusMessage(
+            translatedUiMessage((copy) =>
+              appendSimilarVariationStatus(
+                copy.puzzleComplete,
+                response.skippedSimilarVariations,
+                copy
+              )
+            )
+          );
         } else {
-          setStatusText(
-            appendSimilarVariationStatus(
-              mode === 'auto'
-                ? i18n.autoplayBranchStatus(
-                    response.nextState.completedBranches + 1,
-                    response.nextState.totalLines
-                  )
-                : i18n.bestLineBranchStatus(
-                    response.nextState.completedBranches + 1,
-                    response.nextState.totalLines
-                  ),
-              response.skippedSimilarVariations,
-              i18n
+          setStatusMessage(
+            translatedUiMessage((copy) =>
+              appendSimilarVariationStatus(
+                mode === 'auto'
+                  ? copy.autoplayBranchStatus(
+                      response.nextState.completedBranches + 1,
+                      response.nextState.totalLines
+                    )
+                  : copy.bestLineBranchStatus(
+                      response.nextState.completedBranches + 1,
+                      response.nextState.totalLines
+                    ),
+                response.skippedSimilarVariations,
+                copy
+              )
             )
           );
         }
 
         void loadSessionArtifacts(sessionId);
       } catch (error) {
-        setErrorText(error instanceof Error ? error.message : i18n.revealFailed);
+        setErrorMessage(
+          error instanceof Error
+            ? literalUiMessage(error.message)
+            : translatedUiMessage((copy) => copy.revealFailed)
+        );
       } finally {
         setLoading(false);
       }
@@ -1294,7 +1386,7 @@ export function App() {
     }
 
     setLoading(true);
-    setErrorText(null);
+    setErrorMessage(null);
     resetHints();
     try {
       const response = await skipVariation(sessionId, prefs.skipSimilarVariations);
@@ -1303,15 +1395,25 @@ export function App() {
       setLastMoveSquares(null);
       setWrongMoveSquare(null);
       setLineCompleteSquare(null);
-      setStatusText(
-        response.skipped
-          ? appendSimilarVariationStatus(i18n.variationSkipped, response.skippedSimilarVariations, i18n)
-          : i18n.nothingToSkip
+      setStatusMessage(
+        translatedUiMessage((copy) =>
+          response.skipped
+            ? appendSimilarVariationStatus(
+                copy.variationSkipped,
+                response.skippedSimilarVariations,
+                copy
+              )
+            : copy.nothingToSkip
+        )
       );
 
       void loadSessionArtifacts(sessionId);
     } catch (error) {
-      setErrorText(error instanceof Error ? error.message : i18n.skipVariationFailed);
+      setErrorMessage(
+        error instanceof Error
+          ? literalUiMessage(error.message)
+          : translatedUiMessage((copy) => copy.skipVariationFailed)
+      );
     } finally {
       setLoading(false);
     }
@@ -1333,12 +1435,12 @@ export function App() {
     }
 
     setLoading(true);
-    setErrorText(null);
+    setErrorMessage(null);
 
     try {
       const prefetchedNext = takePrefetchedNextSession(sessionId, prefs.variationMode, prefs.autoNext);
       if (prefetchedNext) {
-        applyStartedSession(prefetchedNext, i18n.newPuzzleLoaded);
+        applyStartedSession(prefetchedNext, translatedUiMessage((copy) => copy.newPuzzleLoaded));
         activatePrefetchedSession(prefetchedNext.sessionId);
       } else {
         const next = await nextPuzzle(sessionId, prefs.variationMode, prefs.autoNext);
@@ -1349,11 +1451,15 @@ export function App() {
             state: next.state,
             ui: { autoNextDefault: prefs.autoNext }
           },
-          i18n.newPuzzleLoaded
+          translatedUiMessage((copy) => copy.newPuzzleLoaded)
         );
       }
     } catch (error) {
-      setErrorText(error instanceof Error ? error.message : i18n.failedToLoadNextPuzzle);
+      setErrorMessage(
+        error instanceof Error
+          ? literalUiMessage(error.message)
+          : translatedUiMessage((copy) => copy.failedToLoadNextPuzzle)
+      );
     } finally {
       setLoading(false);
     }
@@ -1375,13 +1481,17 @@ export function App() {
     }
 
     setLoading(true);
-    setErrorText(null);
+    setErrorMessage(null);
 
     try {
       const response = await startSession(prefs.variationMode, prefs.autoNext, puzzle.publicId);
-      applyStartedSession(response, i18n.puzzleRestarted);
+      applyStartedSession(response, translatedUiMessage((copy) => copy.puzzleRestarted));
     } catch (error) {
-      setErrorText(error instanceof Error ? error.message : i18n.failedToLoadPuzzle);
+      setErrorMessage(
+        error instanceof Error
+          ? literalUiMessage(error.message)
+          : translatedUiMessage((copy) => copy.failedToLoadPuzzle)
+      );
     } finally {
       setLoading(false);
     }
@@ -1732,24 +1842,28 @@ export function App() {
 
     const trimmedId = puzzleIdInput.trim();
     if (!trimmedId) {
-      setErrorText(i18n.enterPuzzleId);
+      setErrorMessage(translatedUiMessage((copy) => copy.enterPuzzleId));
       return;
     }
 
     setLoading(true);
-    setErrorText(null);
+    setErrorMessage(null);
     resetHints();
     setLastBestMove(null);
     setLastMoveSquares(null);
-    setCorrectText(null);
+    setCorrectMessage(null);
     setReviewPath(null);
 
     try {
       const response = await startSession(prefs.variationMode, prefs.autoNext, trimmedId);
-      applyStartedSession(response, i18n.puzzleLoadedById);
+      applyStartedSession(response, translatedUiMessage((copy) => copy.puzzleLoadedById));
     } catch (error) {
-      setErrorText(error instanceof Error ? error.message : i18n.failedToLoadPuzzleById);
-      setStatusText(i18n.failedToLoadPuzzle);
+      setErrorMessage(
+        error instanceof Error
+          ? literalUiMessage(error.message)
+          : translatedUiMessage((copy) => copy.failedToLoadPuzzleById)
+      );
+      setStatusMessage(translatedUiMessage((copy) => copy.failedToLoadPuzzle));
     } finally {
       setLoading(false);
     }
@@ -1771,18 +1885,22 @@ export function App() {
       }
 
       setHistoryLoading(true);
-      setErrorText(null);
+      setErrorMessage(null);
       resetHints();
       setLastBestMove(null);
       setLastMoveSquares(null);
-      setCorrectText(null);
+      setCorrectMessage(null);
       setReviewPath(null);
 
       try {
         const response = await loadSession(targetSessionId);
-        applyStartedSession(response, i18n.loadedGameFromHistory);
+        applyStartedSession(response, translatedUiMessage((copy) => copy.loadedGameFromHistory));
       } catch (error) {
-        setErrorText(error instanceof Error ? error.message : i18n.failedToLoadHistoryGame);
+        setErrorMessage(
+          error instanceof Error
+            ? literalUiMessage(error.message)
+            : translatedUiMessage((copy) => copy.failedToLoadHistoryGame)
+        );
       } finally {
         setHistoryLoading(false);
       }
