@@ -28,13 +28,12 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
   width="100%"
 />
 
-### Settings Panel
+### Settings
 
-<img
-  src="assets/settings-panel.png"
-  alt="Chess Puzzle Trainer settings panel grouped into gameplay, display, feedback, automation, and tools"
-  width="420"
-/>
+- Languages: English, Deutsch, 中文, Español, Français, Русский
+- Gameplay: explore variations, skip similar variations, auto-next, hints, one-try mode, auto-queen
+- Display and feedback: dark mode, zen mode, board glass, engine eval, animations, sound, capture rain
+- Automation and tools: autoplay plus direct puzzle loading by ID
 
 ### Zen Mode
 
