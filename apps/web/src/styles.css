@@ -2059,7 +2059,12 @@ button:disabled {
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+    scrollbar-width: none;
     z-index: 120;
+  }
+
+  .app-header-settings[open]::-webkit-scrollbar {
+    display: none;
   }
 
   .app-header-settings[open] .settings-summary {
@@ -2120,10 +2125,20 @@ button:disabled {
   .app-header-settings[open] .settings-content-body {
     width: 100%;
     margin-block: 0;
+    scrollbar-width: none;
+  }
+
+  .app-header-settings[open] .settings-content-body::-webkit-scrollbar {
+    display: none;
   }
 
   button.language-option {
     padding-block: 0.82rem;
+  }
+
+  .capture-rain-piece {
+    width: calc(var(--capture-size) * 0.72);
+    height: calc(var(--capture-size) * 0.72);
   }
 
   .app-footer-inner {
