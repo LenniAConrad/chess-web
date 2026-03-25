@@ -1,406 +1,20 @@
-import {
-  type AnimationEvent as ReactAnimationEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type FocusEvent as ReactFocusEvent,
-  type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent
-} from 'react';
-import { Chess, type PieceSymbol, type Square } from 'chess.js';
+import { type AnimationEvent as ReactAnimationEvent, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Chess, type Square } from 'chess.js';
 import { ChessBoard } from './components/ChessBoard.js';
+import { AppHeader } from './components/AppHeader.js';
+import { CaptureRainLayer, getPromotionPieceLabels, LoadingScreen, PuzzleActionButtons, ReviewNavigationButtons, ZenExitHint } from './components/AppUiBits.js';
 import { EvalBar } from './components/EvalBar.js';
 import { MiniPreviewBoard } from './components/MiniPreviewBoard.js';
 import { useLocalPrefs } from './hooks/useLocalPrefs.js';
 import { useStockfishEval } from './hooks/useStockfishEval.js';
 import { getHistoryDotSymbol, getHistoryDotTone } from './lib/historyDots.js';
-import { getI18n, LANGUAGE_OPTIONS, type FrontendI18n } from './lib/i18n.js';
-import {
-  cacheLoadedSession,
-  getPuzzleCount,
-  getHint,
-  loadSession,
-  refreshSession,
-  getSessionHistory,
-  getSessionTree,
-  nextPuzzle,
-  prefetchNextPuzzle,
-  playMove,
-  retainLoadedSessions,
-  revealSolution,
-  skipVariation,
-  startSession
-} from './lib/api.js';
-import { playMoveSound, primeMoveSounds, type MoveSoundType } from './lib/moveSounds.js';
-import type {
-  SessionHistoryItem,
-  SessionStatePayload,
-  SessionTreeNode,
-  SessionTreeResponse,
-  StartSessionResponse
-} from './types/api.js';
-
-interface PuzzleHeader {
-  publicId: string;
-  startFen: string;
-  title: string;
-}
-
-const AUTO_PLAY_DELAY_MS = 220;
-const CORRECT_BREAK_MS = 220;
-const REWIND_STEP_DELAY_MS = 220;
-const REWIND_BREAK_MS = 160;
-const SHORT_STATUS_DELAY_MS = 160;
-const CHECK_SOUND_DELAY_MS = 0;
-const WRONG_MOVE_FEEDBACK_MS = 220;
-const SESSION_HISTORY_FETCH_LIMIT = 100;
-const NO_ANIMATION_DELAY_MS = 120;
-const MOBILE_HISTORY_PREVIEW_HOLD_MS = 260;
-const CAPTURE_RAIN_MAX_PIECES = 64;
-const REPO_URL = 'https://github.com/LenniAConrad/chess-web';
-
-type PrimaryMoveSoundType = Exclude<MoveSoundType, 'check'>;
-
-interface MoveSoundDecision {
-  primary: PrimaryMoveSoundType | null;
-  isCheck: boolean;
-}
-
-interface AppChromeLink {
-  href: string;
-  label: string;
-  external?: boolean;
-}
-
-interface FallingCapturePiece {
-  id: number;
-  src: string;
-  style: CSSProperties & Record<`--${string}`, string>;
-}
-
-interface AutoPlayAnimationPayload {
-  autoPlayedMoves: string[];
-  autoPlayStartFen: string | null;
-  rewindFens: string[];
-  nextState: SessionStatePayload;
-}
-
-interface HistoryPreviewData {
-  sessionId: string;
-  fen: string;
-  puzzleTitle: string;
-  puzzlePublicId: string;
-  createdAt: string;
-  label: string;
-}
-
-interface HistoryPreviewState extends HistoryPreviewData {
-  tone: ReturnType<typeof getHistoryDotTone>;
-  x: number;
-  y: number;
-  loading: boolean;
-}
-
-interface PrefetchedNextState {
-  sourceSessionId: string;
-  mode: StartSessionResponse['state']['variationMode'];
-  autoNext: boolean;
-  response: StartSessionResponse;
-}
-
-const HISTORY_PREVIEW_DELAY_MS = 110;
-
-function withBasePath(relativePath: string): string {
-  const base = import.meta.env.BASE_URL ?? '/';
-  const normalizedBase = base.endsWith('/') ? base : `${base}/`;
-  return `${normalizedBase}${relativePath.replace(/^\/+/, '')}`;
-}
-
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-function maybeWait(ms: number, enabled: boolean): Promise<void> {
-  if (ms <= 0 || !enabled) {
-    return Promise.resolve();
-  }
-  return wait(ms);
-}
-
-function getFeedbackDelay(ms: number, animationsEnabled: boolean): number {
-  if (ms <= 0) {
-    return 0;
-  }
-
-  return animationsEnabled ? ms : NO_ANIMATION_DELAY_MS;
-}
-
-function applyUciMove(chess: Chess, uciMove: string): boolean {
-  if (uciMove.length < 4) {
-    return false;
-  }
-
-  const from = uciMove.slice(0, 2) as Square;
-  const to = uciMove.slice(2, 4) as Square;
-  const promotion = (uciMove[4] as PieceSymbol | undefined) ?? undefined;
-  const result = chess.move({ from, to, promotion });
-  return Boolean(result);
-}
-
-function getMoveSoundDecision(fen: string, uciMove: string): MoveSoundDecision {
-  if (uciMove.length < 4) {
-    return { primary: null, isCheck: false };
-  }
-
-  const chess = new Chess(fen);
-  const from = uciMove.slice(0, 2) as Square;
-  const to = uciMove.slice(2, 4) as Square;
-  const promotion = (uciMove[4] as PieceSymbol | undefined) ?? undefined;
-  const move = chess.move({ from, to, promotion });
-
-  if (!move) {
-    return { primary: null, isCheck: false };
-  }
-
-  const isCheck = chess.inCheck();
-
-  if (move.isKingsideCastle() || move.isQueensideCastle()) {
-    return { primary: 'castle', isCheck };
-  }
-
-  if (move.isCapture()) {
-    return { primary: 'capture', isCheck };
-  }
-
-  return { primary: 'move', isCheck };
-}
-
-function playMoveSoundDecision(decision: MoveSoundDecision, enabled: boolean): void {
-  if (!enabled) {
-    return;
-  }
-  if (decision.primary) {
-    playMoveSound(decision.primary);
-  }
-  if (decision.isCheck) {
-    if (CHECK_SOUND_DELAY_MS <= 0) {
-      playMoveSound('check');
-      return;
-    }
-    window.setTimeout(() => {
-      playMoveSound('check');
-    }, CHECK_SOUND_DELAY_MS);
-  }
-}
-
-function getFenAfterUciMove(fen: string, uciMove: string): string | null {
-  const chess = new Chess(fen);
-  const ok = applyUciMove(chess, uciMove);
-  if (!ok) {
-    return null;
-  }
-  return chess.fen();
-}
-
-function getMoveSquares(uciMove: string): [Square, Square] | null {
-  if (uciMove.length < 4) {
-    return null;
-  }
-
-  return [uciMove.slice(0, 2) as Square, uciMove.slice(2, 4) as Square];
-}
-
-function getFenStateKey(fen: string): string {
-  return fen.split(' ').slice(0, 4).join(' ');
-}
-
-function getMoveSquaresBetweenFens(beforeFen: string, afterFen: string): [Square, Square] | null {
-  const chess = new Chess(beforeFen);
-  const targetKey = getFenStateKey(afterFen);
-
-  for (const move of chess.moves({ verbose: true })) {
-    chess.move(move);
-    const matches = getFenStateKey(chess.fen()) === targetKey;
-    chess.undo();
-    if (matches) {
-      return [move.from as Square, move.to as Square];
-    }
-  }
-
-  return null;
-}
-
-function getCapturedPieceAsset(fen: string, uciMove: string): string | null {
-  if (uciMove.length < 4) {
-    return null;
-  }
-
-  const chess = new Chess(fen);
-  const from = uciMove.slice(0, 2) as Square;
-  const to = uciMove.slice(2, 4) as Square;
-  const promotion = (uciMove[4] as PieceSymbol | undefined) ?? undefined;
-  const move = chess.move({ from, to, promotion });
-
-  if (!move?.captured) {
-    return null;
-  }
-
-  const capturedColor = move.color === 'w' ? 'b' : 'w';
-  return `/pieces/cburnett/${capturedColor}${move.captured.toUpperCase()}.svg`;
-}
-
-function randomBetween(min: number, max: number): number {
-  return min + Math.random() * (max - min);
-}
-
-function isPuzzleSolved(snapshot: SessionStatePayload): boolean {
-  return snapshot.completedBranches >= snapshot.totalLines;
-}
-
-interface TerminalEvalDisplay {
-  cp: null;
-  mate: number;
-  text: string;
-  sideText: string;
-  depthText: string;
-}
-
-function getTerminalEvalDisplay(fen: string | null, i18n: FrontendI18n): TerminalEvalDisplay | null {
-  if (!fen) {
-    return null;
-  }
-
-  const chess = new Chess(fen);
-
-  if (chess.isCheckmate()) {
-    const whiteWon = chess.turn() === 'b';
-    return {
-      cp: null,
-      mate: whiteWon ? 1 : -1,
-      text: i18n.checkmate,
-      sideText: whiteWon ? i18n.whiteWinning : i18n.blackWinning,
-      depthText: i18n.terminalDepth
-    };
-  }
-
-  if (chess.isStalemate()) {
-    return {
-      cp: null,
-      mate: 0,
-      text: i18n.stalemate,
-      sideText: i18n.drawn,
-      depthText: i18n.terminalDepth
-    };
-  }
-
-  if (chess.isDraw()) {
-    return {
-      cp: null,
-      mate: 0,
-      text: i18n.draw,
-      sideText: i18n.drawn,
-      depthText: i18n.terminalDepth
-    };
-  }
-
-  return null;
-}
-
-function formatEngineEval(
-  cp: number | null,
-  mate: number | null,
-  error: string | null,
-  i18n: FrontendI18n
-): string {
-  if (error) {
-    return i18n.unavailable;
-  }
-
-  if (mate !== null) {
-    return `M${mate}`;
-  }
-
-  if (cp === null) {
-    return '--';
-  }
-
-  const pawns = cp / 100;
-  const sign = pawns > 0 ? '+' : '';
-  return `${sign}${pawns.toFixed(2)}`;
-}
-
-function formatEngineSide(
-  cp: number | null,
-  mate: number | null,
-  error: string | null,
-  i18n: FrontendI18n
-): string {
-  if (error) {
-    return i18n.engineUnavailable;
-  }
-
-  if (mate !== null) {
-    if (mate === 0) {
-      return i18n.drawn;
-    }
-    return mate > 0 ? i18n.whiteWinning : i18n.blackWinning;
-  }
-
-  if (cp === null) {
-    return i18n.neutral;
-  }
-
-  if (Math.abs(cp) <= 25) {
-    return i18n.neutral;
-  }
-
-  return cp > 0 ? i18n.whiteBetter : i18n.blackBetter;
-}
-
-function appendSimilarVariationStatus(
-  base: string,
-  skippedSimilarVariations: number,
-  i18n: FrontendI18n
-): string {
-  if (skippedSimilarVariations <= 0) {
-    return base;
-  }
-
-  return `${base}. ${i18n.similarVariationsSkipped(skippedSimilarVariations)}`;
-}
-
-type UiMessage =
-  | { kind: 'literal'; value: string }
-  | { kind: 'translated'; resolve: (i18n: FrontendI18n) => string };
-
-function literalUiMessage(value: string): UiMessage {
-  return { kind: 'literal', value };
-}
-
-function translatedUiMessage(resolve: (i18n: FrontendI18n) => string): UiMessage {
-  return { kind: 'translated', resolve };
-}
-
-function resolveUiMessage(message: UiMessage | null, i18n: FrontendI18n): string | null {
-  if (!message) {
-    return null;
-  }
-
-  return message.kind === 'literal' ? message.value : message.resolve(i18n);
-}
+import { getI18n } from './lib/i18n.js';
+import { appendSimilarVariationStatus, applyUciMove, AUTO_PLAY_DELAY_MS, type AutoPlayAnimationPayload, type AppChromeLink, CAPTURE_RAIN_MAX_PIECES, CORRECT_BREAK_MS, type FallingCapturePiece, formatEngineEval, formatEngineSide, getCapturedPieceAsset, getFeedbackDelay, getFenAfterUciMove, getMoveSoundDecision, getMoveSquares, getMoveSquaresBetweenFens, getTerminalEvalDisplay, HISTORY_PREVIEW_DELAY_MS, type HistoryPreviewData, type HistoryPreviewState, isPuzzleSolved, literalUiMessage, MOBILE_HISTORY_PREVIEW_HOLD_MS, maybeWait, type PrefetchedNextState, type PuzzleHeader, randomBetween, REPO_URL, resolveUiMessage, REWIND_BREAK_MS, REWIND_STEP_DELAY_MS, SESSION_HISTORY_FETCH_LIMIT, SHORT_STATUS_DELAY_MS, translatedUiMessage, type UiMessage, wait, withBasePath, WRONG_MOVE_FEEDBACK_MS, playMoveSoundDecision } from './lib/appShared.js';
+import { cacheLoadedSession, getPuzzleCount, getHint, loadSession, refreshSession, getSessionHistory, getSessionTree, nextPuzzle, prefetchNextPuzzle, playMove, retainLoadedSessions, revealSolution, skipVariation, startSession } from './lib/api.js';
+import { primeMoveSounds } from './lib/moveSounds.js';
+import type { SessionHistoryItem, SessionStatePayload, SessionTreeNode, SessionTreeResponse, StartSessionResponse } from './types/api.js';
 
 export function App() {
-  /**
-   * `App` is the session orchestrator for the full UI:
-   * - manages API-driven puzzle/session state
-   * - drives board/status animations and sound decisions
-   * - coordinates history + PGN explorer + settings persistence
-   */
   const { prefs, setPrefs } = useLocalPrefs();
   const i18n = useMemo(() => getI18n(prefs.language), [prefs.language]);
   const i18nRef = useRef(i18n);
@@ -1050,7 +664,6 @@ export function App() {
   );
 
   const loadInitial = useCallback(async () => {
-    const currentI18n = i18nRef.current;
     setLoading(true);
     setErrorMessage(null);
     setHistoryErrorMessage(null);
@@ -2026,23 +1639,7 @@ export function App() {
   };
 
   if (!state || !puzzle) {
-    return (
-      <>
-        <main className="loading-minimal">
-          <div className="loading-piece-shell" aria-hidden="true">
-            <span className="loading-piece-glow" />
-            <img className="loading-piece" src={withBasePath('pieces/cburnett/wR.svg')} alt="" />
-          </div>
-          <h1>chess-web</h1>
-          <p className="loading-status">{i18n.loading}</p>
-        </main>
-        {errorText ? (
-          <p className="global-error-toast" role="alert" aria-live="assertive">
-            {errorText}
-          </p>
-        ) : null}
-      </>
-    );
+    return <LoadingScreen i18n={i18n} errorText={errorText} pieceSrc={withBasePath('pieces/cburnett/wR.svg')} />;
   }
 
   const interactive = boardCanInteract;
@@ -2054,492 +1651,74 @@ export function App() {
     { href: REPO_URL, label: i18n.github, external: true }
   ];
   const puzzleActionButtons = (
-    <>
-      <button
-        type="button"
-        className="btn-secondary"
-        disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled}
-        onClick={() => void handleHint()}
-      >
-        {i18n.hint}
-      </button>
-      <button
-        type="button"
-        className="btn-secondary"
-        disabled={panelControlsDisabled || isReviewMode}
-        onClick={() => void handleReveal()}
-      >
-        {i18n.showSolution}
-      </button>
-      {puzzleIsComplete ? (
-        <button
-          type="button"
-          className="btn-secondary"
-          disabled={panelControlsDisabled || isReviewMode}
-          onClick={() => void handleRestartPuzzle()}
-        >
-          {i18n.restartPuzzle}
-        </button>
-      ) : (
-        <button
-          type="button"
-          className="btn-secondary"
-          disabled={panelControlsDisabled || isReviewMode}
-          onClick={() => void handleSkipVariation()}
-        >
-          {i18n.skipVariation}
-        </button>
-      )}
-      <button
-        type="button"
-        className="btn-primary"
-        disabled={panelControlsDisabled}
-        onClick={() => void handleNextPuzzle()}
-      >
-        {i18n.nextPuzzle}
-      </button>
-    </>
+    <PuzzleActionButtons
+      disabled={panelControlsDisabled}
+      isReviewMode={isReviewMode}
+      hintsEnabled={prefs.hintsEnabled}
+      puzzleIsComplete={puzzleIsComplete}
+      i18n={i18n}
+      onHint={() => void handleHint()}
+      onReveal={() => void handleReveal()}
+      onRestartPuzzle={() => void handleRestartPuzzle()}
+      onSkipVariation={() => void handleSkipVariation()}
+      onNextPuzzle={() => void handleNextPuzzle()}
+    />
   );
   const reviewNavigationButtons = (
-    <>
-      <button type="button" disabled={panelControlsDisabled || !isReviewMode} onClick={handleReviewBackOne}>
-        {i18n.backOneMove}
-      </button>
-      <button type="button" disabled={panelControlsDisabled || !isReviewMode} onClick={handleBackToLive}>
-        {i18n.backToLivePuzzle}
-      </button>
-    </>
+    <ReviewNavigationButtons
+      disabled={panelControlsDisabled}
+      isReviewMode={isReviewMode}
+      i18n={i18n}
+      onBackOne={handleReviewBackOne}
+      onBackToLive={handleBackToLive}
+    />
   );
   const zenReviewNavigationButtons = (
-    <>
-      <button
-        type="button"
-        className="btn-secondary"
-        disabled={panelControlsDisabled || !isReviewMode}
-        onClick={handleReviewBackOne}
-      >
-        {i18n.backOneMove}
-      </button>
-      <button
-        type="button"
-        className="btn-secondary"
-        disabled={panelControlsDisabled || !isReviewMode}
-        onClick={handleBackToLive}
-      >
-        {i18n.backToLivePuzzle}
-      </button>
-    </>
+    <ReviewNavigationButtons
+      disabled={panelControlsDisabled}
+      isReviewMode={isReviewMode}
+      secondary
+      i18n={i18n}
+      onBackOne={handleReviewBackOne}
+      onBackToLive={handleBackToLive}
+    />
   );
-  const promotionPieceLabels = {
-    q: i18n.promoteTo(i18n.promotionPieceNames.q),
-    r: i18n.promoteTo(i18n.promotionPieceNames.r),
-    b: i18n.promoteTo(i18n.promotionPieceNames.b),
-    n: i18n.promoteTo(i18n.promotionPieceNames.n)
-  } as const;
+  const promotionPieceLabels = getPromotionPieceLabels(i18n);
 
   return (
     <>
       <div className={shellClassName}>
-        {isZenMode ? (
-          <button
-            type="button"
-            className="zen-exit-hint"
-            onClick={() =>
-              setPrefs((previous) => ({
-                ...previous,
-                zenMode: false
-              }))
-            }
-          >
-            {i18n.exitZenModeHint}
-          </button>
-        ) : null}
-        <div className="capture-rain-layer" aria-hidden="true">
-          {fallingCapturePieces.map((piece) => (
-            <div
-              key={piece.id}
-              className="capture-rain-piece"
-              style={piece.style}
-              onAnimationEnd={(event) => handleCaptureRainPieceAnimationEnd(event, piece.id)}
-            >
-              <img className="capture-rain-piece-spin" src={piece.src} alt="" />
-            </div>
-          ))}
-        </div>
-        <header className="app-header">
-          <div className="app-header-inner">
-            <div className="app-header-primary">
-              <div className="app-brand-lockup">
-                <a className="app-brand" href="/" aria-label={i18n.homeAriaLabel}>
-                  chess-web
-                </a>
-                <p className="app-brand-meta">
-                  {puzzleCount === null ? i18n.livePuzzleCountUnavailable : i18n.puzzleCount(countFormatter.format(puzzleCount))}
-                </p>
-              </div>
-              <div className="app-header-controls">
-                <details
-                  ref={headerLanguageRef}
-                  className="app-header-settings app-header-language settings-panel"
-                  onToggle={(event) => {
-                    if (event.currentTarget.open) {
-                      closeHeaderMenus('language');
-                    }
-                  }}
-                >
-                  <summary className="settings-summary">{i18n.languageLabel}</summary>
-                  <div className="settings-content">
-                    <div className="settings-content-body">
-                      <section className="settings-section" aria-labelledby="settings-language">
-                        <div className="settings-section-head">
-                          <span className="settings-section-title" id="settings-language">
-                            {i18n.languageLabel}
-                          </span>
-                        </div>
-                        <div className="language-option-grid" role="group" aria-label={i18n.languageLabel}>
-                          {LANGUAGE_OPTIONS.map((option) => (
-                            <button
-                              key={option.code}
-                              type="button"
-                              className={`language-option ${prefs.language === option.code ? 'is-active' : ''}`}
-                              aria-pressed={prefs.language === option.code}
-                              onClick={() => {
-                                setPrefs((previous) => ({
-                                  ...previous,
-                                  language: option.code
-                                }));
-                                if (headerLanguageRef.current) {
-                                  headerLanguageRef.current.open = false;
-                                }
-                              }}
-                            >
-                              <span className="language-option-english">{option.englishLabel}</span>
-                              <span className="language-option-native">{option.nativeLabel}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </section>
-                    </div>
-                  </div>
-                </details>
-
-                <details
-                  ref={headerSettingsRef}
-                  className="app-header-settings settings-panel"
-                  onToggle={(event) => {
-                    if (event.currentTarget.open) {
-                      closeHeaderMenus('settings');
-                    }
-                  }}
-                >
-                  <summary className="settings-summary">{i18n.settings}</summary>
-                  <div className="settings-content">
-                    <div className="settings-content-body">
-                      <section className="settings-section" aria-labelledby="settings-gameplay">
-                        <div className="settings-section-head">
-                          <span className="settings-section-title" id="settings-gameplay">
-                            {i18n.gameplay}
-                          </span>
-                        </div>
-                        <div className="toggle-chip-grid">
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.variationMode === 'explore' ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.variationMode === 'explore'}
-                            onClick={() => toggleVariationMode(prefs.variationMode !== 'explore')}
-                          >
-                            <span className="toggle-chip-text">{i18n.exploreVariations}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.skipSimilarVariations ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.skipSimilarVariations}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                skipSimilarVariations: !previous.skipSimilarVariations
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.skipSimilarVariations}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.autoNext ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.autoNext}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                autoNext: !previous.autoNext
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.autoNextPuzzle}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.hintsEnabled ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.hintsEnabled}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                hintsEnabled: !previous.hintsEnabled
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.enableHints}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.oneTryMode ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.oneTryMode}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                oneTryMode: !previous.oneTryMode
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.oneTryMode}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-                        </div>
-                      </section>
-
-                      <section className="settings-section" aria-labelledby="settings-presentation">
-                        <div className="settings-section-head">
-                          <span className="settings-section-title" id="settings-presentation">
-                            {i18n.display}
-                          </span>
-                        </div>
-                        <div className="toggle-chip-grid">
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.darkMode ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.darkMode}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                darkMode: !previous.darkMode
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.darkMode}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.zenMode ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.zenMode}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                zenMode: !previous.zenMode
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.zenMode}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.boardGlass ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.boardGlass}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                boardGlass: !previous.boardGlass
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.boardGlass}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.showEngineEval ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.showEngineEval}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                showEngineEval: !previous.showEngineEval
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.engineEval}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-                        </div>
-                      </section>
-
-                      <section className="settings-section" aria-labelledby="settings-feedback">
-                        <div className="settings-section-head">
-                          <span className="settings-section-title" id="settings-feedback">
-                            {i18n.feedback}
-                          </span>
-                        </div>
-                        <div className="toggle-chip-grid">
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.animations ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.animations}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                animations: !previous.animations
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.animations}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.soundEnabled ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.soundEnabled}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                soundEnabled: !previous.soundEnabled
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.sound}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.captureRain ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.captureRain}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                captureRain: !previous.captureRain
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.captureRain}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-                        </div>
-                      </section>
-
-                      <section className="settings-section" aria-labelledby="settings-automation">
-                        <div className="settings-section-head">
-                          <span className="settings-section-title" id="settings-automation">
-                            {i18n.automation}
-                          </span>
-                        </div>
-                        <div className="toggle-chip-grid">
-                          <button
-                            type="button"
-                            className={`toggle-chip autoplay-chip ${prefs.autoPlay ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.autoPlay}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                autoPlay: !previous.autoPlay
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.autoplayPuzzles}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className={`toggle-chip ${prefs.autoQueenPromotion ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.autoQueenPromotion}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                autoQueenPromotion: !previous.autoQueenPromotion
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.autoQueen}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-                        </div>
-                      </section>
-
-                      <section className="settings-section" aria-labelledby="settings-tools">
-                        <div className="settings-section-head">
-                          <span className="settings-section-title" id="settings-tools">
-                            {i18n.tools}
-                          </span>
-                        </div>
-                        <div className="id-search-row">
-                          <input
-                            type="text"
-                            value={puzzleIdInput}
-                            onChange={(event) => setPuzzleIdInput(event.target.value)}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault();
-                                void handleLoadById();
-                              }
-                            }}
-                            placeholder={i18n.puzzleIdPlaceholder}
-                            spellCheck={false}
-                          />
-                          <button
-                            type="button"
-                            disabled={loading || historyLoading || puzzleIdInput.trim().length === 0}
-                            onClick={() => void handleLoadById()}
-                          >
-                            {i18n.loadId}
-                          </button>
-                        </div>
-                      </section>
-                    </div>
-                  </div>
-                </details>
-              </div>
-            </div>
-          </div>
-        </header>
+        <ZenExitHint
+          visible={isZenMode}
+          label={i18n.exitZenModeHint}
+          onExit={() =>
+            setPrefs((previous) => ({
+              ...previous,
+              zenMode: false
+            }))
+          }
+        />
+        <CaptureRainLayer
+          pieces={fallingCapturePieces}
+          onPieceAnimationEnd={handleCaptureRainPieceAnimationEnd}
+        />
+        <AppHeader
+          i18n={i18n}
+          puzzleCountText={
+            puzzleCount === null ? i18n.livePuzzleCountUnavailable : i18n.puzzleCount(countFormatter.format(puzzleCount))
+          }
+          headerLanguageRef={headerLanguageRef}
+          headerSettingsRef={headerSettingsRef}
+          closeHeaderMenus={closeHeaderMenus}
+          prefs={prefs}
+          setPrefs={setPrefs}
+          toggleVariationMode={toggleVariationMode}
+          puzzleIdInput={puzzleIdInput}
+          setPuzzleIdInput={setPuzzleIdInput}
+          handleLoadById={handleLoadById}
+          loading={loading}
+          historyLoading={historyLoading}
+        />
         <main className="layout split-layout">
           <section className="board-column" id="board">
             <div className={`board-stack ${prefs.showEngineEval ? '' : 'no-eval'}`}>
