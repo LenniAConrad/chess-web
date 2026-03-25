@@ -1,6 +1,20 @@
 import type { HistoryDotTone } from './historyDots.js';
 
-export type LanguageCode = 'en' | 'de' | 'zh' | 'es' | 'fr' | 'ru' | 'he' | 'ar' | 'ja' | 'ko';
+export type LanguageCode =
+  | 'en'
+  | 'de'
+  | 'zh'
+  | 'es'
+  | 'fr'
+  | 'ru'
+  | 'he'
+  | 'ar'
+  | 'ja'
+  | 'ko'
+  | 'mn'
+  | 'la'
+  | 'hy'
+  | 'en-gb-x-pirate';
 export type PromotionPieceCode = 'q' | 'r' | 'b' | 'n';
 
 export interface FrontendI18n {
@@ -129,7 +143,11 @@ const LANGUAGE_NAMES: Record<LanguageCode, string> = {
   he: 'Hebrew עברית',
   ar: 'Arabic العربية',
   ja: 'Japanese 日本語',
-  ko: 'Korean 한국어'
+  ko: 'Korean 한국어',
+  mn: 'Mongolian Монгол',
+  la: 'Latin Latina',
+  hy: 'Armenian Հայերեն',
+  'en-gb-x-pirate': 'Pirate British Pirate British'
 };
 
 const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
@@ -957,6 +975,46 @@ I18N.ko = {
   loadingPuzzle: '퍼즐 불러오는 중...'
 };
 
+I18N.mn = {
+  ...ENGLISH_I18N,
+  language: 'mn',
+  locale: 'mn-MN',
+  languageLabel: 'Хэл',
+  languageNames: LANGUAGE_NAMES,
+  loading: 'Ачаалж байна...',
+  loadingPuzzle: 'Бодлого ачаалж байна...'
+};
+
+I18N.la = {
+  ...ENGLISH_I18N,
+  language: 'la',
+  locale: 'la',
+  languageLabel: 'Lingua',
+  languageNames: LANGUAGE_NAMES,
+  loading: 'Oneratur...',
+  loadingPuzzle: 'Problema oneratur...'
+};
+
+I18N.hy = {
+  ...ENGLISH_I18N,
+  language: 'hy',
+  locale: 'hy-AM',
+  languageLabel: 'Լեզու',
+  languageNames: LANGUAGE_NAMES,
+  loading: 'Բեռնվում է...',
+  loadingPuzzle: 'Փազլը բեռնվում է...'
+};
+
+I18N['en-gb-x-pirate'] = {
+  ...ENGLISH_I18N,
+  language: 'en-gb-x-pirate',
+  locale: 'en-GB',
+  languageLabel: 'Tongue',
+  languageNames: LANGUAGE_NAMES,
+  loading: "Loadin'...",
+  loadingPuzzle: "Loadin' puzzle..."
+};
+
 export const LANGUAGE_OPTIONS: Array<{ code: LanguageCode; label: string }> = [
   { code: 'en', label: LANGUAGE_NAMES.en },
   { code: 'de', label: LANGUAGE_NAMES.de },
@@ -967,7 +1025,11 @@ export const LANGUAGE_OPTIONS: Array<{ code: LanguageCode; label: string }> = [
   { code: 'he', label: LANGUAGE_NAMES.he },
   { code: 'ar', label: LANGUAGE_NAMES.ar },
   { code: 'ja', label: LANGUAGE_NAMES.ja },
-  { code: 'ko', label: LANGUAGE_NAMES.ko }
+  { code: 'ko', label: LANGUAGE_NAMES.ko },
+  { code: 'mn', label: LANGUAGE_NAMES.mn },
+  { code: 'la', label: LANGUAGE_NAMES.la },
+  { code: 'hy', label: LANGUAGE_NAMES.hy },
+  { code: 'en-gb-x-pirate', label: LANGUAGE_NAMES['en-gb-x-pirate'] }
 ];
 
 export function getI18n(language: LanguageCode): FrontendI18n {
