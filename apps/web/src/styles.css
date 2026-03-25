@@ -381,7 +381,7 @@ body {
 
 .app-header-settings {
   position: relative;
-  min-width: 180px;
+  min-width: 0;
   margin-left: 0;
   padding: 0;
   border: 0;
@@ -398,6 +398,12 @@ body {
 .app-header-settings .settings-summary {
   padding: 0;
   color: var(--color-meta);
+  white-space: nowrap;
+}
+
+.app-header-settings:not([open]) .settings-summary {
+  justify-content: flex-start;
+  gap: 0.38rem;
 }
 
 .app-header-settings[open] .settings-content {

@@ -124,7 +124,7 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
   en: {
     language: 'en',
     locale: 'en-US',
-    languageLabel: '🌐 Language',
+    languageLabel: 'Language',
     languageNames: { en: 'English', de: 'Deutsch', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' },
     loading: 'Loading...',
     loadingPuzzle: 'Loading puzzle...',
@@ -255,7 +255,7 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
   de: {
     language: 'de',
     locale: 'de-DE',
-    languageLabel: '🌐 Sprache',
+    languageLabel: 'Sprache',
     languageNames: { en: 'English', de: 'Deutsch', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' },
     loading: 'Laden...',
     loadingPuzzle: 'Aufgabe wird geladen...',
@@ -386,7 +386,7 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
   zh: {
     language: 'zh',
     locale: 'zh-CN',
-    languageLabel: '🌐 语言',
+    languageLabel: '语言',
     languageNames: { en: 'English', de: 'Deutsch', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' },
     loading: '加载中...',
     loadingPuzzle: '正在加载题目...',
@@ -517,7 +517,7 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
   es: {
     language: 'es',
     locale: 'es-ES',
-    languageLabel: '🌐 Idioma',
+    languageLabel: 'Idioma',
     languageNames: { en: 'English', de: 'Deutsch', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' },
     loading: 'Cargando...',
     loadingPuzzle: 'Cargando problema...',
@@ -648,7 +648,7 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
   fr: {
     language: 'fr',
     locale: 'fr-FR',
-    languageLabel: '🌐 Langue',
+    languageLabel: 'Langue',
     languageNames: { en: 'English', de: 'Deutsch', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' },
     loading: 'Chargement...',
     loadingPuzzle: 'Chargement du problème...',
@@ -779,7 +779,7 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
   ru: {
     language: 'ru',
     locale: 'ru-RU',
-    languageLabel: '🌐 Язык',
+    languageLabel: 'Язык',
     languageNames: { en: 'English', de: 'Deutsch', zh: '中文', es: 'Español', fr: 'Français', ru: 'Русский' },
     loading: 'Загрузка...',
     loadingPuzzle: 'Загрузка задачи...',
