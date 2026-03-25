@@ -2,6 +2,7 @@ import type { HistoryDotTone } from './historyDots.js';
 
 export type LanguageCode =
   | 'en'
+  | 'eo'
   | 'de'
   | 'zh'
   | 'es'
@@ -133,22 +134,27 @@ export interface FrontendI18n {
   pathMoves: (moves: string) => string;
 }
 
-const LANGUAGE_NAMES: Record<LanguageCode, string> = {
-  en: 'English English',
-  de: 'German Deutsch',
-  zh: 'Chinese 中文',
-  es: 'Spanish Español',
-  fr: 'French Français',
-  ru: 'Russian Русский',
-  he: 'Hebrew עברית',
-  ar: 'Arabic العربية',
-  ja: 'Japanese 日本語',
-  ko: 'Korean 한국어',
-  mn: 'Mongolian Монгол',
-  la: 'Latin Latina',
-  hy: 'Armenian Հայերեն',
-  'en-gb-x-pirate': 'Pirate British Pirate British'
+const LANGUAGE_NAME_PARTS: Record<LanguageCode, { english: string; native: string }> = {
+  en: { english: 'English', native: 'English' },
+  eo: { english: 'Esperanto', native: 'Esperanto' },
+  de: { english: 'German', native: 'Deutsch' },
+  zh: { english: 'Chinese', native: '中文' },
+  es: { english: 'Spanish', native: 'Español' },
+  fr: { english: 'French', native: 'Français' },
+  ru: { english: 'Russian', native: 'Русский' },
+  he: { english: 'Hebrew', native: 'עברית' },
+  ar: { english: 'Arabic', native: 'العربية' },
+  ja: { english: 'Japanese', native: '日本語' },
+  ko: { english: 'Korean', native: '한국어' },
+  mn: { english: 'Mongolian', native: 'Монгол' },
+  la: { english: 'Latin', native: 'Latina' },
+  hy: { english: 'Armenian', native: 'Հայերեն' },
+  'en-gb-x-pirate': { english: 'Pirate British', native: 'Pirate British' }
 };
+
+const LANGUAGE_NAMES: Record<LanguageCode, string> = Object.fromEntries(
+  Object.entries(LANGUAGE_NAME_PARTS).map(([code, names]) => [code, `${names.english} ${names.native}`])
+) as Record<LanguageCode, string>;
 
 const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
   en: {
@@ -934,6 +940,132 @@ const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
 };
 
 const ENGLISH_I18N = I18N.en as FrontendI18n;
+
+I18N.eo = {
+  language: 'eo',
+  locale: 'eo',
+  languageLabel: 'Lingvo',
+  languageNames: LANGUAGE_NAMES,
+  loading: 'Sxargante...',
+  loadingPuzzle: 'Sxargante problemon...',
+  whiteToMove: 'Blanko movas',
+  blackToMove: 'Nigro movas',
+  checkmate: 'Mato',
+  stalemate: 'Pato',
+  draw: 'Remizo',
+  unavailable: 'ne disponebla',
+  engineUnavailable: 'Motoro ne disponeblas',
+  drawn: 'Egala',
+  whiteWinning: 'Blanko gajnas',
+  blackWinning: 'Nigro gajnas',
+  terminalDepth: 'fino',
+  neutral: 'Neuxtrala',
+  whiteBetter: 'Blanko pli bonas',
+  blackBetter: 'Nigro pli bonas',
+  correct: 'Gxuste',
+  correctMove: 'Gxusta movo',
+  incorrect: 'Malgxuste',
+  tryAgain: 'Provu denove',
+  noHintAvailable: 'Neniu helpo disponeblas',
+  hintShownPiece: 'Helpo montrita (peco)',
+  hintShownPieceAndArrow: 'Helpo montrita (peco + sago)',
+  correctRewinding: 'Gxuste. Reenmovas al sekva varianto...',
+  correctOpponentResponse: 'Gxuste. Respondo de kontrauxulo...',
+  incorrectNextPuzzle: 'Malgxuste. Sekva problemo...',
+  incorrectPressNextPuzzle: 'Malgxuste. Premu Sekva problemo',
+  puzzleComplete: 'Problemo finita',
+  noMoveToReveal: 'Neniu movo por montri',
+  variationSkipped: 'Varianto transsaltita',
+  nothingToSkip: 'Nenio por transsalti',
+  newPuzzleLoaded: 'Nova problemo sxargita',
+  puzzleRestarted: 'Problemo restartigita',
+  puzzleLoadedById: 'Problemo sxargita lau ID',
+  loadedGameFromHistory: 'Ludo sxargita el historio',
+  failedToLoadPuzzle: 'Malsukcesis sxargi problemon',
+  failedToLoadPuzzleById: 'Malsukcesis sxargi problemon lau ID',
+  failedToLoadHistoryGame: 'Malsukcesis sxargi historian ludon',
+  failedToLoadPuzzleMetadata: 'Malsukcesis sxargi problemmetadatumojn',
+  moveFailed: 'Movo malsukcesis',
+  hintFailed: 'Helpo malsukcesis',
+  revealFailed: 'Montrado malsukcesis',
+  skipVariationFailed: 'Transsalto de varianto malsukcesis',
+  failedToLoadNextPuzzle: 'Malsukcesis sxargi sekvan problemon',
+  enterPuzzleId: 'Enigu probleman ID',
+  exitZenModeHint: 'Alklaku cxi tie aux premu Esc por eliri el zen-reghimo',
+  livePuzzleCountUnavailable: 'Nombro de problemoj ne disponeblas',
+  settings: 'Agordoj',
+  gameplay: 'Ludado',
+  display: 'Aspekto',
+  feedback: 'Reago',
+  automation: 'Auxtomatigo',
+  tools: 'Iloj',
+  exploreVariations: 'Esplori variantojn',
+  skipSimilarVariations: 'Transsalti similajn variantojn',
+  autoNextPuzzle: 'Auxtomate sekva problemo',
+  enableHints: 'Ebligi helpojn',
+  oneTryMode: 'Reghimo de unu provo',
+  darkMode: 'Malhela reghimo',
+  zenMode: 'Zen-reghimo',
+  boardGlass: 'Vitra tabulo',
+  engineEval: 'Motoro + takso',
+  animations: 'Animacioj',
+  sound: 'Sono',
+  captureRain: 'Kapta pluvo',
+  autoplayPuzzles: 'Auxtomata ludado de problemoj',
+  autoQueen: 'Auxtomata damigo',
+  puzzleIdPlaceholder: 'Problema ID (UUID)',
+  loadId: 'Sxargi ID',
+  hint: 'Helpo',
+  showSolution: 'Montri solvon',
+  restartPuzzle: 'Restartigi problemon',
+  skipVariation: 'Transsalti varianton',
+  nextPuzzle: 'Sekva problemo',
+  backOneMove: 'Reen unu movon',
+  backToLivePuzzle: 'Reen al aktuala problemo',
+  untitledPuzzle: 'Sentitola problemo',
+  reviewModeActive: 'Revizia reghimo aktiva',
+  recentGameHistory: 'Historio de lastaj ludoj',
+  recentGames: 'Lastaj ludoj',
+  pgnExplorer: 'PGN-esplorilo',
+  pathLivePosition: 'Vojo: aktuala pozicio',
+  noLegalContinuation: 'Neniu laulegha daurigo el cxi tiu nodo',
+  mainLine: 'Cxefa',
+  variationLine: 'Var.',
+  loadingPreview: 'Sxargante antauxrigardon…',
+  puzzleFallback: 'Problemo',
+  footerLinks: 'Piedaj ligiloj',
+  github: 'GitHub',
+  homeAriaLabel: 'hejmo de chess-web',
+  choosePromotionPiece: 'Elektu promociotan pecon',
+  cancelPromotion: 'Nuligi promocion',
+  promotionPieceNames: { q: 'damo', r: 'turo', b: 'episkopo', n: 'cxevalo' },
+  promoteTo: (piece) => `Promocii al ${piece}`,
+  historyDotLabels: {
+    blue: 'Auxtoludo',
+    green: 'Finita',
+    yellow: 'Solvita kun helpoj',
+    orange: 'Solvita kun eraroj',
+    red: 'Malsukcesis',
+    gray: 'Neludita',
+    unknown: 'Nekonata'
+  },
+  puzzleCount: (count) => `${count} problemoj`,
+  similarVariationsSkipped: (count) =>
+    count === 1 ? '1 simila varianto transsaltita' : `${count} similaj variantoj transsaltitaj`,
+  correctBranchStatus: (current, total) => `Gxuste. Brancxo ${current}/${total}`,
+  autoplayBranchStatus: (current, total) => `Auxto. Brancxo ${current}/${total}`,
+  bestLineBranchStatus: (current, total) => `Plej bona linio. Brancxo ${current}/${total}`,
+  autoplayMove: (move) => `Auxto: ${move}`,
+  bestMove: (move) => `Plej bona movo: ${move}`,
+  expectedMove: (move) => `Atendita: ${move}`,
+  completedBranches: (completed, total) => `Finita ${completed}/${total}`,
+  puzzleId: (id) => `ID: ${id}`,
+  engineLine: (evalText, depthText, sideText) => `Motoro: ${evalText} | ${depthText} | ${sideText}`,
+  historyCount: (count) => `Lastaj ${count}`,
+  historyItemAriaLabel: (selected, label, puzzleId) =>
+    `${selected ? 'Nuna' : label} problemo ${puzzleId} el historio`,
+  pathMoves: (moves) => `Vojo: ${moves}`
+};
 
 I18N.he = {
   language: 'he',
@@ -1943,21 +2075,102 @@ I18N['en-gb-x-pirate'] = {
   pathMoves: (moves) => `Path: ${moves}`
 };
 
-export const LANGUAGE_OPTIONS: Array<{ code: LanguageCode; label: string }> = [
-  { code: 'en', label: LANGUAGE_NAMES.en },
-  { code: 'de', label: LANGUAGE_NAMES.de },
-  { code: 'zh', label: LANGUAGE_NAMES.zh },
-  { code: 'es', label: LANGUAGE_NAMES.es },
-  { code: 'fr', label: LANGUAGE_NAMES.fr },
-  { code: 'ru', label: LANGUAGE_NAMES.ru },
-  { code: 'he', label: LANGUAGE_NAMES.he },
-  { code: 'ar', label: LANGUAGE_NAMES.ar },
-  { code: 'ja', label: LANGUAGE_NAMES.ja },
-  { code: 'ko', label: LANGUAGE_NAMES.ko },
-  { code: 'mn', label: LANGUAGE_NAMES.mn },
-  { code: 'la', label: LANGUAGE_NAMES.la },
-  { code: 'hy', label: LANGUAGE_NAMES.hy },
-  { code: 'en-gb-x-pirate', label: LANGUAGE_NAMES['en-gb-x-pirate'] }
+export const LANGUAGE_OPTIONS: Array<{
+  code: LanguageCode;
+  label: string;
+  englishLabel: string;
+  nativeLabel: string;
+}> = [
+  {
+    code: 'en',
+    label: LANGUAGE_NAMES.en,
+    englishLabel: LANGUAGE_NAME_PARTS.en.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.en.native
+  },
+  {
+    code: 'eo',
+    label: LANGUAGE_NAMES.eo,
+    englishLabel: LANGUAGE_NAME_PARTS.eo.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.eo.native
+  },
+  {
+    code: 'de',
+    label: LANGUAGE_NAMES.de,
+    englishLabel: LANGUAGE_NAME_PARTS.de.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.de.native
+  },
+  {
+    code: 'zh',
+    label: LANGUAGE_NAMES.zh,
+    englishLabel: LANGUAGE_NAME_PARTS.zh.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.zh.native
+  },
+  {
+    code: 'es',
+    label: LANGUAGE_NAMES.es,
+    englishLabel: LANGUAGE_NAME_PARTS.es.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.es.native
+  },
+  {
+    code: 'fr',
+    label: LANGUAGE_NAMES.fr,
+    englishLabel: LANGUAGE_NAME_PARTS.fr.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.fr.native
+  },
+  {
+    code: 'ru',
+    label: LANGUAGE_NAMES.ru,
+    englishLabel: LANGUAGE_NAME_PARTS.ru.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.ru.native
+  },
+  {
+    code: 'he',
+    label: LANGUAGE_NAMES.he,
+    englishLabel: LANGUAGE_NAME_PARTS.he.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.he.native
+  },
+  {
+    code: 'ar',
+    label: LANGUAGE_NAMES.ar,
+    englishLabel: LANGUAGE_NAME_PARTS.ar.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.ar.native
+  },
+  {
+    code: 'ja',
+    label: LANGUAGE_NAMES.ja,
+    englishLabel: LANGUAGE_NAME_PARTS.ja.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.ja.native
+  },
+  {
+    code: 'ko',
+    label: LANGUAGE_NAMES.ko,
+    englishLabel: LANGUAGE_NAME_PARTS.ko.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.ko.native
+  },
+  {
+    code: 'mn',
+    label: LANGUAGE_NAMES.mn,
+    englishLabel: LANGUAGE_NAME_PARTS.mn.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.mn.native
+  },
+  {
+    code: 'la',
+    label: LANGUAGE_NAMES.la,
+    englishLabel: LANGUAGE_NAME_PARTS.la.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.la.native
+  },
+  {
+    code: 'hy',
+    label: LANGUAGE_NAMES.hy,
+    englishLabel: LANGUAGE_NAME_PARTS.hy.english,
+    nativeLabel: LANGUAGE_NAME_PARTS.hy.native
+  },
+  {
+    code: 'en-gb-x-pirate',
+    label: LANGUAGE_NAMES['en-gb-x-pirate'],
+    englishLabel: LANGUAGE_NAME_PARTS['en-gb-x-pirate'].english,
+    nativeLabel: LANGUAGE_NAME_PARTS['en-gb-x-pirate'].native
+  }
 ];
 
 export function getI18n(language: LanguageCode): FrontendI18n {

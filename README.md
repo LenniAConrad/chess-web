@@ -30,10 +30,12 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
 
 ### Settings
 
-- Languages: English, Deutsch, 中文, Español, Français, Русский
+- Languages: English, Esperanto, Deutsch, 中文, Español, Français, Русский, עברית, العربية, 日本語, 한국어, Монгол, Latina, Հայերեն, Pirate British
+- Language picker: English names align left and native names align right
 - Gameplay: explore variations, skip similar variations, auto-next, hints, one-try mode, auto-queen
 - Display and feedback: dark mode, zen mode, board glass, engine eval, animations, sound, capture rain
 - Automation and tools: autoplay plus direct puzzle loading by ID
+- Menu behavior: desktop header menus scroll when tall, and the mobile settings/language sheet fades the sticky title after a slight scroll
 
 ### Zen Mode
 
@@ -51,6 +53,7 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
 - Tracks recent games with replayable history
 - Includes hints, reveal, skip variation, restart, and next puzzle flows
 - Supports autoplay, auto-next, one-try mode, auto-queen, sounds, and animations
+- Supports a multilingual UI with native-language labels and RTL handling for Hebrew and Arabic
 - Shows optional in-browser Stockfish eval with an eval bar
 - Works with local Postgres or in-memory `pg-mem` during development
 

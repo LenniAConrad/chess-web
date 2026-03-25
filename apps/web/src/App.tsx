@@ -797,6 +797,52 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    const menus = [headerSettingsRef.current, headerLanguageRef.current].filter(
+      (menu): menu is HTMLDetailsElement => Boolean(menu)
+    );
+
+    if (menus.length === 0) {
+      return;
+    }
+
+    const cleanups = menus.map((menu) => {
+      const syncScrolledState = () => {
+        if (!isMobileViewport || !menu.open) {
+          menu.dataset.mobileScrolled = 'false';
+          return;
+        }
+
+        menu.dataset.mobileScrolled = menu.scrollTop > 6 ? 'true' : 'false';
+      };
+
+      const handleToggle = () => {
+        if (!menu.open) {
+          menu.dataset.mobileScrolled = 'false';
+          return;
+        }
+
+        syncScrolledState();
+      };
+
+      menu.addEventListener('scroll', syncScrolledState, { passive: true });
+      menu.addEventListener('toggle', handleToggle);
+      syncScrolledState();
+
+      return () => {
+        menu.removeEventListener('scroll', syncScrolledState);
+        menu.removeEventListener('toggle', handleToggle);
+        delete menu.dataset.mobileScrolled;
+      };
+    });
+
+    return () => {
+      for (const cleanup of cleanups) {
+        cleanup();
+      }
+    };
+  }, [isMobileViewport]);
+
+  useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== 'Escape' || !prefs.zenMode) {
         return;
@@ -2166,7 +2212,8 @@ export function App() {
                                 }
                               }}
                             >
-                              {option.label}
+                              <span className="language-option-english">{option.englishLabel}</span>
+                              <span className="language-option-native">{option.nativeLabel}</span>
                             </button>
                           ))}
                         </div>
