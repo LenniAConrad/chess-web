@@ -70,7 +70,6 @@ export interface FrontendI18n {
   zenMode: string;
   boardGlass: string;
   engineEval: string;
-  fastMode: string;
   animations: string;
   sound: string;
   captureRain: string;
@@ -188,7 +187,6 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
     zenMode: 'Zen mode',
     boardGlass: 'Board glass',
     engineEval: 'Engine + eval',
-    fastMode: 'Fast mode',
     animations: 'Animations',
     sound: 'Sound',
     captureRain: 'Capture rain',
@@ -319,7 +317,6 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
     zenMode: 'Zen-Modus',
     boardGlass: 'Glasbrett',
     engineEval: 'Engine + Bewertung',
-    fastMode: 'Schnellmodus',
     animations: 'Animationen',
     sound: 'Ton',
     captureRain: 'Figurenregen',
@@ -450,7 +447,6 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
     zenMode: '禅模式',
     boardGlass: '棋盘玻璃效果',
     engineEval: '引擎 + 评估',
-    fastMode: '快速模式',
     animations: '动画',
     sound: '声音',
     captureRain: '吃子雨',
@@ -581,7 +577,6 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
     zenMode: 'Modo zen',
     boardGlass: 'Tablero de cristal',
     engineEval: 'Motor + evaluación',
-    fastMode: 'Modo rápido',
     animations: 'Animaciones',
     sound: 'Sonido',
     captureRain: 'Lluvia de capturas',
@@ -712,7 +707,6 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
     zenMode: 'Mode zen',
     boardGlass: 'Plateau en verre',
     engineEval: 'Moteur + évaluation',
-    fastMode: 'Mode rapide',
     animations: 'Animations',
     sound: 'Son',
     captureRain: 'Pluie de captures',
@@ -843,7 +837,6 @@ const I18N: Record<LanguageCode, FrontendI18n> = {
     zenMode: 'Дзен-режим',
     boardGlass: 'Стеклянная доска',
     engineEval: 'Движок + оценка',
-    fastMode: 'Быстрый режим',
     animations: 'Анимации',
     sound: 'Звук',
     captureRain: 'Дождь из фигур',

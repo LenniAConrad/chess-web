@@ -49,18 +49,16 @@ interface PuzzleHeader {
   title: string;
 }
 
-const AUTO_PLAY_DELAY_MS = 900;
-const CORRECT_BREAK_MS = 750;
-const REWIND_STEP_DELAY_MS = 260;
-const REWIND_BREAK_MS = 700;
-const SHORT_STATUS_DELAY_MS = 700;
+const AUTO_PLAY_DELAY_MS = 220;
+const CORRECT_BREAK_MS = 220;
+const REWIND_STEP_DELAY_MS = 220;
+const REWIND_BREAK_MS = 160;
+const SHORT_STATUS_DELAY_MS = 160;
 const CHECK_SOUND_DELAY_MS = 0;
-const WRONG_MOVE_FEEDBACK_MS = 520;
+const WRONG_MOVE_FEEDBACK_MS = 220;
 const SESSION_HISTORY_FETCH_LIMIT = 100;
-const NO_ANIMATION_DELAY_MS = 180;
+const NO_ANIMATION_DELAY_MS = 120;
 const MOBILE_HISTORY_PREVIEW_HOLD_MS = 260;
-const FAST_MODE_DELAY_SCALE = 0.22;
-const FAST_MODE_DELAY_CAP_MS = 180;
 const REPO_URL = 'https://github.com/LenniAConrad/chess-web';
 
 type PrimaryMoveSoundType = Exclude<MoveSoundType, 'check'>;
@@ -127,16 +125,12 @@ function maybeWait(ms: number, enabled: boolean): Promise<void> {
   return wait(ms);
 }
 
-function getInteractionDelay(ms: number, fastMode: boolean): number {
+function getFeedbackDelay(ms: number, animationsEnabled: boolean): number {
   if (ms <= 0) {
     return 0;
   }
 
-  if (!fastMode) {
-    return ms;
-  }
-
-  return Math.min(FAST_MODE_DELAY_CAP_MS, Math.max(0, Math.round(ms * FAST_MODE_DELAY_SCALE)));
+  return animationsEnabled ? ms : NO_ANIMATION_DELAY_MS;
 }
 
 function applyUciMove(chess: Chess, uciMove: string): boolean {
@@ -408,6 +402,7 @@ export function App() {
   const [puzzle, setPuzzle] = useState<PuzzleHeader | null>(null);
   const [state, setState] = useState<SessionStatePayload | null>(null);
   const [displayFen, setDisplayFen] = useState<string | null>(null);
+  const [premoveResetCounter, setPremoveResetCounter] = useState(0);
   const [statusMessage, setStatusMessage] = useState<UiMessage>(() =>
     translatedUiMessage((copy) => copy.loadingPuzzle)
   );
@@ -641,12 +636,17 @@ export function App() {
     terminalEvalDisplay?.sideText ??
     formatEngineSide(displayedEngineCp, displayedEngineMate, displayedEngineError, i18n);
   const engineDepthText = terminalEvalDisplay?.depthText ?? `d${engineEval.depth}`;
-  const getDelay = useCallback((ms: number) => getInteractionDelay(ms, prefs.fastMode), [prefs.fastMode]);
+  const getDelay = useCallback((ms: number) => ms, []);
+  const getFeedbackPause = useCallback((ms: number, animationsEnabled: boolean) => getFeedbackDelay(ms, animationsEnabled), []);
 
   const resetHints = useCallback(() => {
     setHintSquare(null);
     setHintArrow(null);
     setHintLevel(0);
+  }, []);
+
+  const resetPremoves = useCallback(() => {
+    setPremoveResetCounter((current) => current + 1);
   }, []);
 
   const loadSessionArtifacts = useCallback(async (activeSessionId: string) => {
@@ -876,9 +876,10 @@ export function App() {
       setWrongMoveSquare(null);
       setLineCompleteSquare(null);
       setOneTryFailed(false);
+      resetPremoves();
       setStatusMessage(status);
     },
-    [resetHints]
+    [resetHints, resetPremoves]
   );
 
   const removeCaptureRainPiece = useCallback((id: number) => {
@@ -938,8 +939,9 @@ export function App() {
       const rewindFens = response.rewindFens ?? [];
       let rewindSourceFen = currentFen;
       if (rewindFens.length > 0) {
+        resetPremoves();
         setStatusMessage(translatedUiMessage((copy) => copy.correctRewinding));
-        await maybeWait(getDelay(CORRECT_BREAK_MS), animationsEnabled);
+        await wait(getFeedbackPause(CORRECT_BREAK_MS, animationsEnabled));
         setLineCompleteSquare(null);
         for (const fen of rewindFens) {
           setLastMoveSquares(getMoveSquaresBetweenFens(fen, rewindSourceFen));
@@ -989,7 +991,7 @@ export function App() {
       setDisplayFen(response.nextState.fen);
       return finalMoveSquares;
     },
-    [getDelay, i18n, spawnCaptureRainPiece]
+    [getDelay, resetPremoves, spawnCaptureRainPiece]
   );
 
   const loadInitial = useCallback(async () => {
@@ -1073,6 +1075,7 @@ export function App() {
           }
           playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
           if (prefs.oneTryMode) {
+            resetPremoves();
             setDisplayFen(response.nextState.fen);
             setLastMoveSquares(null);
             setWrongMoveSquare(null);
@@ -1104,7 +1107,8 @@ export function App() {
             }
           } else {
             setStatusMessage(translatedUiMessage((copy) => copy.incorrect));
-            await maybeWait(getDelay(WRONG_MOVE_FEEDBACK_MS), prefs.animations);
+            await wait(getFeedbackPause(WRONG_MOVE_FEEDBACK_MS, prefs.animations));
+            resetPremoves();
             setDisplayFen(response.nextState.fen);
             setLastMoveSquares(null);
             setWrongMoveSquare(null);
@@ -1119,7 +1123,7 @@ export function App() {
           setCorrectMessage(translatedUiMessage((copy) => copy.correct));
           setStatusMessage(translatedUiMessage((copy) => copy.correctMove));
           if (response.rewindFens.length === 0) {
-            await maybeWait(getDelay(CORRECT_BREAK_MS), prefs.animations);
+            await wait(getFeedbackPause(CORRECT_BREAK_MS, prefs.animations));
           }
           await animateAutoPlay(
             response,
@@ -1148,7 +1152,7 @@ export function App() {
           setCorrectMessage(translatedUiMessage((copy) => copy.correct));
           setStatusMessage(translatedUiMessage((copy) => copy.correctMove));
           if (response.rewindFens.length === 0) {
-            await maybeWait(getDelay(CORRECT_BREAK_MS), prefs.animations);
+            await wait(getFeedbackPause(CORRECT_BREAK_MS, prefs.animations));
           }
           await animateAutoPlay(
             response,
@@ -1211,6 +1215,7 @@ export function App() {
       loading,
       historyLoading,
       getDelay,
+      getFeedbackPause,
       prefs.animations,
       prefs.autoNext,
       prefs.oneTryMode,
@@ -1224,7 +1229,8 @@ export function App() {
       activatePrefetchedSession,
       takePrefetchedNextSession,
       i18n,
-      oneTryLocked
+      oneTryLocked,
+      resetPremoves
     ]
   );
 
@@ -1244,6 +1250,7 @@ export function App() {
         nextHintLevel >= 2 && response.bestMoveUci ? getMoveSquares(response.bestMoveUci) : null
       );
       setState(response.state);
+      resetPremoves();
       setDisplayFen(response.state.fen);
       setLastMoveSquares(null);
       setWrongMoveSquare(null);
@@ -1268,7 +1275,17 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [hintLevel, i18n, isReviewMode, loadSessionArtifacts, loading, historyLoading, sessionId, oneTryLocked]);
+  }, [
+    hintLevel,
+    i18n,
+    isReviewMode,
+    loadSessionArtifacts,
+    loading,
+    historyLoading,
+    resetPremoves,
+    sessionId,
+    oneTryLocked
+  ]);
 
   const handleReveal = useCallback(
     async (mode: 'manual' | 'auto' = 'manual') => {
@@ -1288,6 +1305,7 @@ export function App() {
         setLineCompleteSquare(null);
 
         if (!response.bestMoveUci || !response.afterFen) {
+          resetPremoves();
           setDisplayFen(response.nextState.fen);
           setLastMoveSquares(null);
           setStatusMessage(
@@ -1315,7 +1333,7 @@ export function App() {
             mode === 'auto' ? copy.autoplayMove(revealedMove) : copy.bestMove(revealedMove)
           )
         );
-        await maybeWait(getDelay(CORRECT_BREAK_MS), prefs.animations);
+        await wait(getFeedbackPause(CORRECT_BREAK_MS, prefs.animations));
 
         await animateAutoPlay(response, response.afterFen, prefs.animations, prefs.soundEnabled);
 
@@ -1368,10 +1386,12 @@ export function App() {
       loading,
       historyLoading,
       getDelay,
+      getFeedbackPause,
       prefs.animations,
       prefs.skipSimilarVariations,
       prefs.soundEnabled,
       resetHints,
+      resetPremoves,
       sessionId,
       spawnCaptureRainPiece,
       state,
@@ -1391,6 +1411,7 @@ export function App() {
     try {
       const response = await skipVariation(sessionId, prefs.skipSimilarVariations);
       setState(response.nextState);
+      resetPremoves();
       setDisplayFen(response.nextState.fen);
       setLastMoveSquares(null);
       setWrongMoveSquare(null);
@@ -1424,6 +1445,7 @@ export function App() {
     historyLoading,
     prefs.skipSimilarVariations,
     resetHints,
+    resetPremoves,
     sessionId,
     i18n,
     oneTryLocked
@@ -1519,12 +1541,9 @@ export function App() {
       return;
     }
 
-    const timer = window.setTimeout(
-      () => {
-        void handleReveal('auto');
-      },
-      getDelay(prefs.animations ? 450 : NO_ANIMATION_DELAY_MS)
-    );
+    const timer = window.setTimeout(() => {
+      void handleReveal('auto');
+    }, getFeedbackPause(AUTO_PLAY_DELAY_MS, prefs.animations));
 
     return () => {
       window.clearTimeout(timer);
@@ -1535,7 +1554,7 @@ export function App() {
     historyLoading,
     isReviewMode,
     loading,
-    getDelay,
+    getFeedbackPause,
     prefs.animations,
     prefs.autoNext,
     prefs.autoPlay,
@@ -2332,23 +2351,6 @@ export function App() {
                         <div className="toggle-chip-grid">
                           <button
                             type="button"
-                            className={`toggle-chip ${prefs.fastMode ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.fastMode}
-                            onClick={() =>
-                              setPrefs((previous) => ({
-                                ...previous,
-                                fastMode: !previous.fastMode
-                              }))
-                            }
-                          >
-                            <span className="toggle-chip-text">{i18n.fastMode}</span>
-                            <span className="toggle-chip-track" aria-hidden="true">
-                              <span className="toggle-chip-thumb" />
-                            </span>
-                          </button>
-
-                          <button
-                            type="button"
                             className={`toggle-chip ${prefs.animations ? 'is-on' : 'is-off'}`}
                             aria-pressed={prefs.animations}
                             onClick={() =>
@@ -2494,7 +2496,7 @@ export function App() {
                     interactive={interactive}
                     canMoveExecution={!loading && !historyLoading}
                     animationsEnabled={prefs.animations}
-                    premoveResetToken={sessionId}
+                    premoveResetToken={sessionId ? `${sessionId}:${premoveResetCounter}` : null}
                     autoQueenPromotion={prefs.autoQueenPromotion}
                     hintSquare={hintSquare}
                     hintArrow={hintArrow}

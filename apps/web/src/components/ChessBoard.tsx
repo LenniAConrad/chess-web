@@ -515,7 +515,7 @@ export function ChessBoard({
   return (
     <div
       ref={boardWrapRef}
-      className={`board-wrap ${glassEnabled ? 'glass-enabled' : ''}`}
+      className={`board-wrap ${glassEnabled ? 'glass-enabled' : ''} ${animationsEnabled ? '' : 'animations-disabled'}`}
     >
       <div ref={containerRef} className="board" />
       <div className="board-coordinates" aria-hidden="true">

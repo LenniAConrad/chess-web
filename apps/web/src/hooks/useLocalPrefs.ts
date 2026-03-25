@@ -11,7 +11,6 @@ export interface UserPreferences {
   variationMode: VariationMode;
   skipSimilarVariations: boolean;
   hintsEnabled: boolean;
-  fastMode: boolean;
   autoQueenPromotion: boolean;
   darkMode: boolean;
   zenMode: boolean;
@@ -30,7 +29,6 @@ const DEFAULT_PREFS: UserPreferences = {
   variationMode: 'explore',
   skipSimilarVariations: true,
   hintsEnabled: true,
-  fastMode: false,
   autoQueenPromotion: false,
   darkMode: false,
   zenMode: false,
@@ -58,7 +56,6 @@ export function useLocalPrefs() {
         variationMode: parsed.variationMode ?? DEFAULT_PREFS.variationMode,
         skipSimilarVariations: parsed.skipSimilarVariations ?? DEFAULT_PREFS.skipSimilarVariations,
         hintsEnabled: parsed.hintsEnabled ?? DEFAULT_PREFS.hintsEnabled,
-        fastMode: parsed.fastMode ?? DEFAULT_PREFS.fastMode,
         autoQueenPromotion: parsed.autoQueenPromotion ?? DEFAULT_PREFS.autoQueenPromotion,
         darkMode: parsed.darkMode ?? DEFAULT_PREFS.darkMode,
         zenMode: parsed.zenMode ?? DEFAULT_PREFS.zenMode,

@@ -1027,6 +1027,8 @@ body {
   background: #e65858;
   border: 2px solid #ffffff;
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.38);
+  opacity: 1;
+  transform: scale(1);
   animation: wrong-move-pop 320ms ease-out;
 }
 
@@ -1085,7 +1087,14 @@ body {
   background: #3dbd68;
   border: 2px solid #ffffff;
   box-shadow: 0 3px 7px rgba(0, 0, 0, 0.38);
+  opacity: 1;
+  transform: scale(1);
   animation: line-complete-pop 320ms ease-out;
+}
+
+.board-wrap.animations-disabled .wrong-move-marker,
+.board-wrap.animations-disabled .line-complete-marker {
+  animation: none;
 }
 
 .line-complete-marker::before {
