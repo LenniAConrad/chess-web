@@ -9,13 +9,21 @@ export type LanguageCode =
   | 'zh-hant'
   | 'es'
   | 'fr'
+  | 'hi'
   | 'id'
+  | 'it'
+  | 'nl'
+  | 'pl'
+  | 'pt'
   | 'ru'
   | 'he'
   | 'ar'
+  | 'az'
   | 'fa'
+  | 'hu'
   | 'ja'
   | 'ko'
+  | 'tr'
   | 'vi'
   | 'mn'
   | 'la'
@@ -147,18 +155,26 @@ const LANGUAGE_NAME_PARTS: Record<LanguageCode, { english: string; native: strin
   'zh-hant': { english: 'Traditional Chinese', native: '繁體中文' },
   es: { english: 'Spanish', native: 'Español' },
   fr: { english: 'French', native: 'Français' },
+  hi: { english: 'Hindi', native: 'हिन्दी' },
   id: { english: 'Indonesian', native: 'Bahasa Indonesia' },
+  it: { english: 'Italian', native: 'Italiano' },
+  nl: { english: 'Dutch', native: 'Nederlands' },
+  pl: { english: 'Polish', native: 'Polski' },
+  pt: { english: 'Portuguese', native: 'Português' },
   ru: { english: 'Russian', native: 'Русский' },
   he: { english: 'Hebrew', native: 'עברית' },
   ar: { english: 'Arabic', native: 'العربية' },
+  az: { english: 'Azerbaijani', native: 'Azərbaycanca' },
   fa: { english: 'Farsi', native: 'فارسی' },
+  hu: { english: 'Hungarian', native: 'Magyar' },
   ja: { english: 'Japanese', native: '日本語' },
   ko: { english: 'Korean', native: '한국어' },
+  tr: { english: 'Turkish', native: 'Türkçe' },
   vi: { english: 'Vietnamese', native: 'Tiếng Việt' },
   mn: { english: 'Mongolian', native: 'Монгол' },
   la: { english: 'Latin', native: 'Latina' },
   hy: { english: 'Armenian', native: 'Հայերեն' },
-  'en-gb-x-pirate': { english: 'Pirate British', native: 'Pirate British' }
+  'en-gb-x-pirate': { english: 'Pirate English', native: 'Arrr' }
 };
 
 const LANGUAGE_NAMES: Record<LanguageCode, string> = Object.fromEntries(
@@ -1839,122 +1855,40 @@ export const LANGUAGE_OPTIONS: Array<{
   label: string;
   englishLabel: string;
   nativeLabel: string;
-}> = [
-  {
-    code: 'en',
-    label: LANGUAGE_NAMES.en,
-    englishLabel: LANGUAGE_NAME_PARTS.en.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.en.native
-  },
-  {
-    code: 'eo',
-    label: LANGUAGE_NAMES.eo,
-    englishLabel: LANGUAGE_NAME_PARTS.eo.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.eo.native
-  },
-  {
-    code: 'de',
-    label: LANGUAGE_NAMES.de,
-    englishLabel: LANGUAGE_NAME_PARTS.de.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.de.native
-  },
-  {
-    code: 'zh',
-    label: LANGUAGE_NAMES.zh,
-    englishLabel: LANGUAGE_NAME_PARTS.zh.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.zh.native
-  },
-  {
-    code: 'zh-hant',
-    label: LANGUAGE_NAMES['zh-hant'],
-    englishLabel: LANGUAGE_NAME_PARTS['zh-hant'].english,
-    nativeLabel: LANGUAGE_NAME_PARTS['zh-hant'].native
-  },
-  {
-    code: 'es',
-    label: LANGUAGE_NAMES.es,
-    englishLabel: LANGUAGE_NAME_PARTS.es.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.es.native
-  },
-  {
-    code: 'fr',
-    label: LANGUAGE_NAMES.fr,
-    englishLabel: LANGUAGE_NAME_PARTS.fr.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.fr.native
-  },
-  {
-    code: 'id',
-    label: LANGUAGE_NAMES.id,
-    englishLabel: LANGUAGE_NAME_PARTS.id.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.id.native
-  },
-  {
-    code: 'ru',
-    label: LANGUAGE_NAMES.ru,
-    englishLabel: LANGUAGE_NAME_PARTS.ru.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.ru.native
-  },
-  {
-    code: 'he',
-    label: LANGUAGE_NAMES.he,
-    englishLabel: LANGUAGE_NAME_PARTS.he.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.he.native
-  },
-  {
-    code: 'ar',
-    label: LANGUAGE_NAMES.ar,
-    englishLabel: LANGUAGE_NAME_PARTS.ar.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.ar.native
-  },
-  {
-    code: 'fa',
-    label: LANGUAGE_NAMES.fa,
-    englishLabel: LANGUAGE_NAME_PARTS.fa.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.fa.native
-  },
-  {
-    code: 'ja',
-    label: LANGUAGE_NAMES.ja,
-    englishLabel: LANGUAGE_NAME_PARTS.ja.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.ja.native
-  },
-  {
-    code: 'ko',
-    label: LANGUAGE_NAMES.ko,
-    englishLabel: LANGUAGE_NAME_PARTS.ko.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.ko.native
-  },
-  {
-    code: 'vi',
-    label: LANGUAGE_NAMES.vi,
-    englishLabel: LANGUAGE_NAME_PARTS.vi.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.vi.native
-  },
-  {
-    code: 'mn',
-    label: LANGUAGE_NAMES.mn,
-    englishLabel: LANGUAGE_NAME_PARTS.mn.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.mn.native
-  },
-  {
-    code: 'la',
-    label: LANGUAGE_NAMES.la,
-    englishLabel: LANGUAGE_NAME_PARTS.la.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.la.native
-  },
-  {
-    code: 'hy',
-    label: LANGUAGE_NAMES.hy,
-    englishLabel: LANGUAGE_NAME_PARTS.hy.english,
-    nativeLabel: LANGUAGE_NAME_PARTS.hy.native
-  },
-  {
-    code: 'en-gb-x-pirate',
-    label: LANGUAGE_NAMES['en-gb-x-pirate'],
-    englishLabel: LANGUAGE_NAME_PARTS['en-gb-x-pirate'].english,
-    nativeLabel: LANGUAGE_NAME_PARTS['en-gb-x-pirate'].native
-  }
-];
+}> = ([
+  'en',
+  'eo',
+  'de',
+  'zh',
+  'zh-hant',
+  'es',
+  'fr',
+  'hi',
+  'id',
+  'it',
+  'nl',
+  'pl',
+  'pt',
+  'ru',
+  'he',
+  'ar',
+  'az',
+  'fa',
+  'hu',
+  'ja',
+  'ko',
+  'tr',
+  'vi',
+  'mn',
+  'la',
+  'hy',
+  'en-gb-x-pirate'
+] as const satisfies readonly LanguageCode[]).map((code) => ({
+  code,
+  label: LANGUAGE_NAMES[code],
+  englishLabel: LANGUAGE_NAME_PARTS[code].english,
+  nativeLabel: LANGUAGE_NAME_PARTS[code].native
+})).sort((left, right) => left.englishLabel.localeCompare(right.englishLabel, 'en'));
 
 export function getI18n(language: LanguageCode): FrontendI18n {
   return I18N[language] ?? ENGLISH_I18N;
