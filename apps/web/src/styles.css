@@ -1223,8 +1223,8 @@ body {
   background: var(--color-eval-fill-bg);
   z-index: 1;
   transition:
-    height 460ms cubic-bezier(0.22, 1, 0.36, 1) 100ms,
-    width 460ms cubic-bezier(0.22, 1, 0.36, 1) 100ms;
+    height 900ms cubic-bezier(0.22, 1, 0.36, 1) 120ms,
+    width 900ms cubic-bezier(0.22, 1, 0.36, 1) 120ms;
 }
 
 .eval-guides {

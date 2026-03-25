@@ -1053,6 +1053,7 @@ export function App() {
         setDisplayFen(optimisticFen);
         setLastMoveSquares(optimisticLastMove);
         spawnCaptureRainPiece(baseFen, uciMove);
+        playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
       }
 
       setLoading(true);
@@ -1073,7 +1074,6 @@ export function App() {
             setWrongMoveSquare(markerSquare);
             setWrongMoveFlashToken((previous) => previous + 1);
           }
-          playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
           if (prefs.oneTryMode) {
             resetPremoves();
             setDisplayFen(response.nextState.fen);
@@ -1119,7 +1119,6 @@ export function App() {
             setLineCompleteSquare(optimisticLastMove[1]);
             setLineCompleteFlashToken((previous) => previous + 1);
           }
-          playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
           setCorrectMessage(translatedUiMessage((copy) => copy.correct));
           setStatusMessage(translatedUiMessage((copy) => copy.correctMove));
           if (response.rewindFens.length === 0) {
@@ -1148,7 +1147,6 @@ export function App() {
             setLineCompleteSquare(optimisticLastMove[1]);
             setLineCompleteFlashToken((previous) => previous + 1);
           }
-          playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
           setCorrectMessage(translatedUiMessage((copy) => copy.correct));
           setStatusMessage(translatedUiMessage((copy) => copy.correctMove));
           if (response.rewindFens.length === 0) {

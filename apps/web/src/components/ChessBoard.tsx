@@ -475,7 +475,16 @@ export function ChessBoard({
   }, [canMoveExecution, fen, interactive, turnColor]);
 
   useEffect(() => {
+    if (interactive && canMoveExecution) {
+      return;
+    }
+
+    apiRef.current?.selectSquare(null);
+  }, [canMoveExecution, interactive]);
+
+  useEffect(() => {
     apiRef.current?.cancelPremove();
+    apiRef.current?.selectSquare(null);
     setPendingPromotion(null);
   }, [premoveResetToken]);
 

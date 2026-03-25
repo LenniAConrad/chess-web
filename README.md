@@ -1,5 +1,13 @@
 # chess-web
 
+<p align="center">
+  <img
+    src="assets/app-icon.svg"
+    alt="Chess Puzzle Trainer app icon"
+    width="128"
+  />
+</p>
+
 No-account chess puzzle trainer with PGN variation support, server-side move validation, browser Stockfish eval, recent-game history, and a fast split-layout UI built for repeated puzzle solving.
 
 ## Screenshots
@@ -7,7 +15,7 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
 ### Light Mode
 
 <img
-  src="assets/chess-puzzle-trainer-light.png"
+  src="assets/light-mode.png"
   alt="Chess Puzzle Trainer in light mode with the board on the left and the control rail on the right"
   width="100%"
 />
@@ -15,7 +23,7 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
 ### Dark Mode
 
 <img
-  src="assets/chess-puzzle-trainer-dark.png"
+  src="assets/dark-mode.png"
   alt="Chess Puzzle Trainer in dark mode with the board on the left and the control rail on the right"
   width="100%"
 />
@@ -23,7 +31,7 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
 ### Settings Panel
 
 <img
-  src="assets/chess-puzzle-settings.png"
+  src="assets/settings-panel.png"
   alt="Chess Puzzle Trainer settings panel grouped into gameplay, display, feedback, automation, and tools"
   width="420"
 />
@@ -31,7 +39,7 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
 ### Zen Mode
 
 <img
-  src="assets/chess-puzzle-trainer-zen-mode.png"
+  src="assets/zen-mode.png"
   alt="Chess Puzzle Trainer in zen mode with the gameplay area focused and chrome hidden"
   width="100%"
 />
@@ -62,7 +70,7 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
 - `packages/chess-core`: PGN parsing and puzzle domain logic
 - `packages/db`: migrations, repositories, DB client
 - `docs`: architecture and flow documentation
-- `assets`: README screenshots
+- `assets`: documentation screenshots and app icon
 
 ## Quick Start
 
