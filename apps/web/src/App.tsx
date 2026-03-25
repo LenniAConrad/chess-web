@@ -959,10 +959,7 @@ export function App() {
 
     try {
       const response = await startSession(prefs.variationMode, prefs.autoNext);
-      applyStartedSession(
-        response,
-        response.state.toMove === 'w' ? currentI18n.whiteToMove : currentI18n.blackToMove
-      );
+      applyStartedSession(response, '\u00A0');
     } catch (error) {
       setErrorText(error instanceof Error ? error.message : currentI18n.failedToLoadPuzzle);
       setStatusText(currentI18n.failedToLoadPuzzle);
