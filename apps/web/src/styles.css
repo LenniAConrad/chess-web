@@ -371,16 +371,28 @@ body {
   flex: 1 1 auto;
 }
 
+.app-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
 .app-header-settings {
   position: relative;
   min-width: 180px;
-  margin-left: auto;
+  margin-left: 0;
   padding: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+
+.app-header-language {
+  min-width: 0;
 }
 
 .app-header-settings .settings-summary {
@@ -1671,6 +1683,45 @@ button.toggle-chip.autoplay-chip.is-on .toggle-chip-track {
   gap: inherit;
 }
 
+.settings-select-wrap {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.settings-select-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-meta);
+}
+
+.settings-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--color-input-border);
+  border-radius: 10px;
+  padding: 0.72rem 2.6rem 0.72rem 0.82rem;
+  font: inherit;
+  color: var(--color-input-text);
+  background:
+    linear-gradient(45deg, transparent 50%, var(--color-meta) 50%) calc(100% - 1.1rem) calc(50% - 0.16rem) / 0.46rem
+      0.46rem no-repeat,
+    linear-gradient(135deg, var(--color-meta) 50%, transparent 50%) calc(100% - 0.78rem) calc(50% - 0.16rem) / 0.46rem
+      0.46rem no-repeat,
+    var(--color-input-bg);
+  cursor: pointer;
+  transition: border-color 160ms ease, background-color 160ms ease;
+}
+
+.settings-select:hover {
+  border-color: var(--color-toggle-focus);
+}
+
+.settings-select:focus-visible {
+  outline: 2px solid var(--color-toggle-focus);
+  outline-offset: 2px;
+}
+
 .settings-section {
   display: grid;
   gap: 0.55rem;
@@ -1835,7 +1886,7 @@ button:disabled {
     overflow: auto;
   }
 
-  body:has(.app-header-settings[open]) {
+  body:has(.app-header-settings[open], .app-header-language[open]) {
     overflow: hidden;
   }
 
@@ -1853,6 +1904,11 @@ button:disabled {
     width: 100%;
     align-items: center;
     gap: 0.85rem;
+  }
+
+  .app-header-controls {
+    margin-left: auto;
+    gap: 0.2rem;
   }
 
   .app-brand {
@@ -1934,6 +1990,10 @@ button:disabled {
   .app-header-settings[open] .settings-content-body {
     width: 100%;
     margin-block: 0;
+  }
+
+  .settings-select {
+    padding-block: 0.82rem;
   }
 
   .app-footer-inner {

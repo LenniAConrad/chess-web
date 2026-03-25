@@ -414,6 +414,7 @@ export function App() {
   const [historyPreview, setHistoryPreview] = useState<HistoryPreviewState | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const headerSettingsRef = useRef<HTMLDetailsElement | null>(null);
+  const headerLanguageRef = useRef<HTMLDetailsElement | null>(null);
   const capturePieceIdRef = useRef(0);
   const historyPreviewCacheRef = useRef(new Map<string, HistoryPreviewData>());
   const historyPreviewDelayRef = useRef<number | null>(null);
@@ -701,16 +702,32 @@ export function App() {
     }
   }, [recentHistoryItems, sessionId]);
 
+  const closeHeaderMenus = useCallback((keepOpen: 'settings' | 'language' | null = null) => {
+    if (keepOpen !== 'settings' && headerSettingsRef.current?.open) {
+      headerSettingsRef.current.open = false;
+    }
+
+    if (keepOpen !== 'language' && headerLanguageRef.current?.open) {
+      headerLanguageRef.current.open = false;
+    }
+  }, []);
+
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
-      const settingsEl = headerSettingsRef.current;
       const target = event.target;
-      if (!settingsEl?.open || !(target instanceof Node)) {
+      if (!(target instanceof Node)) {
         return;
       }
 
-      if (!settingsEl.contains(target)) {
+      const settingsEl = headerSettingsRef.current;
+      const languageEl = headerLanguageRef.current;
+
+      if (settingsEl?.open && !settingsEl.contains(target)) {
         settingsEl.open = false;
+      }
+
+      if (languageEl?.open && !languageEl.contains(target)) {
+        languageEl.open = false;
       }
     }
 
@@ -1962,350 +1979,380 @@ export function App() {
                   {puzzleCount === null ? i18n.livePuzzleCountUnavailable : i18n.puzzleCount(countFormatter.format(puzzleCount))}
                 </p>
               </div>
-              <details ref={headerSettingsRef} className="app-header-settings settings-panel">
-                <summary className="settings-summary">{i18n.settings}</summary>
-                <div className="settings-content">
-                  <div className="settings-content-body">
-                    <section className="settings-section" aria-labelledby="settings-gameplay">
-                      <div className="settings-section-head">
-                        <span className="settings-section-title" id="settings-gameplay">
-                          {i18n.gameplay}
-                        </span>
-                      </div>
-                      <div className="toggle-chip-grid">
-                        <button
-                          type="button"
-                          className={`toggle-chip ${prefs.variationMode === 'explore' ? 'is-on' : 'is-off'}`}
-                          aria-pressed={prefs.variationMode === 'explore'}
-                          onClick={() => toggleVariationMode(prefs.variationMode !== 'explore')}
-                        >
-                          <span className="toggle-chip-text">{i18n.exploreVariations}</span>
-                          <span className="toggle-chip-track" aria-hidden="true">
-                            <span className="toggle-chip-thumb" />
+              <div className="app-header-controls">
+                <details
+                  ref={headerLanguageRef}
+                  className="app-header-settings app-header-language settings-panel"
+                  onToggle={(event) => {
+                    if (event.currentTarget.open) {
+                      closeHeaderMenus('language');
+                    }
+                  }}
+                >
+                  <summary className="settings-summary">{i18n.languageLabel}</summary>
+                  <div className="settings-content">
+                    <div className="settings-content-body">
+                      <section className="settings-section" aria-labelledby="settings-language">
+                        <div className="settings-section-head">
+                          <span className="settings-section-title" id="settings-language">
+                            {i18n.languageLabel}
                           </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          className={`toggle-chip ${prefs.skipSimilarVariations ? 'is-on' : 'is-off'}`}
-                          aria-pressed={prefs.skipSimilarVariations}
-                          onClick={() =>
-                            setPrefs((previous) => ({
-                              ...previous,
-                              skipSimilarVariations: !previous.skipSimilarVariations
-                            }))
-                          }
-                        >
-                          <span className="toggle-chip-text">{i18n.skipSimilarVariations}</span>
-                          <span className="toggle-chip-track" aria-hidden="true">
-                            <span className="toggle-chip-thumb" />
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          className={`toggle-chip ${prefs.autoNext ? 'is-on' : 'is-off'}`}
-                          aria-pressed={prefs.autoNext}
-                          onClick={() =>
-                            setPrefs((previous) => ({
-                              ...previous,
-                              autoNext: !previous.autoNext
-                            }))
-                          }
-                        >
-                          <span className="toggle-chip-text">{i18n.autoNextPuzzle}</span>
-                          <span className="toggle-chip-track" aria-hidden="true">
-                            <span className="toggle-chip-thumb" />
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          className={`toggle-chip ${prefs.hintsEnabled ? 'is-on' : 'is-off'}`}
-                          aria-pressed={prefs.hintsEnabled}
-                          onClick={() =>
-                            setPrefs((previous) => ({
-                              ...previous,
-                              hintsEnabled: !previous.hintsEnabled
-                            }))
-                          }
-                        >
-                          <span className="toggle-chip-text">{i18n.enableHints}</span>
-                          <span className="toggle-chip-track" aria-hidden="true">
-                            <span className="toggle-chip-thumb" />
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          className={`toggle-chip ${prefs.oneTryMode ? 'is-on' : 'is-off'}`}
-                          aria-pressed={prefs.oneTryMode}
-                          onClick={() =>
-                            setPrefs((previous) => ({
-                              ...previous,
-                              oneTryMode: !previous.oneTryMode
-                            }))
-                          }
-                        >
-                          <span className="toggle-chip-text">{i18n.oneTryMode}</span>
-                          <span className="toggle-chip-track" aria-hidden="true">
-                            <span className="toggle-chip-thumb" />
-                          </span>
-                        </button>
-                      </div>
-                    </section>
-
-                  <section className="settings-section" aria-labelledby="settings-presentation">
-                    <div className="settings-section-head">
-                      <span className="settings-section-title" id="settings-presentation">
-                        {i18n.display}
-                      </span>
-                    </div>
-                    <div className="toggle-chip-grid">
-                      <div className="toggle-chip-grid" role="group" aria-label={i18n.languageLabel}>
-                        {LANGUAGE_OPTIONS.map((option) => (
-                          <button
-                            key={option.code}
-                            type="button"
-                            className={`toggle-chip ${prefs.language === option.code ? 'is-on' : 'is-off'}`}
-                            aria-pressed={prefs.language === option.code}
-                            onClick={() =>
+                        </div>
+                        <label className="settings-select-wrap">
+                          <span className="settings-select-label">{i18n.languageNames[prefs.language]}</span>
+                          <select
+                            className="settings-select"
+                            value={prefs.language}
+                            onChange={(event) =>
                               setPrefs((previous) => ({
                                 ...previous,
-                                language: option.code
+                                language: event.target.value as (typeof LANGUAGE_OPTIONS)[number]['code']
                               }))
                             }
                           >
-                            <span className="toggle-chip-text">{i18n.languageNames[option.code]}</span>
+                            {LANGUAGE_OPTIONS.map((option) => (
+                              <option key={option.code} value={option.code}>
+                                {i18n.languageNames[option.code]}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </section>
+                    </div>
+                  </div>
+                </details>
+
+                <details
+                  ref={headerSettingsRef}
+                  className="app-header-settings settings-panel"
+                  onToggle={(event) => {
+                    if (event.currentTarget.open) {
+                      closeHeaderMenus('settings');
+                    }
+                  }}
+                >
+                  <summary className="settings-summary">{i18n.settings}</summary>
+                  <div className="settings-content">
+                    <div className="settings-content-body">
+                      <section className="settings-section" aria-labelledby="settings-gameplay">
+                        <div className="settings-section-head">
+                          <span className="settings-section-title" id="settings-gameplay">
+                            {i18n.gameplay}
+                          </span>
+                        </div>
+                        <div className="toggle-chip-grid">
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.variationMode === 'explore' ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.variationMode === 'explore'}
+                            onClick={() => toggleVariationMode(prefs.variationMode !== 'explore')}
+                          >
+                            <span className="toggle-chip-text">{i18n.exploreVariations}</span>
                             <span className="toggle-chip-track" aria-hidden="true">
                               <span className="toggle-chip-thumb" />
                             </span>
                           </button>
-                        ))}
-                      </div>
 
-                      <button
-                        type="button"
-                        className={`toggle-chip ${prefs.darkMode ? 'is-on' : 'is-off'}`}
-                        aria-pressed={prefs.darkMode}
-                        onClick={() =>
-                          setPrefs((previous) => ({
-                            ...previous,
-                            darkMode: !previous.darkMode
-                          }))
-                        }
-                      >
-                        <span className="toggle-chip-text">{i18n.darkMode}</span>
-                        <span className="toggle-chip-track" aria-hidden="true">
-                          <span className="toggle-chip-thumb" />
-                        </span>
-                      </button>
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.skipSimilarVariations ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.skipSimilarVariations}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                skipSimilarVariations: !previous.skipSimilarVariations
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.skipSimilarVariations}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
 
-                      <button
-                        type="button"
-                        className={`toggle-chip ${prefs.zenMode ? 'is-on' : 'is-off'}`}
-                        aria-pressed={prefs.zenMode}
-                        onClick={() =>
-                          setPrefs((previous) => ({
-                            ...previous,
-                            zenMode: !previous.zenMode
-                          }))
-                        }
-                      >
-                        <span className="toggle-chip-text">{i18n.zenMode}</span>
-                        <span className="toggle-chip-track" aria-hidden="true">
-                          <span className="toggle-chip-thumb" />
-                        </span>
-                      </button>
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.autoNext ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.autoNext}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                autoNext: !previous.autoNext
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.autoNextPuzzle}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
 
-                      <button
-                        type="button"
-                        className={`toggle-chip ${prefs.boardGlass ? 'is-on' : 'is-off'}`}
-                        aria-pressed={prefs.boardGlass}
-                        onClick={() =>
-                          setPrefs((previous) => ({
-                            ...previous,
-                            boardGlass: !previous.boardGlass
-                          }))
-                        }
-                      >
-                        <span className="toggle-chip-text">{i18n.boardGlass}</span>
-                        <span className="toggle-chip-track" aria-hidden="true">
-                          <span className="toggle-chip-thumb" />
-                        </span>
-                      </button>
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.hintsEnabled ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.hintsEnabled}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                hintsEnabled: !previous.hintsEnabled
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.enableHints}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
 
-                      <button
-                        type="button"
-                        className={`toggle-chip ${prefs.showEngineEval ? 'is-on' : 'is-off'}`}
-                        aria-pressed={prefs.showEngineEval}
-                        onClick={() =>
-                          setPrefs((previous) => ({
-                            ...previous,
-                            showEngineEval: !previous.showEngineEval
-                          }))
-                        }
-                      >
-                        <span className="toggle-chip-text">{i18n.engineEval}</span>
-                        <span className="toggle-chip-track" aria-hidden="true">
-                          <span className="toggle-chip-thumb" />
-                        </span>
-                      </button>
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.oneTryMode ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.oneTryMode}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                oneTryMode: !previous.oneTryMode
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.oneTryMode}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
+                        </div>
+                      </section>
+
+                      <section className="settings-section" aria-labelledby="settings-presentation">
+                        <div className="settings-section-head">
+                          <span className="settings-section-title" id="settings-presentation">
+                            {i18n.display}
+                          </span>
+                        </div>
+                        <div className="toggle-chip-grid">
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.darkMode ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.darkMode}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                darkMode: !previous.darkMode
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.darkMode}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.zenMode ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.zenMode}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                zenMode: !previous.zenMode
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.zenMode}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.boardGlass ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.boardGlass}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                boardGlass: !previous.boardGlass
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.boardGlass}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.showEngineEval ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.showEngineEval}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                showEngineEval: !previous.showEngineEval
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.engineEval}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
+                        </div>
+                      </section>
+
+                      <section className="settings-section" aria-labelledby="settings-feedback">
+                        <div className="settings-section-head">
+                          <span className="settings-section-title" id="settings-feedback">
+                            {i18n.feedback}
+                          </span>
+                        </div>
+                        <div className="toggle-chip-grid">
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.fastMode ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.fastMode}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                fastMode: !previous.fastMode
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.fastMode}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.animations ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.animations}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                animations: !previous.animations
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.animations}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.soundEnabled ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.soundEnabled}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                soundEnabled: !previous.soundEnabled
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.sound}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.captureRain ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.captureRain}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                captureRain: !previous.captureRain
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.captureRain}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
+                        </div>
+                      </section>
+
+                      <section className="settings-section" aria-labelledby="settings-automation">
+                        <div className="settings-section-head">
+                          <span className="settings-section-title" id="settings-automation">
+                            {i18n.automation}
+                          </span>
+                        </div>
+                        <div className="toggle-chip-grid">
+                          <button
+                            type="button"
+                            className={`toggle-chip autoplay-chip ${prefs.autoPlay ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.autoPlay}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                autoPlay: !previous.autoPlay
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.autoplayPuzzles}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className={`toggle-chip ${prefs.autoQueenPromotion ? 'is-on' : 'is-off'}`}
+                            aria-pressed={prefs.autoQueenPromotion}
+                            onClick={() =>
+                              setPrefs((previous) => ({
+                                ...previous,
+                                autoQueenPromotion: !previous.autoQueenPromotion
+                              }))
+                            }
+                          >
+                            <span className="toggle-chip-text">{i18n.autoQueen}</span>
+                            <span className="toggle-chip-track" aria-hidden="true">
+                              <span className="toggle-chip-thumb" />
+                            </span>
+                          </button>
+                        </div>
+                      </section>
+
+                      <section className="settings-section" aria-labelledby="settings-tools">
+                        <div className="settings-section-head">
+                          <span className="settings-section-title" id="settings-tools">
+                            {i18n.tools}
+                          </span>
+                        </div>
+                        <div className="id-search-row">
+                          <input
+                            type="text"
+                            value={puzzleIdInput}
+                            onChange={(event) => setPuzzleIdInput(event.target.value)}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') {
+                                event.preventDefault();
+                                void handleLoadById();
+                              }
+                            }}
+                            placeholder={i18n.puzzleIdPlaceholder}
+                            spellCheck={false}
+                          />
+                          <button
+                            type="button"
+                            disabled={loading || historyLoading || puzzleIdInput.trim().length === 0}
+                            onClick={() => void handleLoadById()}
+                          >
+                            {i18n.loadId}
+                          </button>
+                        </div>
+                      </section>
                     </div>
-                  </section>
-
-                  <section className="settings-section" aria-labelledby="settings-feedback">
-                    <div className="settings-section-head">
-                      <span className="settings-section-title" id="settings-feedback">
-                        {i18n.feedback}
-                      </span>
-                    </div>
-                    <div className="toggle-chip-grid">
-                      <button
-                        type="button"
-                        className={`toggle-chip ${prefs.fastMode ? 'is-on' : 'is-off'}`}
-                        aria-pressed={prefs.fastMode}
-                        onClick={() =>
-                          setPrefs((previous) => ({
-                            ...previous,
-                            fastMode: !previous.fastMode
-                          }))
-                        }
-                      >
-                        <span className="toggle-chip-text">{i18n.fastMode}</span>
-                        <span className="toggle-chip-track" aria-hidden="true">
-                          <span className="toggle-chip-thumb" />
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className={`toggle-chip ${prefs.animations ? 'is-on' : 'is-off'}`}
-                        aria-pressed={prefs.animations}
-                        onClick={() =>
-                          setPrefs((previous) => ({
-                            ...previous,
-                            animations: !previous.animations
-                          }))
-                        }
-                      >
-                        <span className="toggle-chip-text">{i18n.animations}</span>
-                        <span className="toggle-chip-track" aria-hidden="true">
-                          <span className="toggle-chip-thumb" />
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className={`toggle-chip ${prefs.soundEnabled ? 'is-on' : 'is-off'}`}
-                        aria-pressed={prefs.soundEnabled}
-                        onClick={() =>
-                          setPrefs((previous) => ({
-                            ...previous,
-                            soundEnabled: !previous.soundEnabled
-                          }))
-                        }
-                      >
-                        <span className="toggle-chip-text">{i18n.sound}</span>
-                        <span className="toggle-chip-track" aria-hidden="true">
-                          <span className="toggle-chip-thumb" />
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className={`toggle-chip ${prefs.captureRain ? 'is-on' : 'is-off'}`}
-                        aria-pressed={prefs.captureRain}
-                        onClick={() =>
-                          setPrefs((previous) => ({
-                            ...previous,
-                            captureRain: !previous.captureRain
-                          }))
-                        }
-                      >
-                        <span className="toggle-chip-text">{i18n.captureRain}</span>
-                        <span className="toggle-chip-track" aria-hidden="true">
-                          <span className="toggle-chip-thumb" />
-                        </span>
-                      </button>
-                    </div>
-                  </section>
-
-                  <section className="settings-section" aria-labelledby="settings-automation">
-                    <div className="settings-section-head">
-                      <span className="settings-section-title" id="settings-automation">
-                        {i18n.automation}
-                      </span>
-                    </div>
-                    <div className="toggle-chip-grid">
-                      <button
-                        type="button"
-                        className={`toggle-chip autoplay-chip ${prefs.autoPlay ? 'is-on' : 'is-off'}`}
-                        aria-pressed={prefs.autoPlay}
-                        onClick={() =>
-                          setPrefs((previous) => ({
-                            ...previous,
-                            autoPlay: !previous.autoPlay
-                          }))
-                        }
-                      >
-                        <span className="toggle-chip-text">{i18n.autoplayPuzzles}</span>
-                        <span className="toggle-chip-track" aria-hidden="true">
-                          <span className="toggle-chip-thumb" />
-                        </span>
-                      </button>
-
-                      <button
-                        type="button"
-                        className={`toggle-chip ${prefs.autoQueenPromotion ? 'is-on' : 'is-off'}`}
-                        aria-pressed={prefs.autoQueenPromotion}
-                        onClick={() =>
-                          setPrefs((previous) => ({
-                            ...previous,
-                            autoQueenPromotion: !previous.autoQueenPromotion
-                          }))
-                        }
-                      >
-                        <span className="toggle-chip-text">{i18n.autoQueen}</span>
-                        <span className="toggle-chip-track" aria-hidden="true">
-                          <span className="toggle-chip-thumb" />
-                        </span>
-                      </button>
-                    </div>
-                  </section>
-
-                  <section className="settings-section" aria-labelledby="settings-tools">
-                    <div className="settings-section-head">
-                      <span className="settings-section-title" id="settings-tools">
-                        {i18n.tools}
-                      </span>
-                    </div>
-                    <div className="id-search-row">
-                      <input
-                        type="text"
-                        value={puzzleIdInput}
-                        onChange={(event) => setPuzzleIdInput(event.target.value)}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault();
-                            void handleLoadById();
-                          }
-                        }}
-                        placeholder={i18n.puzzleIdPlaceholder}
-                        spellCheck={false}
-                      />
-                      <button
-                        type="button"
-                        disabled={loading || historyLoading || puzzleIdInput.trim().length === 0}
-                        onClick={() => void handleLoadById()}
-                      >
-                        {i18n.loadId}
-                      </button>
-                    </div>
-                  </section>
                   </div>
-                </div>
-              </details>
+                </details>
+              </div>
             </div>
           </div>
         </header>
