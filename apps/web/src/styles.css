@@ -249,6 +249,7 @@ body {
   overflow: hidden;
   pointer-events: none;
   z-index: 0;
+  transform: translateZ(0);
 }
 
 .capture-rain-piece {
@@ -256,21 +257,28 @@ body {
   top: -16vh;
   left: var(--capture-x);
   width: var(--capture-size);
+  height: var(--capture-size);
+  aspect-ratio: 1 / 1;
   opacity: 0;
   transform: translate3d(-50%, 0, 0);
   animation: capture-piece-fall var(--capture-fall-duration) linear forwards;
   will-change: transform, opacity;
-  contain: layout paint;
+  contain: paint;
   backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 
 .capture-rain-piece-spin {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
   animation: capture-piece-spin var(--capture-fall-duration) linear forwards;
   transform-origin: center;
+  will-change: transform;
+  transform: translateZ(0);
   backface-visibility: hidden;
+  -webkit-user-drag: none;
 }
 
 .zen-exit-hint {
@@ -657,6 +665,41 @@ body {
   font-size: 1.05rem;
 }
 
+.loading-piece-shell {
+  position: relative;
+  width: 7.5rem;
+  height: 7.5rem;
+  display: grid;
+  place-items: center;
+}
+
+.loading-piece-glow {
+  position: absolute;
+  inset: 12%;
+  border-radius: 999px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-button-bg) 34%, transparent) 0%, transparent 70%);
+  filter: blur(10px);
+  opacity: 0.9;
+  animation: loading-piece-glow 1900ms ease-in-out infinite;
+}
+
+.loading-piece {
+  position: relative;
+  width: 4.8rem;
+  height: 4.8rem;
+  display: block;
+  transform-origin: center bottom;
+  animation: loading-piece-float 1900ms cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  will-change: transform;
+  -webkit-user-drag: none;
+}
+
+.loading-minimal h1 {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1.1;
+}
+
 .loading-layout {
   min-height: calc(100vh - (var(--page-vertical-space) * 2));
   display: flex;
@@ -720,6 +763,30 @@ body {
 @keyframes loading-sweep {
   100% {
     transform: translateX(110%);
+  }
+}
+
+@keyframes loading-piece-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translateY(-8px) scale(1.025);
+  }
+}
+
+@keyframes loading-piece-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 0.95;
+    transform: scale(1.05);
   }
 }
 

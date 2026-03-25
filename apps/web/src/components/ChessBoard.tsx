@@ -68,6 +68,8 @@ const PIECE_FILE_SUFFIX: Record<PromotionPiece, 'Q' | 'N' | 'R' | 'B'> = {
   r: 'R',
   b: 'B'
 };
+const PROMOTION_IMAGE_COLORS = ['w', 'b'] as const;
+let promotionImagesPreloaded = false;
 
 function withBasePath(relativePath: string): string {
   const base = import.meta.env.BASE_URL ?? '/';
@@ -137,6 +139,22 @@ function promotionImageSrc(piece: PromotionPiece, color: 'w' | 'b'): string {
   const side = color === 'w' ? 'w' : 'b';
   const suffix = PIECE_FILE_SUFFIX[piece];
   return withBasePath(`pieces/cburnett/${side}${suffix}.svg`);
+}
+
+function preloadPromotionImages(): void {
+  if (promotionImagesPreloaded || typeof window === 'undefined' || typeof Image === 'undefined') {
+    return;
+  }
+
+  promotionImagesPreloaded = true;
+
+  for (const color of PROMOTION_IMAGE_COLORS) {
+    for (const piece of PROMOTION_PIECES) {
+      const image = new Image();
+      image.decoding = 'sync';
+      image.src = promotionImageSrc(piece, color);
+    }
+  }
 }
 
 function getPromotionLayout(square: string, orientation: 'white' | 'black'): PromotionLayout | null {
@@ -222,6 +240,10 @@ export function ChessBoard({
   const apiRef = useRef<Api | null>(null);
   const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
   const [boardSize, setBoardSize] = useState<number | null>(null);
+
+  useEffect(() => {
+    preloadPromotionImages();
+  }, []);
 
   const turnColor = useMemo(() => turnColorFromFen(fen), [fen]);
   const destinations = useMemo(() => legalDestinations(fen), [fen]);

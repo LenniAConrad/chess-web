@@ -113,6 +113,12 @@ interface PrefetchedNextState {
 
 const HISTORY_PREVIEW_DELAY_MS = 110;
 
+function withBasePath(relativePath: string): string {
+  const base = import.meta.env.BASE_URL ?? '/';
+  const normalizedBase = base.endsWith('/') ? base : `${base}/`;
+  return `${normalizedBase}${relativePath.replace(/^\/+/, '')}`;
+}
+
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -1319,10 +1325,6 @@ export function App() {
         const moveSquares = getMoveSquares(response.bestMoveUci);
         if (moveSquares) {
           setLastMoveSquares(moveSquares);
-          if (mode === 'auto') {
-            setLineCompleteSquare(moveSquares[1]);
-            setLineCompleteFlashToken((previous) => previous + 1);
-          }
         }
 
         const moveSoundDecision = getMoveSoundDecision(baseFen, response.bestMoveUci);
@@ -1979,7 +1981,12 @@ export function App() {
     return (
       <>
         <main className="loading-minimal">
-          <p>{i18n.loading}</p>
+          <div className="loading-piece-shell" aria-hidden="true">
+            <span className="loading-piece-glow" />
+            <img className="loading-piece" src={withBasePath('pieces/cburnett/wR.svg')} alt="" />
+          </div>
+          <h1>chess-web</h1>
+          <p className="loading-status">{i18n.loading}</p>
         </main>
         {errorText ? (
           <p className="global-error-toast" role="alert" aria-live="assertive">

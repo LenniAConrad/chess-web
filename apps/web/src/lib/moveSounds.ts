@@ -20,8 +20,6 @@ const SOUND_POOL_SIZE = 4;
 
 let cachedPools: Partial<Record<BaseSoundType, HTMLAudioElement[]>> = {};
 let preloadLinksInjected = false;
-let unlockListenersInstalled = false;
-let audioUnlocked = false;
 
 function injectSoundPreloads(): void {
   if (typeof document === 'undefined' || preloadLinksInjected) {
@@ -66,58 +64,6 @@ function getSoundPool(type: BaseSoundType): HTMLAudioElement[] | null {
   return pool;
 }
 
-async function unlockSoundPlayback(): Promise<void> {
-  if (audioUnlocked) {
-    return;
-  }
-
-  audioUnlocked = true;
-  const samples = BASE_SOUND_TYPES.map((type) => getSoundPool(type)?.[0] ?? null).filter(
-    (audio): audio is HTMLAudioElement => Boolean(audio)
-  );
-
-  await Promise.all(
-    samples.map(async (audio) => {
-      const previousMuted = audio.muted;
-      const previousVolume = audio.volume;
-
-      try {
-        audio.muted = true;
-        audio.volume = 0;
-        audio.currentTime = 0;
-        await audio.play();
-        audio.pause();
-        audio.currentTime = 0;
-      } catch {
-        // Ignore browsers that still decline pre-play warmup.
-      } finally {
-        audio.muted = previousMuted;
-        audio.volume = previousVolume;
-      }
-    })
-  );
-}
-
-function installUnlockListeners(): void {
-  if (typeof window === 'undefined' || unlockListenersInstalled) {
-    return;
-  }
-
-  unlockListenersInstalled = true;
-  const eventTypes = ['pointerdown', 'keydown', 'touchstart'] as const;
-
-  const handleFirstInteraction = () => {
-    for (const eventType of eventTypes) {
-      window.removeEventListener(eventType, handleFirstInteraction, true);
-    }
-    void unlockSoundPlayback();
-  };
-
-  for (const eventType of eventTypes) {
-    window.addEventListener(eventType, handleFirstInteraction, true);
-  }
-}
-
 function playBaseSound(type: BaseSoundType): void {
   const pool = getSoundPool(type);
   if (!pool || pool.length === 0) {
@@ -140,7 +86,6 @@ export function primeMoveSounds(): void {
   for (const type of BASE_SOUND_TYPES) {
     getSoundPool(type);
   }
-  installUnlockListeners();
 }
 
 export function playMoveSound(type: MoveSoundType): void {
