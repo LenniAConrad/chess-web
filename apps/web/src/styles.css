@@ -1789,6 +1789,7 @@ button.language-option {
   align-items: baseline;
   justify-content: space-between;
   gap: 1rem;
+  direction: ltr;
   border: 1px solid var(--color-input-border);
   border-radius: 10px;
   padding: 0.72rem 0.82rem;
@@ -1810,11 +1811,14 @@ button.language-option {
 
 .language-option-english {
   flex: 1 1 auto;
+  display: block;
   text-align: left;
 }
 
 .language-option-native {
   flex: 0 0 auto;
+  display: block;
+  margin-left: auto;
   text-align: right;
   white-space: nowrap;
   opacity: 0.92;
