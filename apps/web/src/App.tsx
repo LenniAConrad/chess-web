@@ -382,6 +382,7 @@ export function App() {
    */
   const { prefs, setPrefs } = useLocalPrefs();
   const i18n = useMemo(() => getI18n(prefs.language), [prefs.language]);
+  const i18nRef = useRef(i18n);
   const countFormatter = useMemo(() => new Intl.NumberFormat(i18n.locale), [i18n.locale]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [puzzle, setPuzzle] = useState<PuzzleHeader | null>(null);
@@ -477,6 +478,10 @@ export function App() {
 
     primeMoveSounds();
   }, [prefs.soundEnabled]);
+
+  useEffect(() => {
+    i18nRef.current = i18n;
+  }, [i18n]);
 
   useEffect(() => {
     historyPreviewCacheRef.current.clear();
@@ -942,6 +947,7 @@ export function App() {
   );
 
   const loadInitial = useCallback(async () => {
+    const currentI18n = i18nRef.current;
     setLoading(true);
     setErrorText(null);
     setHistoryError(null);
@@ -955,15 +961,15 @@ export function App() {
       const response = await startSession(prefs.variationMode, prefs.autoNext);
       applyStartedSession(
         response,
-        response.state.toMove === 'w' ? i18n.whiteToMove : i18n.blackToMove
+        response.state.toMove === 'w' ? currentI18n.whiteToMove : currentI18n.blackToMove
       );
     } catch (error) {
-      setErrorText(error instanceof Error ? error.message : i18n.failedToLoadPuzzle);
-      setStatusText(i18n.failedToLoadPuzzle);
+      setErrorText(error instanceof Error ? error.message : currentI18n.failedToLoadPuzzle);
+      setStatusText(currentI18n.failedToLoadPuzzle);
     } finally {
       setLoading(false);
     }
-  }, [applyStartedSession, i18n.blackToMove, i18n.failedToLoadPuzzle, i18n.whiteToMove, prefs.autoNext, prefs.variationMode, resetHints]);
+  }, [applyStartedSession, prefs.autoNext, prefs.variationMode, resetHints]);
 
   useEffect(() => {
     void loadInitial();
