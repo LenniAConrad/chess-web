@@ -1809,12 +1809,12 @@ button.language-option {
   justify-content: space-between;
   gap: 1rem;
   direction: ltr;
-  border: 1px solid var(--color-chip-off-border);
+  border: 1px solid var(--color-toggle-border);
   border-radius: 10px;
   padding: 0.72rem 0.82rem;
   font: inherit;
-  color: var(--color-chip-off-text);
-  background: var(--color-chip-off-bg);
+  color: var(--color-toggle-text);
+  background: var(--color-toggle-bg);
   cursor: pointer;
   text-align: left;
   transition:
@@ -2095,7 +2095,7 @@ button:disabled {
     content: '';
     position: absolute;
     inset:
-      var(--mobile-settings-summary-height, 0px)
+      max(0px, calc(var(--mobile-settings-summary-height, 0px) - 1px))
       0
       0
       0;

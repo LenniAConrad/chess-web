@@ -433,10 +433,10 @@ export function App() {
 
         const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
         const summaryHeight = summary.getBoundingClientRect().height;
-        menu.style.setProperty('--mobile-settings-summary-height', `${Math.round(summaryHeight)}px`);
+        menu.style.setProperty('--mobile-settings-summary-height', `${summaryHeight}px`);
         menu.style.setProperty(
           '--mobile-settings-content-height',
-          `${Math.max(0, Math.round(viewportHeight - summaryHeight))}px`
+          `${Math.max(0, viewportHeight - summaryHeight)}px`
         );
       };
 
