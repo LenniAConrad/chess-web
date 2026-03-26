@@ -60,8 +60,10 @@
   --color-autoplay-chip-on-track-border: #9f734f;
   --color-chip-on-bg: #f2dbb7;
   --color-chip-on-border: #b78964;
+  --color-chip-on-text: #2b2218;
   --color-chip-off-bg: #b38324;
   --color-chip-off-border: #7f5b15;
+  --color-chip-off-text: #fff7e8;
   --color-history-correct-bg: #b9d9a9;
   --color-history-correct-border: #9fc48e;
   --color-history-correct-text: #243520;
@@ -150,8 +152,10 @@
   --color-autoplay-chip-on-track-border: #9f734f;
   --color-chip-on-bg: #f2dbb7;
   --color-chip-on-border: #b78964;
+  --color-chip-on-text: #2b2218;
   --color-chip-off-bg: #3f3f3f;
   --color-chip-off-border: #595959;
+  --color-chip-off-text: #efefef;
   --color-history-correct-bg: #7fa36f;
   --color-history-correct-border: #95b885;
   --color-history-correct-text: #f4f8ef;
@@ -272,13 +276,28 @@ body {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
   animation: capture-piece-spin var(--capture-fall-duration) linear forwards;
   transform-origin: center;
   will-change: transform;
   transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-user-drag: none;
+}
+
+.capture-rain-piece-skin {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.capture-rain-piece-skin piece.capture-rain-piece-spin {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .zen-exit-hint {
@@ -1790,12 +1809,12 @@ button.language-option {
   justify-content: space-between;
   gap: 1rem;
   direction: ltr;
-  border: 1px solid var(--color-input-border);
+  border: 1px solid var(--color-chip-off-border);
   border-radius: 10px;
   padding: 0.72rem 0.82rem;
   font: inherit;
-  color: var(--color-input-text);
-  background: var(--color-input-bg);
+  color: var(--color-chip-off-text);
+  background: var(--color-chip-off-bg);
   cursor: pointer;
   text-align: left;
   transition:
@@ -1945,7 +1964,7 @@ button.pgn-move.is-mainline {
   color: var(--color-input-placeholder);
 }
 
-button:not(.toggle-chip):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint) {
+button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint) {
   border: 1px solid var(--color-button-border);
   background: var(--color-button-bg);
   color: var(--color-button-text);
@@ -1955,7 +1974,7 @@ button:not(.toggle-chip):not(.history-dot):not(.promotion-backdrop):not(.promoti
   transition: background-color 160ms ease, border-color 160ms ease;
 }
 
-button:not(.toggle-chip):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):hover:not(:disabled) {
+button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):hover:not(:disabled) {
   background: var(--color-button-bg-hover);
 }
 
@@ -1981,6 +2000,7 @@ button:disabled {
 @media (max-width: 900px) {
   :root {
     --mobile-page-gutter: 1rem;
+    --mobile-menu-inline-pad: 1.2rem;
   }
 
   .app-shell {
@@ -2052,13 +2072,13 @@ button:disabled {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    background: color-mix(in srgb, var(--color-bg) 94%, transparent);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    overflow-y: auto;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow: hidden;
     overflow-x: hidden;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
     scrollbar-width: none;
     z-index: 120;
   }
@@ -2068,31 +2088,30 @@ button:disabled {
   }
 
   .app-header-settings[open] .settings-summary {
-    position: sticky;
-    top: 0;
-    z-index: 1;
+    position: relative;
     width: 100%;
+    margin: 0;
     box-sizing: border-box;
     padding:
       max(1rem, env(safe-area-inset-top))
       max(var(--mobile-page-gutter), env(safe-area-inset-right))
       0.9rem
       max(var(--mobile-page-gutter), env(safe-area-inset-left));
-    background: color-mix(in srgb, var(--color-bg) 97%, transparent);
-    color: var(--color-status);
-    transition:
-      color 140ms ease,
-      background-color 140ms ease,
-      opacity 140ms ease;
+    border: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--color-panel-border) 78%, transparent);
+    border-radius: 0;
+    background: var(--color-panel-bg);
+    backdrop-filter: blur(20px) brightness(1.06);
+    -webkit-backdrop-filter: blur(20px) brightness(1.06);
+    color: var(--color-meta);
   }
 
   .app-header-settings[open][data-mobile-scrolled='true'] .settings-summary {
-    background: transparent;
-    color: transparent;
+    border-bottom-color: color-mix(in srgb, var(--color-panel-border) 78%, transparent);
   }
 
   .app-header-settings[open][data-mobile-scrolled='true'] .settings-summary::after {
-    opacity: 0;
+    opacity: 0.85;
   }
 
   .app-header-settings[open] .settings-content {
@@ -2102,38 +2121,58 @@ button:disabled {
     left: auto;
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
     width: 100%;
     max-width: 100%;
-    flex: 0 0 auto;
-    min-height: auto;
+    max-height: none;
+    margin: 0;
+    min-height: 0;
     margin-top: 0;
-    padding:
-      1rem
-      max(var(--mobile-page-gutter), env(safe-area-inset-right))
-      max(1rem, env(safe-area-inset-bottom))
-      max(var(--mobile-page-gutter), env(safe-area-inset-left));
+    padding: 0 var(--mobile-menu-inline-pad);
     border: 0;
     border-radius: 0;
-    background: transparent;
+    background: var(--color-panel-bg);
     box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    overflow: visible;
+    backdrop-filter: blur(20px) brightness(1.06);
+    -webkit-backdrop-filter: blur(20px) brightness(1.06);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     box-sizing: border-box;
+    scrollbar-width: none;
   }
 
   .app-header-settings[open] .settings-content-body {
     width: 100%;
     margin-block: 0;
+    flex: 0 0 auto;
+    min-height: auto;
+    padding-top: 0;
+    padding-right: max(0px, calc(env(safe-area-inset-right) - var(--mobile-menu-inline-pad)));
+    padding-bottom: 0;
+    padding-left: max(0px, calc(env(safe-area-inset-left) - var(--mobile-menu-inline-pad)));
     scrollbar-width: none;
+  }
+
+  .app-header-settings[open] .settings-content::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-header-settings[open] .settings-content-body::before {
+    content: '';
+    display: block;
+    height: 0.9rem;
+  }
+
+  .app-header-settings[open] .settings-content-body::after {
+    content: '';
+    display: block;
+    height: 0.9rem;
   }
 
   .app-header-settings[open] .settings-content-body::-webkit-scrollbar {
     display: none;
-  }
-
-  button.language-option {
-    padding-block: 0.82rem;
   }
 
   .capture-rain-piece {
