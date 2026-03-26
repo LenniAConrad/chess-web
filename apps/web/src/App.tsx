@@ -420,7 +420,23 @@ export function App() {
     }
 
     const cleanups = menus.map((menu) => {
-      const scrollTarget = menu.querySelector<HTMLDivElement>('.settings-content') ?? menu;
+      const content = menu.querySelector<HTMLDivElement>('.settings-content');
+      const scrollTarget = (isMobileViewport ? menu : content) ?? menu;
+      const summary = menu.querySelector<HTMLElement>('.settings-summary');
+
+      const syncContentHeight = () => {
+        if (!isMobileViewport || !menu.open || !summary) {
+          menu.style.removeProperty('--mobile-settings-content-height');
+          return;
+        }
+
+        const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+        const summaryHeight = summary.getBoundingClientRect().height;
+        menu.style.setProperty(
+          '--mobile-settings-content-height',
+          `${Math.max(0, Math.round(viewportHeight - summaryHeight))}px`
+        );
+      };
 
       const syncScrolledState = () => {
         if (!isMobileViewport || !menu.open) {
@@ -434,19 +450,34 @@ export function App() {
       const handleToggle = () => {
         if (!menu.open) {
           menu.dataset.mobileScrolled = 'false';
+          menu.style.removeProperty('--mobile-settings-content-height');
           return;
         }
 
+        requestAnimationFrame(() => {
+          syncContentHeight();
+          syncScrolledState();
+        });
+      };
+
+      const handleResize = () => {
+        syncContentHeight();
         syncScrolledState();
       };
 
       scrollTarget.addEventListener('scroll', syncScrolledState, { passive: true });
       menu.addEventListener('toggle', handleToggle);
+      window.addEventListener('resize', handleResize);
+      window.visualViewport?.addEventListener('resize', handleResize);
+      syncContentHeight();
       syncScrolledState();
 
       return () => {
         scrollTarget.removeEventListener('scroll', syncScrolledState);
         menu.removeEventListener('toggle', handleToggle);
+        window.removeEventListener('resize', handleResize);
+        window.visualViewport?.removeEventListener('resize', handleResize);
+        menu.style.removeProperty('--mobile-settings-content-height');
         delete menu.dataset.mobileScrolled;
       };
     });
