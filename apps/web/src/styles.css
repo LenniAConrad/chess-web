@@ -2082,7 +2082,23 @@ button:disabled {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     scrollbar-width: none;
+    isolation: isolate;
     z-index: 120;
+  }
+
+  .app-header-settings[open]::after {
+    content: '';
+    position: absolute;
+    inset:
+      var(--mobile-settings-summary-height, 0px)
+      0
+      0
+      0;
+    background: var(--color-panel-bg);
+    backdrop-filter: blur(20px) brightness(1.06);
+    -webkit-backdrop-filter: blur(20px) brightness(1.06);
+    pointer-events: none;
+    z-index: 0;
   }
 
   .app-header-settings[open]::-webkit-scrollbar {
@@ -2108,6 +2124,7 @@ button:disabled {
     backdrop-filter: blur(20px) brightness(1.06);
     -webkit-backdrop-filter: blur(20px) brightness(1.06);
     color: var(--color-meta);
+    isolation: isolate;
   }
 
   .app-header-settings[open][data-mobile-scrolled='true'] .settings-summary {
@@ -2120,24 +2137,25 @@ button:disabled {
 
   .app-header-settings[open] .settings-content {
     position: relative;
+    z-index: 1;
     top: auto;
     right: auto;
     left: auto;
     display: grid;
     width: 100%;
     max-width: 100%;
-    height: auto;
-    max-height: none;
+    height: var(--mobile-settings-content-height, auto);
+    max-height: var(--mobile-settings-content-height, none);
     margin: 0;
     min-height: var(--mobile-settings-content-height, 0px);
     margin-top: 0;
     padding: 0 var(--mobile-menu-inline-pad);
     border: 0;
     border-radius: 0;
-    background: var(--color-panel-bg);
+    background: transparent;
     box-shadow: none;
-    backdrop-filter: blur(20px) brightness(1.06);
-    -webkit-backdrop-filter: blur(20px) brightness(1.06);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     overflow: visible;
     box-sizing: border-box;
   }
