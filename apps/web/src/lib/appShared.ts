@@ -38,9 +38,12 @@ export interface AppChromeLink {
   external?: boolean;
 }
 
+export type CaptureRainPieceRole = 'pawn' | 'knight' | 'bishop' | 'rook' | 'queen' | 'king';
+
 export interface FallingCapturePiece {
   id: number;
-  src: string;
+  color: 'white' | 'black';
+  role: CaptureRainPieceRole;
   style: CSSProperties & Record<`--${string}`, string>;
 }
 
@@ -208,7 +211,19 @@ export function getMoveSquaresBetweenFens(beforeFen: string, afterFen: string): 
   return null;
 }
 
-export function getCapturedPieceAsset(fen: string, uciMove: string): string | null {
+const CAPTURE_RAIN_ROLE_BY_SYMBOL: Record<PieceSymbol, CaptureRainPieceRole> = {
+  p: 'pawn',
+  n: 'knight',
+  b: 'bishop',
+  r: 'rook',
+  q: 'queen',
+  k: 'king'
+};
+
+export function getCapturedPieceSkin(
+  fen: string,
+  uciMove: string
+): Pick<FallingCapturePiece, 'color' | 'role'> | null {
   if (uciMove.length < 4) {
     return null;
   }
@@ -223,8 +238,10 @@ export function getCapturedPieceAsset(fen: string, uciMove: string): string | nu
     return null;
   }
 
-  const capturedColor = move.color === 'w' ? 'b' : 'w';
-  return `/pieces/cburnett/${capturedColor}${move.captured.toUpperCase()}.svg`;
+  return {
+    color: move.color === 'w' ? 'black' : 'white',
+    role: CAPTURE_RAIN_ROLE_BY_SYMBOL[move.captured]
+  };
 }
 
 export function randomBetween(min: number, max: number): number {

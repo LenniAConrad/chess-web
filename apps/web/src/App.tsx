@@ -9,7 +9,7 @@ import { useLocalPrefs } from './hooks/useLocalPrefs.js';
 import { useStockfishEval } from './hooks/useStockfishEval.js';
 import { getHistoryDotSymbol, getHistoryDotTone } from './lib/historyDots.js';
 import { getI18n } from './lib/i18n.js';
-import { appendSimilarVariationStatus, applyUciMove, AUTO_PLAY_DELAY_MS, type AutoPlayAnimationPayload, type AppChromeLink, CAPTURE_RAIN_MAX_PIECES, CORRECT_BREAK_MS, type FallingCapturePiece, formatEngineEval, formatEngineSide, getCapturedPieceAsset, getFeedbackDelay, getFenAfterUciMove, getMoveSoundDecision, getMoveSquares, getMoveSquaresBetweenFens, getTerminalEvalDisplay, HISTORY_PREVIEW_DELAY_MS, type HistoryPreviewData, type HistoryPreviewState, isPuzzleSolved, literalUiMessage, MOBILE_HISTORY_PREVIEW_HOLD_MS, maybeWait, type PrefetchedNextState, type PuzzleHeader, randomBetween, REPO_URL, resolveUiMessage, REWIND_BREAK_MS, REWIND_STEP_DELAY_MS, SESSION_HISTORY_FETCH_LIMIT, SHORT_STATUS_DELAY_MS, translatedUiMessage, type UiMessage, wait, withBasePath, WRONG_MOVE_FEEDBACK_MS, playMoveSoundDecision } from './lib/appShared.js';
+import { appendSimilarVariationStatus, applyUciMove, AUTO_PLAY_DELAY_MS, type AutoPlayAnimationPayload, type AppChromeLink, CAPTURE_RAIN_MAX_PIECES, CORRECT_BREAK_MS, type FallingCapturePiece, formatEngineEval, formatEngineSide, getCapturedPieceSkin, getFeedbackDelay, getFenAfterUciMove, getMoveSoundDecision, getMoveSquares, getMoveSquaresBetweenFens, getTerminalEvalDisplay, HISTORY_PREVIEW_DELAY_MS, type HistoryPreviewData, type HistoryPreviewState, isPuzzleSolved, literalUiMessage, MOBILE_HISTORY_PREVIEW_HOLD_MS, maybeWait, type PrefetchedNextState, type PuzzleHeader, randomBetween, REPO_URL, resolveUiMessage, REWIND_BREAK_MS, REWIND_STEP_DELAY_MS, SESSION_HISTORY_FETCH_LIMIT, SHORT_STATUS_DELAY_MS, translatedUiMessage, type UiMessage, wait, withBasePath, WRONG_MOVE_FEEDBACK_MS, playMoveSoundDecision } from './lib/appShared.js';
 import { cacheLoadedSession, getPuzzleCount, getHint, loadSession, refreshSession, getSessionHistory, getSessionTree, nextPuzzle, prefetchNextPuzzle, playMove, retainLoadedSessions, revealSolution, skipVariation, startSession } from './lib/api.js';
 import { primeMoveSounds } from './lib/moveSounds.js';
 import type { SessionHistoryItem, SessionStatePayload, SessionTreeNode, SessionTreeResponse, StartSessionResponse } from './types/api.js';
@@ -420,13 +420,15 @@ export function App() {
     }
 
     const cleanups = menus.map((menu) => {
+      const scrollTarget = menu.querySelector<HTMLDivElement>('.settings-content') ?? menu;
+
       const syncScrolledState = () => {
         if (!isMobileViewport || !menu.open) {
           menu.dataset.mobileScrolled = 'false';
           return;
         }
 
-        menu.dataset.mobileScrolled = menu.scrollTop > 6 ? 'true' : 'false';
+        menu.dataset.mobileScrolled = scrollTarget.scrollTop > 6 ? 'true' : 'false';
       };
 
       const handleToggle = () => {
@@ -438,12 +440,12 @@ export function App() {
         syncScrolledState();
       };
 
-      menu.addEventListener('scroll', syncScrolledState, { passive: true });
+      scrollTarget.addEventListener('scroll', syncScrolledState, { passive: true });
       menu.addEventListener('toggle', handleToggle);
       syncScrolledState();
 
       return () => {
-        menu.removeEventListener('scroll', syncScrolledState);
+        scrollTarget.removeEventListener('scroll', syncScrolledState);
         menu.removeEventListener('toggle', handleToggle);
         delete menu.dataset.mobileScrolled;
       };
@@ -560,8 +562,8 @@ export function App() {
         return;
       }
 
-      const src = getCapturedPieceAsset(fen, uciMove);
-      if (!src) {
+      const skin = getCapturedPieceSkin(fen, uciMove);
+      if (!skin) {
         return;
       }
 
@@ -569,7 +571,7 @@ export function App() {
       const fallDurationMs = Math.round(randomBetween(6500, 12000));
       const piece = {
         id,
-        src,
+        ...skin,
         style: {
           '--capture-x': `${randomBetween(4, 96).toFixed(2)}%`,
           '--capture-size': `${Math.round(randomBetween(44, 118))}px`,

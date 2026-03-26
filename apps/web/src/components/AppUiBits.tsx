@@ -1,4 +1,4 @@
-import type { AnimationEvent as ReactAnimationEvent } from 'react';
+import { createElement, type AnimationEvent as ReactAnimationEvent } from 'react';
 import type { FallingCapturePiece } from '../lib/appShared.js';
 import type { FrontendI18n, PromotionPieceCode } from '../lib/i18n.js';
 
@@ -125,7 +125,11 @@ export function CaptureRainLayer(props: {
           style={piece.style}
           onAnimationEnd={(event) => onPieceAnimationEnd(event, piece.id)}
         >
-          <img className="capture-rain-piece-spin" src={piece.src} alt="" />
+          <div className="capture-rain-piece-skin cg-wrap">
+            {createElement('piece', {
+              className: `capture-rain-piece-spin ${piece.role} ${piece.color}`
+            })}
+          </div>
         </div>
       ))}
     </div>
