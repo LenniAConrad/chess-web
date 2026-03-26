@@ -81,7 +81,7 @@ export function AppHeader(props: AppHeaderProps) {
               <summary className="settings-summary">{i18n.languageLabel}</summary>
               <div className="settings-content">
                 <div className="settings-content-body">
-                  <section className="settings-section settings-section-language" aria-labelledby="settings-language">
+                  <section className="settings-section" aria-labelledby="settings-language">
                     <div className="settings-section-head">
                       <span className="settings-section-title" id="settings-language">
                         {i18n.languageLabel}

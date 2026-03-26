@@ -420,16 +420,13 @@ export function App() {
     }
 
     const cleanups = menus.map((menu) => {
-      const contentBody = menu.querySelector<HTMLElement>('.settings-content-body');
-      const scrollTarget = isMobileViewport && contentBody ? contentBody : menu;
-
       const syncScrolledState = () => {
         if (!isMobileViewport || !menu.open) {
           menu.dataset.mobileScrolled = 'false';
           return;
         }
 
-        menu.dataset.mobileScrolled = scrollTarget.scrollTop > 6 ? 'true' : 'false';
+        menu.dataset.mobileScrolled = menu.scrollTop > 6 ? 'true' : 'false';
       };
 
       const handleToggle = () => {
@@ -438,16 +435,15 @@ export function App() {
           return;
         }
 
-        scrollTarget.scrollTop = 0;
         syncScrolledState();
       };
 
-      scrollTarget.addEventListener('scroll', syncScrolledState, { passive: true });
+      menu.addEventListener('scroll', syncScrolledState, { passive: true });
       menu.addEventListener('toggle', handleToggle);
       syncScrolledState();
 
       return () => {
-        scrollTarget.removeEventListener('scroll', syncScrolledState);
+        menu.removeEventListener('scroll', syncScrolledState);
         menu.removeEventListener('toggle', handleToggle);
         delete menu.dataset.mobileScrolled;
       };

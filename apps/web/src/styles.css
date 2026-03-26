@@ -1780,7 +1780,7 @@ button.toggle-chip.autoplay-chip.is-on .toggle-chip-track {
 
 .language-option-grid {
   display: grid;
-  gap: 0.12rem;
+  gap: 0.45rem;
 }
 
 button.language-option {
@@ -1790,17 +1790,18 @@ button.language-option {
   justify-content: space-between;
   gap: 1rem;
   direction: ltr;
-  border: 0;
-  border-radius: 4px;
-  padding: 0.3rem 0;
+  border: 1px solid var(--color-input-border);
+  border-radius: 10px;
+  padding: 0.72rem 0.82rem;
   font: inherit;
-  color: inherit;
-  background: transparent;
+  color: var(--color-input-text);
+  background: var(--color-input-bg);
   cursor: pointer;
   text-align: left;
   transition:
-    color 160ms ease,
-    opacity 160ms ease;
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
 }
 
 .language-option-english,
@@ -1820,20 +1821,17 @@ button.language-option {
   margin-left: auto;
   text-align: right;
   white-space: nowrap;
-  opacity: 0.72;
+  opacity: 0.92;
 }
 
 button.language-option:hover:not(:disabled) {
-  color: var(--color-toggle-focus);
+  border-color: var(--color-toggle-focus);
 }
 
 button.language-option.is-active {
-  color: var(--color-text);
-  font-weight: 700;
-}
-
-button.language-option.is-active .language-option-native {
-  opacity: 0.94;
+  border-color: var(--color-chip-on-border);
+  background: var(--color-chip-on-bg);
+  color: var(--color-chip-on-text);
 }
 
 button.language-option:focus-visible {
@@ -2054,18 +2052,14 @@ button:disabled {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    color: var(--color-chrome-text);
-    background:
-      radial-gradient(circle at top, color-mix(in srgb, var(--color-chrome-accent) 16%, transparent), transparent 32%),
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--color-chrome-bg) 96%, black) 0%,
-        color-mix(in srgb, var(--color-chrome-bg) 90%, var(--color-bg) 10%) 58%,
-        color-mix(in srgb, var(--color-chrome-bg) 78%, var(--color-bg) 22%) 100%
-      );
-    backdrop-filter: blur(20px) saturate(1.05);
-    -webkit-backdrop-filter: blur(20px) saturate(1.05);
-    overflow: hidden;
+    background: color-mix(in srgb, var(--color-bg) 94%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
     z-index: 120;
   }
 
@@ -2074,53 +2068,31 @@ button:disabled {
   }
 
   .app-header-settings[open] .settings-summary {
-    position: relative;
-    z-index: 2;
+    position: sticky;
+    top: 0;
+    z-index: 1;
     width: 100%;
     box-sizing: border-box;
     padding:
-      max(0.9rem, env(safe-area-inset-top))
+      max(1rem, env(safe-area-inset-top))
       max(var(--mobile-page-gutter), env(safe-area-inset-right))
-      0.95rem
+      0.9rem
       max(var(--mobile-page-gutter), env(safe-area-inset-left));
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--color-chrome-bg) 94%, black) 0%,
-        color-mix(in srgb, var(--color-chrome-bg) 84%, transparent) 100%
-      );
-    color: var(--color-chrome-text);
-    border-bottom: 1px solid color-mix(in srgb, var(--color-chrome-text) 12%, transparent);
-    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.2);
+    background: color-mix(in srgb, var(--color-bg) 97%, transparent);
+    color: var(--color-status);
     transition:
       color 140ms ease,
       background-color 140ms ease,
-      border-color 140ms ease,
-      box-shadow 140ms ease;
+      opacity 140ms ease;
   }
 
   .app-header-settings[open][data-mobile-scrolled='true'] .settings-summary {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--color-chrome-bg) 98%, black) 0%,
-        color-mix(in srgb, var(--color-chrome-bg) 92%, transparent) 100%
-      );
-    border-bottom-color: color-mix(in srgb, var(--color-chrome-text) 18%, transparent);
-    box-shadow: 0 18px 34px rgba(0, 0, 0, 0.28);
+    background: transparent;
+    color: transparent;
   }
 
-  .app-header-settings[open] .settings-summary::after {
-    width: 1.7rem;
-    height: 1.7rem;
-    display: grid;
-    place-items: center;
-    border-radius: 999px;
-    border: 1px solid color-mix(in srgb, var(--color-chrome-text) 14%, transparent);
-    background: color-mix(in srgb, var(--color-chrome-text) 8%, transparent);
-    color: var(--color-chrome-muted);
-    font-size: 0.82rem;
-    opacity: 1;
+  .app-header-settings[open][data-mobile-scrolled='true'] .settings-summary::after {
+    opacity: 0;
   }
 
   .app-header-settings[open] .settings-content {
@@ -2132,13 +2104,13 @@ button:disabled {
     flex-direction: column;
     width: 100%;
     max-width: 100%;
-    flex: 1 1 auto;
-    min-height: 0;
+    flex: 0 0 auto;
+    min-height: auto;
     margin-top: 0;
     padding:
-      0
+      1rem
       max(var(--mobile-page-gutter), env(safe-area-inset-right))
-      0
+      max(1rem, env(safe-area-inset-bottom))
       max(var(--mobile-page-gutter), env(safe-area-inset-left));
     border: 0;
     border-radius: 0;
@@ -2153,151 +2125,15 @@ button:disabled {
   .app-header-settings[open] .settings-content-body {
     width: 100%;
     margin-block: 0;
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
     scrollbar-width: none;
-    padding:
-      1rem
-      0
-      max(1.35rem, calc(env(safe-area-inset-bottom) + 0.85rem))
-      0;
-    gap: 0.9rem;
-    align-content: start;
   }
 
   .app-header-settings[open] .settings-content-body::-webkit-scrollbar {
     display: none;
   }
 
-  .app-header-settings[open] .settings-section {
-    gap: 0.85rem;
-    padding: 0.95rem 0.95rem 1rem;
-    border-radius: 22px;
-    border: 1px solid color-mix(in srgb, var(--color-chrome-text) 10%, transparent);
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--color-chrome-text) 8%, transparent) 0%,
-        color-mix(in srgb, var(--color-chrome-text) 3%, transparent) 100%
-      );
-    box-shadow:
-      inset 0 1px 0 color-mix(in srgb, white 14%, transparent),
-      0 18px 40px rgba(0, 0, 0, 0.18);
-  }
-
-  .app-header-settings[open] .settings-section-head::after {
-    background: color-mix(in srgb, var(--color-chrome-text) 12%, transparent);
-  }
-
-  .app-header-settings[open] .settings-section-title {
-    color: color-mix(in srgb, var(--color-chrome-text) 72%, var(--color-chrome-muted) 28%);
-    opacity: 1;
-  }
-
-  .app-header-settings[open]:not(.app-header-language) button.toggle-chip {
-    border-radius: 16px;
-    border-color: color-mix(in srgb, var(--color-chrome-text) 10%, transparent);
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--color-chrome-text) 7%, transparent) 0%,
-        color-mix(in srgb, var(--color-chrome-text) 3%, transparent) 100%
-      );
-    color: var(--color-chrome-text);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
-  }
-
-  .app-header-settings[open]:not(.app-header-language) button.toggle-chip.is-on {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--color-button-bg) 96%, transparent) 0%,
-        color-mix(in srgb, var(--color-button-bg) 78%, var(--color-chrome-bg) 22%) 100%
-      );
-    border-color: color-mix(in srgb, var(--color-button-border) 88%, transparent);
-    color: var(--color-button-text);
-  }
-
-  .app-header-settings[open] .id-search-row input {
-    border-color: color-mix(in srgb, var(--color-chrome-text) 14%, transparent);
-    background: color-mix(in srgb, var(--color-chrome-text) 7%, transparent);
-    color: var(--color-chrome-text);
-  }
-
-  .app-header-settings[open] .id-search-row input::placeholder {
-    color: color-mix(in srgb, var(--color-chrome-text) 58%, transparent);
-  }
-
-  .app-header-language[open] .settings-section-language {
-    padding-bottom: 0.5rem;
-  }
-
-  .app-header-language[open] .language-option-grid {
-    gap: 0;
-    margin-top: 0.18rem;
-  }
-
-  .app-header-language[open] button.language-option {
-    position: relative;
-    padding: 0.9rem 0.1rem;
-    color: color-mix(in srgb, var(--color-chrome-text) 88%, transparent);
-  }
-
-  .app-header-language[open] button.language-option + button.language-option {
-    border-top: 1px solid color-mix(in srgb, var(--color-chrome-text) 10%, transparent);
-  }
-
-  .app-header-language[open] button.language-option::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    width: 0.46rem;
-    height: 0.46rem;
-    border-radius: 999px;
-    background: var(--color-chrome-accent);
-    transform: translateY(-50%) scale(0.45);
-    opacity: 0;
-    transition:
-      transform 160ms ease,
-      opacity 160ms ease;
-  }
-
-  .app-header-language[open] .language-option-english {
-    padding-left: 0.95rem;
-    font-size: 1rem;
-    line-height: 1.2;
-  }
-
-  .app-header-language[open] .language-option-native {
-    color: color-mix(in srgb, var(--color-chrome-text) 76%, transparent);
-    opacity: 1;
-  }
-
-  .app-header-language[open] button.language-option:hover:not(:disabled) {
-    color: var(--color-chrome-text);
-  }
-
-  .app-header-language[open] button.language-option.is-active {
-    color: var(--color-chrome-text);
-    background:
-      linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--color-button-bg) 18%, transparent) 0%,
-        transparent 72%
-      );
-  }
-
-  .app-header-language[open] button.language-option.is-active::before {
-    transform: translateY(-50%) scale(1);
-    opacity: 1;
-  }
-
-  .app-header-language[open] button.language-option.is-active .language-option-native {
-    color: color-mix(in srgb, var(--color-button-bg) 86%, white 14%);
+  button.language-option {
+    padding-block: 0.82rem;
   }
 
   .capture-rain-piece {
