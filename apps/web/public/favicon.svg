@@ -1,24 +1,49 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Chess Puzzle Trainer icon">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#28231f" />
-      <stop offset="100%" stop-color="#12100e" />
+      <stop offset="0%" stop-color="#f5f0e7" />
+      <stop offset="100%" stop-color="#ddd3c3" />
     </linearGradient>
-    <linearGradient id="gloss" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22" />
-      <stop offset="45%" stop-color="#ffffff" stop-opacity="0.08" />
+    <radialGradient id="shine" cx="28%" cy="20%" r="70%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.42" />
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0.14" />
       <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="vignette" cx="72%" cy="80%" r="78%">
+      <stop offset="55%" stop-color="#8d775b" stop-opacity="0" />
+      <stop offset="100%" stop-color="#8d775b" stop-opacity="0.22" />
+    </radialGradient>
+    <linearGradient id="lowerShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8d775b" stop-opacity="0" />
+      <stop offset="100%" stop-color="#8d775b" stop-opacity="0.16" />
     </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#000000" flood-opacity="0.38" />
-    </filter>
   </defs>
 
   <rect x="16" y="16" width="224" height="224" rx="52" fill="url(#bg)" />
-  <rect x="17" y="17" width="222" height="222" rx="51" fill="none" stroke="#ffffff" stroke-opacity="0.14" stroke-width="2" />
+  <rect x="16" y="16" width="224" height="224" rx="52" fill="url(#shine)" />
+  <rect x="16" y="16" width="224" height="224" rx="52" fill="url(#vignette)" />
+  <rect x="16" y="16" width="224" height="224" rx="52" fill="url(#lowerShade)" />
+  <rect
+    x="17"
+    y="17"
+    width="222"
+    height="222"
+    rx="51"
+    fill="none"
+    stroke="#ffffff"
+    stroke-opacity="0.22"
+    stroke-width="2"
+  />
 
-  <g filter="url(#shadow)" transform="translate(29 19) scale(4.4)">
-    <g fill="#fff" fill-rule="evenodd" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
+  <g transform="translate(33 27) scale(4.4)" opacity="0.18">
+    <g
+      fill="#6d5c48"
+      fill-rule="evenodd"
+      stroke="#6d5c48"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.6"
+    >
       <path stroke-linecap="butt" d="M9 39h27v-3H9v3zm3-3v-4h21v4H12zm-1-22V9h4v2h5V9h5v2h5V9h4v5"/>
       <path d="m34 14-3 3H14l-3-3"/>
       <path stroke-linecap="butt" stroke-linejoin="miter" d="M31 17v12.5H14V17"/>
@@ -26,10 +51,31 @@
       <path fill="none" stroke-linejoin="miter" d="M11 14h23"/>
     </g>
   </g>
-  <path
-    d="M44 34h168c15.464 0 28 12.536 28 28v44c-50-12-112-20-196-6V62c0-15.464 12.536-28 28-28Z"
-    fill="url(#gloss)"
-    opacity="0.6"
+  <g transform="translate(29 19) scale(4.4)">
+    <g
+      fill="#fff"
+      fill-rule="evenodd"
+      stroke="#111"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="1.5"
+    >
+      <path stroke-linecap="butt" d="M9 39h27v-3H9v3zm3-3v-4h21v4H12zm-1-22V9h4v2h5V9h5v2h5V9h4v5"/>
+      <path d="m34 14-3 3H14l-3-3"/>
+      <path stroke-linecap="butt" stroke-linejoin="miter" d="M31 17v12.5H14V17"/>
+      <path d="m31 29.5 1.5 2.5h-20l1.5-2.5"/>
+      <path fill="none" stroke-linejoin="miter" d="M11 14h23"/>
+    </g>
+  </g>
+  <rect
+    x="16"
+    y="16"
+    width="224"
+    height="224"
+    rx="52"
+    fill="none"
+    stroke="#ffffff"
+    stroke-opacity="0.08"
+    stroke-width="1"
   />
-  <rect x="16" y="16" width="224" height="224" rx="52" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1" />
 </svg>

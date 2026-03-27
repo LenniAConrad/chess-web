@@ -93,6 +93,23 @@
   --color-chrome-text: #f6f8fb;
   --color-chrome-muted: rgba(219, 225, 232, 0.82);
   --color-chrome-accent: #4ab66f;
+  --board-highlight-last-move: rgba(236, 218, 96, 0.62);
+  --board-highlight-last-move-edge: rgba(132, 103, 34, 0.2);
+  --board-highlight-selected: rgba(112, 153, 78, 0.58);
+  --board-highlight-selected-edge: rgba(48, 88, 30, 0.48);
+  --board-highlight-move-dot: rgba(81, 115, 56, 0.76);
+  --board-highlight-move-dot-ring: rgba(255, 248, 235, 0.8);
+  --board-highlight-move-ring: rgba(66, 106, 47, 0.78);
+  --board-highlight-move-ring-shadow: rgba(255, 249, 239, 0.52);
+  --board-highlight-move-hover-fill: rgba(112, 153, 78, 0.18);
+  --board-highlight-premove: rgba(87, 111, 163, 0.42);
+  --board-highlight-premove-edge: rgba(44, 64, 107, 0.4);
+  --board-highlight-premove-dot: rgba(70, 89, 134, 0.7);
+  --board-highlight-premove-ring: rgba(70, 89, 134, 0.72);
+  --board-highlight-premove-hover-fill: rgba(87, 111, 163, 0.16);
+  --board-highlight-check-core: rgba(231, 78, 78, 0.96);
+  --board-highlight-check-glow: rgba(186, 26, 26, 0.82);
+  --board-highlight-check-fill: rgba(214, 54, 54, 0.22);
 }
 
 :root[data-theme='dark'] {
@@ -180,6 +197,23 @@
   --color-history-current-bg: #8c79b8;
   --color-history-current-border: #a08bc8;
   --color-history-current-text: #f5f1ff;
+  --board-highlight-last-move: rgba(223, 208, 96, 0.5);
+  --board-highlight-last-move-edge: rgba(255, 236, 154, 0.16);
+  --board-highlight-selected: rgba(118, 163, 88, 0.48);
+  --board-highlight-selected-edge: rgba(194, 225, 164, 0.28);
+  --board-highlight-move-dot: rgba(148, 191, 108, 0.76);
+  --board-highlight-move-dot-ring: rgba(15, 18, 21, 0.55);
+  --board-highlight-move-ring: rgba(156, 206, 110, 0.78);
+  --board-highlight-move-ring-shadow: rgba(14, 18, 22, 0.48);
+  --board-highlight-move-hover-fill: rgba(118, 163, 88, 0.18);
+  --board-highlight-premove: rgba(116, 141, 198, 0.38);
+  --board-highlight-premove-edge: rgba(182, 200, 242, 0.18);
+  --board-highlight-premove-dot: rgba(140, 164, 224, 0.72);
+  --board-highlight-premove-ring: rgba(140, 164, 224, 0.74);
+  --board-highlight-premove-hover-fill: rgba(116, 141, 198, 0.14);
+  --board-highlight-check-core: rgba(240, 104, 104, 0.94);
+  --board-highlight-check-glow: rgba(215, 45, 45, 0.78);
+  --board-highlight-check-fill: rgba(221, 63, 63, 0.2);
 }
 
 body {
@@ -434,6 +468,7 @@ body {
 }
 
 .app-header-settings[open] .settings-content {
+  --settings-menu-inline-pad: 0.9rem;
   position: absolute;
   top: calc(100% + 0.65rem);
   right: 0;
@@ -441,7 +476,7 @@ body {
   max-height: min(78dvh, calc(100dvh - 5rem));
   display: flex;
   flex-direction: column;
-  padding: 0.9rem;
+  padding: 0 var(--settings-menu-inline-pad);
   border: 1px solid var(--color-panel-border);
   border-radius: 4px;
   background: var(--color-panel-bg);
@@ -463,8 +498,25 @@ body {
 
 .app-header-settings[open] .settings-content-body {
   min-height: 0;
+  display: block;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.app-header-settings[open] .settings-content-body > .settings-section + .settings-section {
+  margin-top: 0.95rem;
+}
+
+.app-header-settings[open] .settings-content-body::before {
+  content: '';
+  display: block;
+  height: var(--settings-menu-inline-pad, 0.9rem);
+}
+
+.app-header-settings[open] .settings-content-body::after {
+  content: '';
+  display: block;
+  height: var(--settings-menu-inline-pad, 0.9rem);
 }
 
 .layout {
@@ -533,6 +585,8 @@ body {
   height: var(--board-size);
   aspect-ratio: 1/1;
   flex: 0 0 auto;
+  display: grid;
+  place-items: center;
 }
 
 .board-wrap {
@@ -542,6 +596,8 @@ body {
   position: relative;
   aspect-ratio: 1/1;
   border-radius: 8px;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .board-wrap.glass-enabled {
@@ -1064,6 +1120,104 @@ body {
   border-radius: 4px;
 }
 
+.board piece,
+.mini-preview-board piece {
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.board cg-board square {
+  box-sizing: border-box;
+  display: block;
+}
+
+.board cg-board square.last-move {
+  background: var(--board-highlight-last-move);
+  box-shadow: inset 0 0 0 1px var(--board-highlight-last-move-edge);
+}
+
+.board cg-board square.selected {
+  background: var(--board-highlight-selected);
+  box-shadow: inset 0 0 0 2px var(--board-highlight-selected-edge);
+}
+
+.board cg-board square.current-premove {
+  background: var(--board-highlight-premove);
+  box-shadow: inset 0 0 0 2px var(--board-highlight-premove-edge);
+}
+
+.board cg-board square.check {
+  background:
+    radial-gradient(circle at 50% 52%, var(--board-highlight-check-core) 0 24%, var(--board-highlight-check-glow) 42%, transparent 74%),
+    linear-gradient(var(--board-highlight-check-fill), var(--board-highlight-check-fill));
+  box-shadow: inset 0 0 0 1px rgba(123, 18, 18, 0.22);
+}
+
+.board cg-board square.move-dest,
+.board cg-board square.premove-dest {
+  background: none;
+}
+
+.board cg-board square.move-dest:hover {
+  background: var(--board-highlight-move-hover-fill);
+}
+
+.board cg-board square.premove-dest:hover {
+  background: var(--board-highlight-premove-hover-fill);
+}
+
+.board cg-board square.move-dest::before,
+.board cg-board square.premove-dest::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 24%;
+  height: 24%;
+  margin: auto;
+  border-radius: 999px;
+  box-sizing: border-box;
+  transition:
+    transform 100ms ease,
+    background-color 100ms ease,
+    border-color 100ms ease,
+    box-shadow 100ms ease;
+}
+
+.board cg-board square.move-dest::before {
+  background: var(--board-highlight-move-dot);
+  box-shadow: 0 0 0 1px var(--board-highlight-move-dot-ring);
+}
+
+.board cg-board square.premove-dest::before {
+  background: var(--board-highlight-premove-dot);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+
+.board cg-board square.oc.move-dest::before,
+.board cg-board square.oc.premove-dest::before {
+  width: 74%;
+  height: 74%;
+  background: transparent;
+}
+
+.board cg-board square.oc.move-dest::before {
+  border: 3px solid var(--board-highlight-move-ring);
+  box-shadow: inset 0 0 0 1px var(--board-highlight-move-ring-shadow);
+}
+
+.board cg-board square.oc.premove-dest::before {
+  border: 3px solid var(--board-highlight-premove-ring);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+}
+
+.board cg-board square.move-dest:hover::before,
+.board cg-board square.premove-dest:hover::before {
+  transform: scale(1.04);
+}
+
 .board-coordinates {
   position: absolute;
   inset: 0;
@@ -1524,6 +1678,8 @@ button.history-dot:focus-visible {
 }
 
 .history-preview-board-wrap {
+  display: grid;
+  place-items: center;
   border-radius: 10px;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.08);
@@ -2141,6 +2297,7 @@ button:disabled {
   }
 
   .app-header-settings[open] .settings-content {
+    --settings-menu-inline-pad: var(--mobile-menu-inline-pad);
     position: relative;
     z-index: 1;
     top: auto;
@@ -2154,7 +2311,7 @@ button:disabled {
     margin: 0;
     min-height: var(--mobile-settings-content-height, 0px);
     margin-top: 0;
-    padding: 0 var(--mobile-menu-inline-pad);
+    padding: 0 var(--settings-menu-inline-pad);
     border: 0;
     border-radius: 0;
     background-color: var(--color-bg);
@@ -2171,11 +2328,16 @@ button:disabled {
   .app-header-settings[open] .settings-content-body {
     width: 100%;
     margin-block: 0;
+    display: block;
     min-height: 100%;
     padding-top: 0;
     padding-right: max(0px, calc(env(safe-area-inset-right) - var(--mobile-menu-inline-pad)));
     padding-bottom: 0;
     padding-left: max(0px, calc(env(safe-area-inset-left) - var(--mobile-menu-inline-pad)));
+  }
+
+  .app-header-settings[open] .settings-content-body > .settings-section + .settings-section {
+    margin-top: 0.95rem;
   }
 
   .app-header-settings[open]::-webkit-scrollbar {
@@ -2185,13 +2347,13 @@ button:disabled {
   .app-header-settings[open] .settings-content-body::before {
     content: '';
     display: block;
-    height: 0.9rem;
+    height: var(--settings-menu-inline-pad, 0.9rem);
   }
 
   .app-header-settings[open] .settings-content-body::after {
     content: '';
     display: block;
-    height: 0.9rem;
+    height: var(--settings-menu-inline-pad, 0.9rem);
   }
 
   .capture-rain-piece {

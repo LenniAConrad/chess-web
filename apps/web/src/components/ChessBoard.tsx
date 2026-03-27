@@ -77,6 +77,14 @@ function withBasePath(relativePath: string): string {
   return `${normalizedBase}${relativePath.replace(/^\/+/, '')}`;
 }
 
+function snapBoardPixels(size: number): number {
+  if (!Number.isFinite(size) || size <= 0) {
+    return 0;
+  }
+
+  return Math.floor(size / 8) * 8;
+}
+
 function legalDestinations(fen: string): Map<Key, Key[]> {
   const chess = new Chess(fen);
   const map = new Map<Key, Key[]>();
@@ -351,8 +359,7 @@ export function ChessBoard({
 
     const syncBoardSize = () => {
       frameId = 0;
-      const width = host.getBoundingClientRect().width;
-      const nextSize = Math.max(0, Math.round(width));
+      const nextSize = snapBoardPixels(host.getBoundingClientRect().width);
       setBoardSize((current) => (current === nextSize ? current : nextSize));
     };
 
@@ -543,10 +550,19 @@ export function ChessBoard({
     });
   }, [chessgroundLastMove, fen]);
 
+  const boardWrapStyle =
+    boardSize === null
+      ? undefined
+      : {
+          width: `${boardSize}px`,
+          height: `${boardSize}px`
+        };
+
   return (
     <div
       ref={boardWrapRef}
       className={`board-wrap ${glassEnabled ? 'glass-enabled' : ''} ${animationsEnabled ? '' : 'animations-disabled'}`}
+      style={boardWrapStyle}
     >
       <div ref={containerRef} className="board" />
       <div className="board-coordinates" aria-hidden="true">

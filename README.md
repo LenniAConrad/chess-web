@@ -8,7 +8,18 @@
   />
 </p>
 
-No-account chess puzzle trainer with PGN variation support, server-side move validation, browser Stockfish eval, recent-game history, and a fast split-layout UI built for repeated puzzle solving.
+No-account chess puzzle trainer built as a `pnpm` monorepo. It serves PGN-based tactical puzzles with variation trees, validates moves on the server, keeps recent-session history, and adds optional browser-side Stockfish evaluation for replay and study.
+
+## Highlights
+
+- PGN puzzle import with full variation-tree support
+- Server-side move validation and session orchestration
+- Explore and mainline solving modes
+- Puzzle history with replay, tree review, and direct loading by public ID
+- Optional autoplay, auto-next, one-try mode, hints, reveal, skip variation, and auto-queen
+- Browser Stockfish eval bar and local UI preferences
+- Multilingual UI with native-language labels and RTL handling
+- Local Postgres support with `pg-mem` fallback for lightweight development
 
 ## Screenshots
 
@@ -28,15 +39,6 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
   width="100%"
 />
 
-### Settings
-
-- Languages: English, Esperanto, Deutsch, 中文, Español, Français, Русский, עברית, العربية, 日本語, 한국어, Монгол, Latina, Հայերեն, Pirate British
-- Language picker: English names align left and native names align right
-- Gameplay: explore variations, skip similar variations, auto-next, hints, one-try mode, auto-queen
-- Display and feedback: dark mode, zen mode, board glass, engine eval, animations, sound, capture rain
-- Automation and tools: autoplay plus direct puzzle loading by ID
-- Menu behavior: desktop header menus scroll when tall, and the mobile settings/language sheet fades the sticky title after a slight scroll
-
 ### Zen Mode
 
 <img
@@ -45,50 +47,47 @@ No-account chess puzzle trainer with PGN variation support, server-side move val
   width="100%"
 />
 
-## What It Does
-
-- Serves PGN-based tactical puzzles with variation trees
-- Validates moves on the server instead of trusting the browser
-- Supports explore/mainline solving flows
-- Tracks recent games with replayable history
-- Includes hints, reveal, skip variation, restart, and next puzzle flows
-- Supports autoplay, auto-next, one-try mode, auto-queen, sounds, and animations
-- Supports a multilingual UI with native-language labels and RTL handling for Hebrew and Arabic
-- Shows optional in-browser Stockfish eval with an eval bar
-- Works with local Postgres or in-memory `pg-mem` during development
-
 ## Stack
 
 - Frontend: React, Vite, TypeScript, Chessground
 - Backend: Fastify, TypeScript, Postgres
-- Shared chess logic: `packages/chess-core`
-- DB layer: `packages/db`
-- Workspace: `pnpm`
+- Shared domain logic: `packages/chess-core`
+- Database layer: `packages/db`
+- Shared config/helpers: `packages/config`
+- Workspace tooling: `pnpm`
 
 ## Repo Layout
 
 - `apps/web`: React client
 - `apps/api`: Fastify API
-- `packages/chess-core`: PGN parsing and puzzle domain logic
+- `packages/chess-core`: PGN parsing and puzzle/session engine logic
 - `packages/db`: migrations, repositories, DB client
+- `packages/config`: shared env/config helpers
 - `docs`: architecture and flow documentation
-- `assets`: documentation screenshots and app icon
+- `ops`: deployment and operations notes
+- `assets`: screenshots and app icon
 
 ## Quick Start
 
-1. Copy the env file:
+1. Copy the example env file:
 
 ```bash
 cp .env.example .env
 ```
 
-2. Install dependencies:
+2. For zero-setup local development, set this in `.env`:
+
+```bash
+DATABASE_URL=pgmem://local
+```
+
+3. Install dependencies:
 
 ```bash
 npx pnpm@10.5.2 install
 ```
 
-3. Start the full app:
+4. Start both apps:
 
 ```bash
 ./start.sh
@@ -98,13 +97,31 @@ Default local URLs:
 
 - Web: `http://localhost:5173`
 - API: `http://localhost:3001`
+- Health check: `http://localhost:3001/health`
+
+`start.sh` waits for both services to become reachable and stops them together on `Ctrl+C`.
+
+## Environment Notes
+
+The example env file includes the main runtime settings:
+
+- `API_PORT`, `API_HOST`
+- `VITE_API_BASE_URL`
+- `DATABASE_URL`
+- `COOKIE_SECRET`
+- `ALLOWED_ORIGINS`
+- `IMPORT_TOKEN`
+- `SEED_PGN_FILE`
+- `SEED_MAX_PUZZLES`
+
+In non-production mode, if the configured Postgres database is unavailable, the API falls back to in-memory `pg-mem`.
 
 ## Database And Puzzle Import
 
-The API supports both:
+The API can run against either:
 
-- local Postgres via `DATABASE_URL`
-- in-memory `pgmem://local` for dev fallback
+- Postgres via `DATABASE_URL`
+- in-memory `pgmem://local` for development
 
 Run migrations manually:
 
@@ -112,13 +129,15 @@ Run migrations manually:
 npx pnpm@10.5.2 --filter @chess-web/api migrate
 ```
 
-Import a PGN puzzle file:
+Import a PGN file from the CLI:
 
 ```bash
 npx pnpm@10.5.2 --filter @chess-web/api import:pgn -- --file /path/to/puzzles.pgn --token "$IMPORT_TOKEN"
 ```
 
-If `SEED_PGN_FILE` is set and the puzzle table is empty, the API can also seed puzzles automatically on startup.
+Bundled puzzle data also exists at `puzzle_exports/stack_min_2plies_256k.pgn`.
+
+If `SEED_PGN_FILE` is set and the puzzle table is empty, the API can seed puzzles automatically on startup.
 
 ## Useful Commands
 
@@ -131,6 +150,12 @@ npx pnpm@10.5.2 -r test
 npx pnpm@10.5.2 -r build
 ```
 
+Or run the helper build script:
+
+```bash
+./build.sh
+```
+
 Run apps separately:
 
 ```bash
@@ -140,6 +165,8 @@ npx pnpm@10.5.2 --filter @chess-web/web dev
 
 ## API Surface
 
+Session routes:
+
 - `POST /api/v1/session/start`
 - `POST /api/v1/session/load`
 - `POST /api/v1/session/move`
@@ -147,11 +174,20 @@ npx pnpm@10.5.2 --filter @chess-web/web dev
 - `POST /api/v1/session/reveal`
 - `POST /api/v1/session/skip-variation`
 - `POST /api/v1/session/next`
+- `POST /api/v1/session/prefetch-next`
 - `POST /api/v1/session/history`
 - `POST /api/v1/session/history/clear`
 - `POST /api/v1/session/tree`
+
+Puzzle and admin routes:
+
+- `GET /api/v1/puzzles/count`
+- `GET /api/v1/admin/import-status`
+- `POST /api/v1/admin/import-bundled`
 - `GET /api/v1/puzzles/:publicId/tree` in non-production debug mode
 - `GET /health`
+
+The admin import routes require `x-import-token` to match `IMPORT_TOKEN`.
 
 ## Documentation
 
@@ -160,6 +196,7 @@ npx pnpm@10.5.2 --filter @chess-web/web dev
 - [docs/api-and-session-flow.md](docs/api-and-session-flow.md)
 - [docs/frontend-flow.md](docs/frontend-flow.md)
 - [docs/database-model.md](docs/database-model.md)
+- [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Licensing
 
@@ -179,6 +216,6 @@ node scripts/generateThirdPartyLicenses.mjs
 ## Notes
 
 - Browser-side anti-download prevention is only best-effort.
-- The app uses runtime rate limits and avoids bulk download-oriented endpoints.
+- The app uses rate limiting and avoids bulk export-style puzzle endpoints.
 - The default runtime audio pack is `lichess-standard`.
 - Deployment notes live in [ops/oracle-cloudflare.md](ops/oracle-cloudflare.md).
