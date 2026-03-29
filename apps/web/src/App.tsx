@@ -16,6 +16,7 @@ import type { SessionHistoryItem, SessionStatePayload, SessionTreeNode, SessionT
 
 const ACTIVE_SESSION_COOKIE = 'active_sid';
 const ACTIVE_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const INITIAL_LOAD_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000] as const;
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -140,6 +141,7 @@ export function App() {
     autoNext: prefs.autoNext,
     variationMode: prefs.variationMode
   });
+  const initialLoadRetryAttemptRef = useRef(0);
   const recentHistoryItems = historyItems;
 
   useEffect(() => {
@@ -783,6 +785,7 @@ export function App() {
 
   useEffect(() => {
     let cancelled = false;
+    let retryTimer = 0;
 
     const loadInitial = async () => {
       setLoading(true);
@@ -801,6 +804,7 @@ export function App() {
         );
 
         if (!cancelled) {
+          initialLoadRetryAttemptRef.current = 0;
           applyStartedSession(response, literalUiMessage('\u00A0'));
         }
       } catch (error) {
@@ -814,6 +818,18 @@ export function App() {
             : translatedUiMessage((copy) => copy.failedToLoadPuzzle)
         );
         setStatusMessage(translatedUiMessage((copy) => copy.failedToLoadPuzzle));
+
+        const retryIndex = Math.min(
+          initialLoadRetryAttemptRef.current,
+          INITIAL_LOAD_RETRY_DELAYS_MS.length - 1
+        );
+        const retryDelayMs = INITIAL_LOAD_RETRY_DELAYS_MS[retryIndex];
+        initialLoadRetryAttemptRef.current += 1;
+        retryTimer = window.setTimeout(() => {
+          if (!cancelled) {
+            void loadInitial();
+          }
+        }, retryDelayMs);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -825,6 +841,9 @@ export function App() {
 
     return () => {
       cancelled = true;
+      if (retryTimer !== 0) {
+        window.clearTimeout(retryTimer);
+      }
     };
   }, [applyStartedSession, resetHints]);
 
