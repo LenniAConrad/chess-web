@@ -1427,11 +1427,18 @@ body {
   width: 12.5%;
   height: 50%;
   display: flex;
+  gap: min(0.22rem, 0.8vw);
+  padding: min(0.22rem, 0.8vw);
   overflow: hidden;
-  border-radius: 2px;
-  border: 1px solid rgba(0, 0, 0, 0.55);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  border: 1px solid var(--color-panel-border);
+  background: var(--color-panel-bg);
+  box-shadow: none;
+  backdrop-filter: blur(20px) brightness(1.06);
+  -webkit-backdrop-filter: blur(20px) brightness(1.06);
   box-sizing: border-box;
+  transform-origin: center;
+  animation: settings-dropdown-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .promotion-menu.from-top {
@@ -1443,42 +1450,52 @@ body {
 }
 
 .promotion-option {
+  flex: 1 1 25%;
   width: 100%;
-  height: 25%;
-  border: 0;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-  border-radius: 0;
+  min-height: 0;
+  border: 1px solid transparent;
+  border-radius: 3px;
   padding: 0;
   margin: 0;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--color-toggle-bg);
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.promotion-menu.from-top .promotion-option:last-child {
-  border-bottom: 0;
-}
-
-.promotion-menu.from-bottom .promotion-option {
-  border-bottom: 0;
-  border-top: 1px solid rgba(0, 0, 0, 0.2);
-}
-
-.promotion-menu.from-bottom .promotion-option:last-child {
-  border-top: 0;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
 }
 
 .promotion-option:hover {
-  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--color-toggle-focus);
+  background: var(--color-button-bg-hover);
 }
 
-.promotion-piece-img {
+.promotion-option:focus-visible {
+  outline: 2px solid var(--color-toggle-focus);
+  outline-offset: 2px;
+}
+
+.promotion-piece-swatch {
   width: 84%;
   height: 84%;
   display: block;
+  position: relative;
   pointer-events: none;
   -webkit-user-drag: none;
+}
+
+.promotion-piece-swatch piece {
+  position: relative;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
 }
 
 .eval-wrap {

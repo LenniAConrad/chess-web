@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createElement, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { Chessground } from 'chessground';
 import type { Api } from 'chessground/api';
@@ -59,23 +59,14 @@ interface CoordinateLabel {
 }
 
 const PROMOTION_PIECES: PromotionPiece[] = ['q', 'n', 'r', 'b'];
+const PROMOTION_PIECE_CLASS: Record<PromotionPiece, 'queen' | 'knight' | 'rook' | 'bishop'> = {
+  q: 'queen',
+  n: 'knight',
+  r: 'rook',
+  b: 'bishop'
+};
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;
 const RANKS_ASC = ['1', '2', '3', '4', '5', '6', '7', '8'] as const;
-
-const PIECE_FILE_SUFFIX: Record<PromotionPiece, 'Q' | 'N' | 'R' | 'B'> = {
-  q: 'Q',
-  n: 'N',
-  r: 'R',
-  b: 'B'
-};
-const PROMOTION_IMAGE_COLORS = ['w', 'b'] as const;
-let promotionImagesPreloaded = false;
-
-function withBasePath(relativePath: string): string {
-  const base = import.meta.env.BASE_URL ?? '/';
-  const normalizedBase = base.endsWith('/') ? base : `${base}/`;
-  return `${normalizedBase}${relativePath.replace(/^\/+/, '')}`;
-}
 
 function snapBoardPixels(size: number): number {
   if (!Number.isFinite(size) || size <= 0) {
@@ -141,28 +132,6 @@ function getPieceColorAtSquare(fen: string, square: string): 'w' | 'b' | null {
   const chess = new Chess(fen);
   const piece = chess.get(square as Square);
   return piece?.color ?? null;
-}
-
-function promotionImageSrc(piece: PromotionPiece, color: 'w' | 'b'): string {
-  const side = color === 'w' ? 'w' : 'b';
-  const suffix = PIECE_FILE_SUFFIX[piece];
-  return withBasePath(`pieces/cburnett/${side}${suffix}.svg`);
-}
-
-function preloadPromotionImages(): void {
-  if (promotionImagesPreloaded || typeof window === 'undefined' || typeof Image === 'undefined') {
-    return;
-  }
-
-  promotionImagesPreloaded = true;
-
-  for (const color of PROMOTION_IMAGE_COLORS) {
-    for (const piece of PROMOTION_PIECES) {
-      const image = new Image();
-      image.decoding = 'sync';
-      image.src = promotionImageSrc(piece, color);
-    }
-  }
 }
 
 function getPromotionLayout(square: string, orientation: 'white' | 'black'): PromotionLayout | null {
@@ -248,10 +217,6 @@ export function ChessBoard({
   const apiRef = useRef<Api | null>(null);
   const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
   const [boardSize, setBoardSize] = useState<number | null>(null);
-
-  useEffect(() => {
-    preloadPromotionImages();
-  }, []);
 
   const turnColor = useMemo(() => turnColorFromFen(fen), [fen]);
   const destinations = useMemo(() => legalDestinations(fen), [fen]);
@@ -623,7 +588,11 @@ export function ChessBoard({
                 onClick={() => applyPromotion(piece)}
                 aria-label={promotionPieceLabels[piece]}
               >
-                <img src={promotionImageSrc(piece, pendingPromotion.color)} alt="" className="promotion-piece-img" />
+                <span className="promotion-piece-swatch cg-wrap" aria-hidden="true">
+                  {createElement('piece', {
+                    className: `${PROMOTION_PIECE_CLASS[piece]} ${pendingPromotion.color === 'w' ? 'white' : 'black'}`
+                  })}
+                </span>
               </button>
             ))}
           </div>

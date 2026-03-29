@@ -14,6 +14,72 @@ import { cacheLoadedSession, getPuzzleCount, getHint, loadSession, refreshSessio
 import { primeMoveSounds } from './lib/moveSounds.js';
 import type { SessionHistoryItem, SessionStatePayload, SessionTreeNode, SessionTreeResponse, StartSessionResponse } from './types/api.js';
 
+const ACTIVE_SESSION_COOKIE = 'active_sid';
+const ACTIVE_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+let initialSessionRequest: Promise<StartSessionResponse> | null = null;
+
+function readActiveSessionIdCookie(): string | null {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  const cookie = document.cookie
+    .split(';')
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(`${ACTIVE_SESSION_COOKIE}=`));
+
+  if (!cookie) {
+    return null;
+  }
+
+  const value = decodeURIComponent(cookie.slice(ACTIVE_SESSION_COOKIE.length + 1));
+  return UUID_REGEX.test(value) ? value : null;
+}
+
+function writeActiveSessionIdCookie(sessionId: string): void {
+  if (typeof document === 'undefined' || !UUID_REGEX.test(sessionId)) {
+    return;
+  }
+
+  const secure = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie =
+    `${ACTIVE_SESSION_COOKIE}=${encodeURIComponent(sessionId)}; Path=/; Max-Age=${ACTIVE_SESSION_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax${secure}`;
+}
+
+function clearActiveSessionIdCookie(): void {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  document.cookie = `${ACTIVE_SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
+}
+
+function getInitialSession(mode: StartSessionResponse['state']['variationMode'], autoNext: boolean): Promise<StartSessionResponse> {
+  if (initialSessionRequest) {
+    return initialSessionRequest;
+  }
+
+  initialSessionRequest = (async () => {
+    const activeSessionId = readActiveSessionIdCookie();
+    if (activeSessionId) {
+      try {
+        return await loadSession(activeSessionId);
+      } catch {
+        clearActiveSessionIdCookie();
+      }
+    }
+
+    return startSession(mode, autoNext);
+  })().finally(() => {
+    initialSessionRequest = null;
+  });
+
+  return initialSessionRequest;
+}
+
 export function App() {
   const { prefs, setPrefs } = useLocalPrefs();
   const i18n = useMemo(() => getI18n(prefs.language), [prefs.language]);
@@ -69,6 +135,10 @@ export function App() {
   const autoPlaySolveStateRef = useRef<{ sessionId: string | null; solved: boolean }>({
     sessionId: null,
     solved: false
+  });
+  const initialPrefsRef = useRef({
+    autoNext: prefs.autoNext,
+    variationMode: prefs.variationMode
   });
   const recentHistoryItems = historyItems;
 
@@ -331,6 +401,14 @@ export function App() {
       }
     });
   }, [prefs.autoNext, puzzle, sessionId, state]);
+
+  useEffect(() => {
+    if (!sessionId) {
+      return;
+    }
+
+    writeActiveSessionIdCookie(sessionId);
+  }, [sessionId]);
 
   const takePrefetchedNextSession = useCallback(
     (sourceSessionId: string, mode: StartSessionResponse['state']['variationMode'], autoNext: boolean) => {
@@ -703,34 +781,52 @@ export function App() {
     [getDelay, resetPremoves, spawnCaptureRainPiece]
   );
 
-  const loadInitial = useCallback(async () => {
-    setLoading(true);
-    setErrorMessage(null);
-    setHistoryErrorMessage(null);
-    setTreeErrorMessage(null);
-    resetHints();
-    setLastBestMove(null);
-    setLastMoveSquares(null);
-    setReviewPath(null);
-
-    try {
-      const response = await startSession(prefs.variationMode, prefs.autoNext);
-      applyStartedSession(response, literalUiMessage('\u00A0'));
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? literalUiMessage(error.message)
-          : translatedUiMessage((copy) => copy.failedToLoadPuzzle)
-      );
-      setStatusMessage(translatedUiMessage((copy) => copy.failedToLoadPuzzle));
-    } finally {
-      setLoading(false);
-    }
-  }, [applyStartedSession, prefs.variationMode, resetHints]);
-
   useEffect(() => {
+    let cancelled = false;
+
+    const loadInitial = async () => {
+      setLoading(true);
+      setErrorMessage(null);
+      setHistoryErrorMessage(null);
+      setTreeErrorMessage(null);
+      resetHints();
+      setLastBestMove(null);
+      setLastMoveSquares(null);
+      setReviewPath(null);
+
+      try {
+        const response = await getInitialSession(
+          initialPrefsRef.current.variationMode,
+          initialPrefsRef.current.autoNext
+        );
+
+        if (!cancelled) {
+          applyStartedSession(response, literalUiMessage('\u00A0'));
+        }
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        setErrorMessage(
+          error instanceof Error
+            ? literalUiMessage(error.message)
+            : translatedUiMessage((copy) => copy.failedToLoadPuzzle)
+        );
+        setStatusMessage(translatedUiMessage((copy) => copy.failedToLoadPuzzle));
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
     void loadInitial();
-  }, [loadInitial]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applyStartedSession, resetHints]);
 
   const puzzleIsComplete = state ? isPuzzleSolved(state) : false;
   const oneTryLocked = prefs.oneTryMode && oneTryFailed;
