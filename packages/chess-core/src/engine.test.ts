@@ -101,6 +101,119 @@ const SIMILAR_VARIATION_NODES: PuzzleNode[] = [
 
 const ALL_SIMILAR_VARIATION_NODES: PuzzleNode[] = SIMILAR_VARIATION_NODES.filter((node) => node.id !== 7 && node.id !== 8);
 
+const TRANSPOSED_VARIATION_NODES: PuzzleNode[] = [
+  {
+    id: 1,
+    parentId: null,
+    ply: 0,
+    san: '',
+    uci: '',
+    actor: 'opponent',
+    isMainline: true,
+    siblingOrder: 0,
+    fenAfter: '8/8/8/8/8/8/8/8 w - - 0 1'
+  },
+  {
+    id: 2,
+    parentId: 1,
+    ply: 1,
+    san: 'Nf3',
+    uci: 'g1f3',
+    actor: 'user',
+    isMainline: true,
+    siblingOrder: 0,
+    fenAfter: '8/8/8/8/8/8/8/8 b - - 0 1'
+  },
+  {
+    id: 3,
+    parentId: 2,
+    ply: 2,
+    san: '...e5',
+    uci: 'e7e5',
+    actor: 'opponent',
+    isMainline: true,
+    siblingOrder: 0,
+    fenAfter: '8/8/8/8/8/8/8/K6k w - - 0 1'
+  },
+  {
+    id: 4,
+    parentId: 3,
+    ply: 3,
+    san: 'Nc3',
+    uci: 'b1c3',
+    actor: 'user',
+    isMainline: true,
+    siblingOrder: 0,
+    fenAfter: '8/8/8/8/8/8/7k/K7 b - - 0 1'
+  },
+  {
+    id: 5,
+    parentId: 4,
+    ply: 4,
+    san: '...Nf6',
+    uci: 'g8f6',
+    actor: 'opponent',
+    isMainline: true,
+    siblingOrder: 0,
+    fenAfter: '8/8/8/8/8/8/6k1/K7 w - - 0 1'
+  },
+  {
+    id: 6,
+    parentId: 5,
+    ply: 5,
+    san: 'h4',
+    uci: 'h2h4',
+    actor: 'user',
+    isMainline: true,
+    siblingOrder: 0,
+    fenAfter: '8/8/8/8/8/8/5k2/K7 b - - 0 1'
+  },
+  {
+    id: 7,
+    parentId: 2,
+    ply: 2,
+    san: '...Nf6',
+    uci: 'g8f6',
+    actor: 'opponent',
+    isMainline: false,
+    siblingOrder: 1,
+    fenAfter: '8/8/8/8/8/8/8/K5k1 w - - 0 1'
+  },
+  {
+    id: 8,
+    parentId: 7,
+    ply: 3,
+    san: 'd4',
+    uci: 'd2d4',
+    actor: 'user',
+    isMainline: false,
+    siblingOrder: 0,
+    fenAfter: '8/8/8/8/8/8/7k/K7 b - - 0 1'
+  },
+  {
+    id: 9,
+    parentId: 8,
+    ply: 4,
+    san: '...e5',
+    uci: 'e7e5',
+    actor: 'opponent',
+    isMainline: false,
+    siblingOrder: 0,
+    fenAfter: '8/8/8/8/8/8/6k1/K7 w - - 0 1'
+  },
+  {
+    id: 10,
+    parentId: 9,
+    ply: 5,
+    san: 'h4',
+    uci: 'h2h4',
+    actor: 'user',
+    isMainline: false,
+    siblingOrder: 0,
+    fenAfter: '8/8/8/8/8/8/4k3/K7 b - - 0 1'
+  }
+];
+
 describe('PuzzleSessionEngine', () => {
   it('parses variations and explores all opponent branches', () => {
     const parsed = parsePuzzlePgn(SAMPLE_PGN, 'test');
@@ -213,5 +326,31 @@ describe('PuzzleSessionEngine', () => {
     expect(skipped.skippedSimilarVariations).toBe(1);
     expect(skipped.snapshot.lineIndex).toBe(2);
     expect(engine.hint(skipped.cursor).bestMoveUci).toBe('d2d4');
+  });
+
+  it('auto-skips transposed positions that were already completed', () => {
+    const engine = new PuzzleSessionEngine({
+      nodes: TRANSPOSED_VARIATION_NODES,
+      rootNodeId: 1,
+      mode: 'explore'
+    });
+
+    let cursor = engine.getInitialCursor();
+    const opener = engine.playUserMove(cursor, 'g1f3', { skipSimilarVariations: true });
+    cursor = opener.cursor;
+
+    const firstBranch = engine.playUserMove(cursor, 'b1c3', { skipSimilarVariations: true });
+    cursor = firstBranch.cursor;
+
+    const switchedBranch = engine.playUserMove(cursor, 'h2h4', { skipSimilarVariations: true });
+    expect(switchedBranch.result).toBe('correct');
+    expect(switchedBranch.snapshot.lineIndex).toBe(1);
+    cursor = switchedBranch.cursor;
+
+    const transposed = engine.playUserMove(cursor, 'd2d4', { skipSimilarVariations: true });
+    expect(transposed.result).toBe('completed');
+    expect(transposed.skippedSimilarVariations).toBe(1);
+    expect(transposed.autoPlayedMoves).toEqual(['e7e5']);
+    expect(transposed.snapshot.completedBranches).toBe(transposed.snapshot.totalLines);
   });
 });

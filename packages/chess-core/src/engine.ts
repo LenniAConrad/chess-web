@@ -424,6 +424,10 @@ export class PuzzleSessionEngine {
     return this.lines[lineIndex] ?? [this.rootNodeId];
   }
 
+  private fenStateKey(fen: string): string {
+    return fen.split(' ').slice(0, 4).join(' ');
+  }
+
   private remainingUserMoveSignature(line: number[], cursorIndex: number): string {
     const moves: string[] = [];
 
@@ -440,6 +444,49 @@ export class PuzzleSessionEngine {
     }
 
     return moves.join('|');
+  }
+
+  private positionContinuationSignature(lineIndex: number, cursorIndex: number): string | null {
+    const line = this.lineAt(lineIndex);
+    const nodeId = line[cursorIndex] ?? this.rootNodeId;
+    const node = this.nodeMap.get(nodeId);
+    if (!node) {
+      return null;
+    }
+
+    return `${this.fenStateKey(node.fenAfter)}::${this.remainingUserMoveSignature(line, cursorIndex)}`;
+  }
+
+  private isDecisionCursor(line: number[], cursorIndex: number): boolean {
+    const nodeId = line[cursorIndex] ?? this.rootNodeId;
+    const node = this.nodeMap.get(nodeId);
+    if (!node) {
+      return false;
+    }
+
+    return cursorIndex >= line.length - 1 || sideToMove(node.fenAfter) === this.userSide;
+  }
+
+  private hasCompletedEquivalentPosition(lineIndex: number, cursorIndex: number): boolean {
+    const candidateSignature = this.positionContinuationSignature(lineIndex, cursorIndex);
+    if (!candidateSignature) {
+      return false;
+    }
+
+    for (let completedLineIndex = 0; completedLineIndex < lineIndex; completedLineIndex += 1) {
+      const completedLine = this.lineAt(completedLineIndex);
+      for (let completedCursorIndex = 0; completedCursorIndex < completedLine.length; completedCursorIndex += 1) {
+        if (!this.isDecisionCursor(completedLine, completedCursorIndex)) {
+          continue;
+        }
+
+        if (this.positionContinuationSignature(completedLineIndex, completedCursorIndex) === candidateSignature) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
   private getNextLineTransition(
@@ -567,6 +614,20 @@ export class PuzzleSessionEngine {
       const activeLine = this.lines[cursor.lineIndex] ?? [this.rootNodeId];
       const atLineEnd = cursor.cursorIndex >= activeLine.length - 1;
       if (!atLineEnd) {
+        if ((options.skipSimilarVariations ?? false) && this.hasCompletedEquivalentPosition(cursor.lineIndex, cursor.cursorIndex)) {
+          const transition = this.getNextLineTransition(cursor.lineIndex, cursor.cursorIndex, true);
+          skippedSimilarVariations += transition.skippedSimilarVariations + 1;
+
+          if (transition.nextLineIndex === null) {
+            return { cursor, solved: true, autoPlayedMoves, autoPlayStartFen, rewindFens, skippedSimilarVariations };
+          }
+
+          rewindFens.push(...transition.rewindFens);
+          cursor.lineIndex = transition.nextLineIndex;
+          cursor.cursorIndex = transition.targetCursorIndex;
+          continue;
+        }
+
         return { cursor, solved: false, autoPlayedMoves, autoPlayStartFen, rewindFens, skippedSimilarVariations };
       }
 
