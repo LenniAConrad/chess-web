@@ -341,9 +341,15 @@ export function ChessBoard({
       queueSyncBoardSize();
     });
     observer.observe(host);
+    observer.observe(boardWrap);
+
+    window.addEventListener('resize', queueSyncBoardSize);
+    window.visualViewport?.addEventListener('resize', queueSyncBoardSize);
 
     return () => {
       observer.disconnect();
+      window.removeEventListener('resize', queueSyncBoardSize);
+      window.visualViewport?.removeEventListener('resize', queueSyncBoardSize);
       if (frameId !== 0) {
         window.cancelAnimationFrame(frameId);
       }
@@ -519,8 +525,7 @@ export function ChessBoard({
     boardSize === null
       ? undefined
       : {
-          width: `${boardSize}px`,
-          height: `${boardSize}px`
+          width: `min(100%, ${boardSize}px)`
         };
 
   return (
