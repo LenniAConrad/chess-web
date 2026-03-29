@@ -124,8 +124,12 @@ export function applyUciMove(chess: Chess, uciMove: string): boolean {
   const from = uciMove.slice(0, 2) as Square;
   const to = uciMove.slice(2, 4) as Square;
   const promotion = (uciMove[4] as PieceSymbol | undefined) ?? undefined;
-  const result = chess.move({ from, to, promotion });
-  return Boolean(result);
+  try {
+    const result = chess.move({ from, to, promotion });
+    return Boolean(result);
+  } catch {
+    return false;
+  }
 }
 
 export function getMoveSoundDecision(fen: string, uciMove: string): MoveSoundDecision {
@@ -137,7 +141,13 @@ export function getMoveSoundDecision(fen: string, uciMove: string): MoveSoundDec
   const from = uciMove.slice(0, 2) as Square;
   const to = uciMove.slice(2, 4) as Square;
   const promotion = (uciMove[4] as PieceSymbol | undefined) ?? undefined;
-  const move = chess.move({ from, to, promotion });
+  let move;
+
+  try {
+    move = chess.move({ from, to, promotion });
+  } catch {
+    return { primary: null, isCheck: false };
+  }
 
   if (!move) {
     return { primary: null, isCheck: false };
@@ -232,7 +242,13 @@ export function getCapturedPieceSkin(
   const from = uciMove.slice(0, 2) as Square;
   const to = uciMove.slice(2, 4) as Square;
   const promotion = (uciMove[4] as PieceSymbol | undefined) ?? undefined;
-  const move = chess.move({ from, to, promotion });
+  let move;
+
+  try {
+    move = chess.move({ from, to, promotion });
+  } catch {
+    return null;
+  }
 
   if (!move?.captured) {
     return null;
