@@ -8,15 +8,15 @@
   --color-bg: #e7dfd2;
   --color-bg-grad-top: #f5f0e7;
   --color-bg-grad-bottom: #ddd3c3;
-  --color-bg-glow: rgba(255, 255, 255, 0.28);
+  --color-bg-glow: rgba(255, 255, 255, 0.06);
   --color-panel-bg: rgba(255, 255, 255, 0.5);
-  --color-panel-border: rgba(80, 80, 80, 0.22);
-  --color-panel-shadow: rgba(0, 0, 0, 0.14);
+  --color-panel-border: rgba(80, 80, 80, 0.12);
+  --color-panel-shadow: rgba(0, 0, 0, 0.4);
   --color-meta: #2c2c2c;
   --color-status: #121212;
   --color-correct: #4a3927;
   --color-error: #9d1c1c;
-  --color-board-shadow: rgba(0, 0, 0, 0.12);
+  --color-board-shadow: rgba(0, 0, 0, 0.4);
   --board-glass-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' shape-rendering='crispEdges'%3E%3Cdefs%3E%3Cpattern id='p' width='2' height='2' patternUnits='userSpaceOnUse'%3E%3Crect width='2' height='2' fill='%23b78964' fill-opacity='0.5'/%3E%3Crect width='1' height='1' fill='%23f2dbb7' fill-opacity='0.5'/%3E%3Crect x='1' y='1' width='1' height='1' fill='%23f2dbb7' fill-opacity='0.5'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='8' height='8' fill='url(%23p)'/%3E%3C/svg%3E");
   --color-eval-depth: #444;
   --color-eval-bar-border: #111;
@@ -33,10 +33,10 @@
   --color-button-secondary-bg: rgba(91, 91, 91, 0.92);
   --color-button-secondary-bg-hover: rgba(103, 103, 103, 0.95);
   --color-button-secondary-border: #6f6f6f;
-  --color-button-disabled-bg: rgba(188, 188, 188, 0.58);
-  --color-button-disabled-border: rgba(138, 138, 138, 0.5);
-  --color-button-disabled-text: rgba(38, 38, 38, 0.5);
-  --color-history-active-ring: rgba(18, 18, 18, 0.78);
+  --color-button-disabled-bg: rgba(188, 188, 188, 0.62);
+  --color-button-disabled-border: rgba(138, 138, 138, 0.48);
+  --color-button-disabled-text: rgba(38, 38, 38, 0.58);
+  --color-history-active-ring: rgba(18, 18, 18, 0.9);
   --color-toggle-bg: #f1f3f6;
   --color-toggle-border: #b8bec8;
   --color-toggle-text: #1a2330;
@@ -93,20 +93,22 @@
   --color-chrome-text: #f6f8fb;
   --color-chrome-muted: rgba(219, 225, 232, 0.82);
   --color-chrome-accent: #4ab66f;
-  --board-highlight-last-move: rgba(236, 218, 96, 0.62);
-  --board-highlight-last-move-edge: rgba(132, 103, 34, 0.2);
-  --board-highlight-selected: rgba(112, 153, 78, 0.58);
-  --board-highlight-selected-edge: rgba(48, 88, 30, 0.48);
-  --board-highlight-move-dot: rgba(81, 115, 56, 0.76);
-  --board-highlight-move-dot-ring: rgba(255, 248, 235, 0.8);
-  --board-highlight-move-ring: rgba(66, 106, 47, 0.78);
-  --board-highlight-move-ring-shadow: rgba(255, 249, 239, 0.52);
-  --board-highlight-move-hover-fill: rgba(112, 153, 78, 0.18);
-  --board-highlight-premove: rgba(87, 111, 163, 0.42);
-  --board-highlight-premove-edge: rgba(44, 64, 107, 0.4);
-  --board-highlight-premove-dot: rgba(70, 89, 134, 0.7);
-  --board-highlight-premove-ring: rgba(70, 89, 134, 0.72);
-  --board-highlight-premove-hover-fill: rgba(87, 111, 163, 0.16);
+  --board-highlight-last-move: rgba(236, 218, 96, 0.5);
+  --board-highlight-last-move-edge: rgba(132, 103, 34, 0.16);
+  --board-highlight-selected: rgba(112, 153, 78, 0.48);
+  --board-highlight-selected-edge: rgba(48, 88, 30, 0.28);
+  --board-highlight-move-dot: rgba(96, 136, 67, 0.72);
+  --board-highlight-move-dot-ring: rgba(58, 93, 36, 0.34);
+  --board-highlight-move-ring: rgba(86, 128, 54, 0.74);
+  --board-highlight-move-ring-shadow: rgba(58, 93, 36, 0.28);
+  --board-highlight-move-hover-fill: rgba(126, 165, 91, 0.14);
+  --board-highlight-premove: rgba(87, 111, 163, 0.38);
+  --board-highlight-premove-edge: rgba(44, 64, 107, 0.18);
+  --board-highlight-premove-dot: rgba(70, 89, 134, 0.72);
+  --board-highlight-premove-ring: rgba(70, 89, 134, 0.74);
+  --board-highlight-premove-dot-ring: rgba(44, 64, 107, 0.34);
+  --board-highlight-premove-ring-shadow: rgba(44, 64, 107, 0.28);
+  --board-highlight-premove-hover-fill: rgba(87, 111, 163, 0.14);
   --board-highlight-check-core: rgba(231, 78, 78, 0.96);
   --board-highlight-check-glow: rgba(186, 26, 26, 0.82);
   --board-highlight-check-fill: rgba(214, 54, 54, 0.22);
@@ -201,21 +203,24 @@
   --board-highlight-last-move-edge: rgba(255, 236, 154, 0.16);
   --board-highlight-selected: rgba(118, 163, 88, 0.48);
   --board-highlight-selected-edge: rgba(194, 225, 164, 0.28);
-  --board-highlight-move-dot: rgba(148, 191, 108, 0.76);
-  --board-highlight-move-dot-ring: rgba(15, 18, 21, 0.55);
-  --board-highlight-move-ring: rgba(156, 206, 110, 0.78);
-  --board-highlight-move-ring-shadow: rgba(14, 18, 22, 0.48);
-  --board-highlight-move-hover-fill: rgba(118, 163, 88, 0.18);
+  --board-highlight-move-dot: rgba(154, 198, 116, 0.72);
+  --board-highlight-move-dot-ring: rgba(187, 219, 156, 0.34);
+  --board-highlight-move-ring: rgba(166, 212, 124, 0.74);
+  --board-highlight-move-ring-shadow: rgba(187, 219, 156, 0.28);
+  --board-highlight-move-hover-fill: rgba(140, 184, 102, 0.14);
   --board-highlight-premove: rgba(116, 141, 198, 0.38);
   --board-highlight-premove-edge: rgba(182, 200, 242, 0.18);
   --board-highlight-premove-dot: rgba(140, 164, 224, 0.72);
   --board-highlight-premove-ring: rgba(140, 164, 224, 0.74);
+  --board-highlight-premove-dot-ring: rgba(182, 200, 242, 0.34);
+  --board-highlight-premove-ring-shadow: rgba(182, 200, 242, 0.26);
   --board-highlight-premove-hover-fill: rgba(116, 141, 198, 0.14);
   --board-highlight-check-core: rgba(240, 104, 104, 0.94);
   --board-highlight-check-glow: rgba(215, 45, 45, 0.78);
   --board-highlight-check-fill: rgba(221, 63, 63, 0.2);
 }
 
+html,
 body {
   margin: 0;
   min-height: 100vh;
@@ -225,6 +230,9 @@ body {
   background-repeat: no-repeat;
   background-size: cover;
   transition: background-color 180ms ease, color 180ms ease, background-image 180ms ease;
+}
+
+body {
   overflow: hidden;
 }
 
@@ -1132,6 +1140,7 @@ body {
 .board cg-board square {
   box-sizing: border-box;
   display: block;
+  overflow: visible;
 }
 
 .board cg-board square.last-move {
@@ -1173,14 +1182,16 @@ body {
 .board cg-board square.premove-dest::before {
   content: '';
   position: absolute;
-  inset: 0;
-  width: 24%;
-  height: 24%;
-  margin: auto;
+  top: 50%;
+  left: 50%;
+  width: 22%;
+  height: 22%;
   border-radius: 999px;
   box-sizing: border-box;
+  transform: translate(-50%, -50%);
   transition:
-    transform 100ms ease,
+    width 100ms ease,
+    height 100ms ease,
     background-color 100ms ease,
     border-color 100ms ease,
     box-shadow 100ms ease;
@@ -1193,7 +1204,7 @@ body {
 
 .board cg-board square.premove-dest::before {
   background: var(--board-highlight-premove-dot);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 0 1px var(--board-highlight-premove-dot-ring);
 }
 
 .board cg-board square.oc.move-dest::before,
@@ -1204,18 +1215,42 @@ body {
 }
 
 .board cg-board square.oc.move-dest::before {
-  border: 3px solid var(--board-highlight-move-ring);
+  border: 5px solid var(--board-highlight-move-ring);
   box-shadow: inset 0 0 0 1px var(--board-highlight-move-ring-shadow);
 }
 
 .board cg-board square.oc.premove-dest::before {
-  border: 3px solid var(--board-highlight-premove-ring);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
+  border: 5px solid var(--board-highlight-premove-ring);
+  box-shadow: inset 0 0 0 1px var(--board-highlight-premove-ring-shadow);
 }
 
 .board cg-board square.move-dest:hover::before,
 .board cg-board square.premove-dest:hover::before {
-  transform: scale(1.04);
+  width: 24%;
+  height: 24%;
+}
+
+.board cg-board square.oc.move-dest:hover::before,
+.board cg-board square.oc.premove-dest:hover::before {
+  width: 76%;
+  height: 76%;
+}
+
+.board-wrap.animations-disabled .board cg-board square.move-dest::before,
+.board-wrap.animations-disabled .board cg-board square.premove-dest::before {
+  transition: none;
+}
+
+.board-wrap.animations-disabled .board cg-board square.move-dest:hover::before,
+.board-wrap.animations-disabled .board cg-board square.premove-dest:hover::before {
+  width: 22%;
+  height: 22%;
+}
+
+.board-wrap.animations-disabled .board cg-board square.oc.move-dest:hover::before,
+.board-wrap.animations-disabled .board cg-board square.oc.premove-dest:hover::before {
+  width: 74%;
+  height: 74%;
 }
 
 .board-coordinates {
@@ -2255,9 +2290,7 @@ button:disabled {
       0
       0
       0;
-    background: var(--color-panel-bg);
-    backdrop-filter: blur(20px) brightness(1.06);
-    -webkit-backdrop-filter: blur(20px) brightness(1.06);
+    background: transparent;
     pointer-events: none;
     z-index: 0;
   }
@@ -2304,20 +2337,19 @@ button:disabled {
     right: auto;
     left: auto;
     display: grid;
+    flex: 1 1 auto;
+    align-content: start;
     width: 100%;
     max-width: 100%;
-    height: var(--mobile-settings-content-height, auto);
-    max-height: var(--mobile-settings-content-height, none);
+    height: auto;
+    max-height: none;
     margin: 0;
-    min-height: var(--mobile-settings-content-height, 0px);
+    min-height: max(100%, var(--mobile-settings-content-height, 0px));
     margin-top: 0;
     padding: 0 var(--settings-menu-inline-pad);
     border: 0;
     border-radius: 0;
-    background-color: var(--color-bg);
-    background-image: linear-gradient(180deg, var(--color-bg-grad-top) 0%, var(--color-bg-grad-bottom) 100%);
-    background-repeat: no-repeat;
-    background-size: cover;
+    background: transparent;
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;

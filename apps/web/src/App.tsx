@@ -66,6 +66,10 @@ export function App() {
   const sessionArtifactsRequestRef = useRef(0);
   const prefetchedNextRef = useRef<PrefetchedNextState | null>(null);
   const prefetchedNextRequestRef = useRef(0);
+  const autoPlaySolveStateRef = useRef<{ sessionId: string | null; solved: boolean }>({
+    sessionId: null,
+    solved: false
+  });
   const recentHistoryItems = historyItems;
 
   useEffect(() => {
@@ -722,7 +726,7 @@ export function App() {
     } finally {
       setLoading(false);
     }
-  }, [applyStartedSession, prefs.autoNext, prefs.variationMode, resetHints]);
+  }, [applyStartedSession, prefs.variationMode, resetHints]);
 
   useEffect(() => {
     void loadInitial();
@@ -1232,12 +1236,22 @@ export function App() {
   ]);
 
   useEffect(() => {
+    if (!sessionId || !state) {
+      autoPlaySolveStateRef.current = { sessionId: null, solved: false };
+      return;
+    }
+
+    const solved = isPuzzleSolved(state);
+    const previous = autoPlaySolveStateRef.current;
+    const justSolved = previous.sessionId === sessionId && solved && !previous.solved;
+    autoPlaySolveStateRef.current = { sessionId, solved };
+
     if (!prefs.autoPlay || !sessionId || !state || loading || historyLoading || isReviewMode || oneTryLocked) {
       return;
     }
 
-    if (isPuzzleSolved(state)) {
-      if (prefs.autoNext) {
+    if (solved) {
+      if (prefs.autoNext && justSolved) {
         void handleNextPuzzle();
       }
       return;
