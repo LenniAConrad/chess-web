@@ -41,6 +41,33 @@ function ToggleChip(props: {
   );
 }
 
+function RangeSetting(props: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+}) {
+  const { label, value, min, max, onChange } = props;
+
+  return (
+    <label className="settings-range-control">
+      <span className="settings-range-head">
+        <span className="settings-range-label">{label}</span>
+        <span className="settings-range-value">{value}deg</span>
+      </span>
+      <input
+        className="settings-range-slider"
+        type="range"
+        min={min}
+        max={max}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+      />
+    </label>
+  );
+}
+
 export function AppHeader(props: AppHeaderProps) {
   const {
     i18n,
@@ -220,6 +247,32 @@ export function AppHeader(props: AppHeaderProps) {
                           setPrefs((previous) => ({
                             ...previous,
                             showEngineEval: !previous.showEngineEval
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="settings-range-grid">
+                      <RangeSetting
+                        label="Board hue"
+                        value={prefs.boardHue}
+                        min={-180}
+                        max={180}
+                        onChange={(value) =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            boardHue: value
+                          }))
+                        }
+                      />
+                      <RangeSetting
+                        label="Background hue"
+                        value={prefs.backgroundHue}
+                        min={-180}
+                        max={180}
+                        onChange={(value) =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            backgroundHue: value
                           }))
                         }
                       />

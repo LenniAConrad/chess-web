@@ -12,6 +12,8 @@
   --color-panel-bg: rgba(255, 255, 255, 0.5);
   --color-panel-border: rgba(80, 80, 80, 0.12);
   --color-panel-shadow: rgba(0, 0, 0, 0.4);
+  --board-hue-rotate: 0deg;
+  --background-hue-rotate: 0deg;
   --color-meta: #2c2c2c;
   --color-status: #121212;
   --color-correct: #4a3927;
@@ -225,15 +227,36 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--color-text);
+  background: transparent;
+  transition: color 180ms ease;
+}
+
+html {
   background-color: var(--color-bg);
-  background-image: linear-gradient(180deg, var(--color-bg-grad-top) 0%, var(--color-bg-grad-bottom) 100%);
-  background-repeat: no-repeat;
-  background-size: cover;
-  transition: background-color 180ms ease, color 180ms ease, background-image 180ms ease;
 }
 
 body {
   overflow: hidden;
+  position: relative;
+  isolation: isolate;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--color-bg);
+  background-image: linear-gradient(180deg, var(--color-bg-grad-top) 0%, var(--color-bg-grad-bottom) 100%);
+  background-repeat: no-repeat;
+  background-size: cover;
+  filter: hue-rotate(var(--background-hue-rotate));
+  transition:
+    background-color 180ms ease,
+    background-image 180ms ease,
+    filter 180ms ease;
+  transform: translateZ(0);
 }
 
 .app-shell {
@@ -242,6 +265,7 @@ body {
   --layout-eval-width: 80px;
   --layout-eval-gap: var(--layout-gap);
   --zen-controls-height: 0px;
+  --side-panel-width: calc(var(--board-size) * 0.75);
   --frame-height: calc(100dvh - var(--chrome-offset) - (var(--page-vertical-space) * 2));
   --board-size: max(
     0px,
@@ -615,11 +639,11 @@ body {
 }
 
 .side-column {
-  width: var(--board-size);
+  width: var(--side-panel-width);
   height: var(--board-size);
-  min-width: var(--board-size);
+  min-width: var(--side-panel-width);
   min-height: var(--board-size);
-  max-width: var(--board-size);
+  max-width: var(--side-panel-width);
   max-height: var(--board-size);
   box-sizing: border-box;
   display: flex;
@@ -664,7 +688,7 @@ body {
   width: min(
     calc(
       var(--board-size) + var(--layout-eval-width) + var(--layout-eval-gap) +
-        var(--board-size) + var(--layout-gap)
+        var(--side-panel-width) + var(--layout-gap)
     ),
     100%
   );
@@ -906,6 +930,13 @@ body {
   gap: 0;
 }
 
+.rail-status-meta {
+  display: grid;
+  justify-items: start;
+  gap: 0.16rem;
+  text-align: left;
+}
+
 .rail-status .subtitle {
   font-size: 1.34rem;
 }
@@ -936,32 +967,47 @@ body {
 .rail-title {
   margin: 0;
   color: var(--color-status);
-  font-size: 1.46rem;
+  font-size: 0.94rem;
   font-weight: 600;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  line-height: 1.25;
+  letter-spacing: 0;
 }
 
 .rail-title.is-untitled {
   font-style: italic;
+  opacity: 0.84;
 }
 
 .rail-id {
-  margin: 0.35rem 0 0;
-  font-size: 0.8rem;
-  line-height: 1.35;
-  opacity: 0.92;
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  opacity: 0.72;
 }
 
 .rail-status-main {
   display: grid;
-  gap: 0.35rem;
-  margin-top: 0.95rem;
+  justify-items: center;
+  gap: 0.45rem;
+  margin-top: 1.35rem;
+  text-align: center;
 }
 
 .rail-engine {
   margin: 0;
-  font-size: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.24rem;
+  max-width: 100%;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--color-meta) 86%, transparent);
+}
+
+.rail-engine-separator {
+  opacity: 0.58;
 }
 
 .turn-indicator {
@@ -973,7 +1019,9 @@ body {
 }
 
 .rail-status .turn-indicator {
-  font-size: 1.08rem;
+  font-size: 1.28rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
 }
 
 .correct {
@@ -983,27 +1031,37 @@ body {
 }
 
 .rail-status .status-line {
-  margin: 0.05rem 0 0;
-  font-size: 0.98rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.15rem 0 0;
+  padding: 0.34rem 0.72rem;
+  min-height: 1.15rem;
+  max-width: 100%;
+  border: 1px solid color-mix(in srgb, var(--color-button-border) 42%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-button-bg) 26%, transparent);
+  font-size: 0.82rem;
   font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .rail-status .correct-line {
   margin: 0;
-  min-height: 1.15rem;
-  font-size: 0.92rem;
-}
-
-.rail-status-footer {
-  display: grid;
-  gap: 0.22rem;
-  margin-top: 1.05rem;
-  padding-top: 0.8rem;
-}
-
-.rail-status-footer .meta {
-  margin: 0;
+  min-height: 1rem;
   font-size: 0.84rem;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.rail-status .status-line.is-empty,
+.rail-status .correct-line.is-empty {
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  min-height: 1rem;
+  opacity: 0;
 }
 
 .rail-review {
@@ -1113,6 +1171,8 @@ body {
   background-size: 100% 100%;
   background-repeat: no-repeat;
   border-radius: 4px;
+  filter: hue-rotate(var(--board-hue-rotate));
+  transition: filter 180ms ease;
 }
 
 .board-wrap.glass-enabled .board cg-board {
@@ -1809,6 +1869,8 @@ button.history-dot:focus-visible {
 
 .mini-preview-board cg-board {
   border-radius: 10px;
+  filter: hue-rotate(var(--board-hue-rotate));
+  transition: filter 180ms ease;
 }
 
 .mini-preview-board .cg-shapes,
@@ -1826,9 +1888,49 @@ button.history-dot:focus-visible {
   margin: 0;
 }
 
+.expected-line {
+  min-height: 1.35rem;
+}
+
 .toggle-chip-grid {
   display: grid;
   gap: 0.5rem;
+}
+
+.settings-range-grid {
+  display: grid;
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+}
+
+.settings-range-control {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.settings-range-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.settings-range-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--color-toggle-text);
+}
+
+.settings-range-value {
+  font-size: 0.74rem;
+  color: var(--color-meta);
+  opacity: 0.9;
+}
+
+.settings-range-slider {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--color-button-border);
 }
 
 button.toggle-chip {

@@ -208,10 +208,12 @@ export function App() {
     () => resolveUiMessage(statusMessage, i18n) ?? '\u00A0',
     [i18n, statusMessage]
   );
+  const hasStatusText = statusText.trim().length > 0;
   const correctText = useMemo(
     () => resolveUiMessage(correctMessage, i18n),
     [correctMessage, i18n]
   );
+  const hasCorrectText = Boolean(correctText?.trim());
   const errorText = useMemo(
     () => resolveUiMessage(errorMessage, i18n),
     [errorMessage, i18n]
@@ -383,6 +385,16 @@ export function App() {
       delete document.documentElement.dataset.theme;
     };
   }, [prefs.darkMode]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--board-hue-rotate', `${prefs.boardHue}deg`);
+    document.documentElement.style.setProperty('--background-hue-rotate', `${prefs.backgroundHue}deg`);
+
+    return () => {
+      document.documentElement.style.removeProperty('--board-hue-rotate');
+      document.documentElement.style.removeProperty('--background-hue-rotate');
+    };
+  }, [prefs.backgroundHue, prefs.boardHue]);
 
   useEffect(() => {
     document.documentElement.lang = i18n.language;
@@ -1807,6 +1819,8 @@ export function App() {
     return <LoadingScreen i18n={i18n} errorText={errorText} pieceSrc={withBasePath('pieces/cburnett/wR.svg')} />;
   }
 
+  const completedBranchesText = i18n.completedBranches(state.completedBranches, state.totalLines);
+  const expectedMoveText = lastBestMove ? i18n.expectedMove(lastBestMove) : null;
   const interactive = boardCanInteract;
   const isZenMode = prefs.zenMode;
   const shellClassName = ['app-shell', isZenMode ? 'is-zen-mode' : null, prefs.showEngineEval ? 'has-eval' : 'no-eval']
@@ -1930,25 +1944,31 @@ export function App() {
           {!isZenMode ? (
             <aside className="side-column panel">
             <section className="rail-block header rail-status">
-              <p className={`subtitle rail-title ${!puzzle.title ? 'is-untitled' : ''}`}>
-                {puzzle.title || i18n.untitledPuzzle}
-              </p>
-              <p className="meta rail-id">{i18n.puzzleId(puzzle.publicId)}</p>
+              <div className="rail-status-meta">
+                <p className={`subtitle rail-title ${!puzzle.title ? 'is-untitled' : ''}`}>
+                  {puzzle.title || i18n.untitledPuzzle}
+                </p>
+                <p className="meta rail-id">{i18n.puzzleId(puzzle.publicId)}</p>
+              </div>
               <div className="rail-status-main">
                 <p className="turn-indicator">{turnLabel}</p>
                 {prefs.showEngineEval ? (
                   <p className="meta rail-engine">
-                    {i18n.engineLine(engineEvalText, engineDepthText, engineEvalSideText)}
+                    <span>{engineEvalText}</span>
+                    <span className="rail-engine-separator" aria-hidden="true">
+                      •
+                    </span>
+                    <span>{engineDepthText}</span>
+                    <span className="rail-engine-separator" aria-hidden="true">
+                      •
+                    </span>
+                    <span>{engineEvalSideText}</span>
                   </p>
                 ) : null}
-                <p className="status status-line">{statusText}</p>
-                <p className="correct correct-line">{correctText ?? '\u00A0'}</p>
-              </div>
-              <div className="rail-status-footer">
-                <p className="meta expected-line">
-                  {lastBestMove ? i18n.expectedMove(lastBestMove) : '\u00A0'}
-                </p>
-                <p className="meta rail-branch">{i18n.completedBranches(state.completedBranches, state.totalLines)}</p>
+                <p className={`status status-line ${hasStatusText ? '' : 'is-empty'}`}>{statusText}</p>
+                <p className={`correct correct-line ${hasCorrectText ? '' : 'is-empty'}`}>{correctText ?? '\u00A0'}</p>
+                <p className="meta rail-branch">{completedBranchesText}</p>
+                {expectedMoveText ? <p className="meta expected-line">{expectedMoveText}</p> : null}
                 {isReviewMode ? <p className="meta rail-review">{i18n.reviewModeActive}</p> : null}
               </div>
             </section>
@@ -1957,7 +1977,6 @@ export function App() {
               <div className="button-row">
                 {puzzleActionButtons}
               </div>
-
             </section>
 
             <section

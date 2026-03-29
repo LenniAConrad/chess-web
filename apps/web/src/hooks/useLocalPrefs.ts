@@ -6,6 +6,8 @@ const STORAGE_KEY = 'chess-web-prefs';
 
 export interface UserPreferences {
   language: LanguageCode;
+  backgroundHue: number;
+  boardHue: number;
   autoNext: boolean;
   oneTryMode: boolean;
   variationMode: VariationMode;
@@ -24,6 +26,8 @@ export interface UserPreferences {
 
 const DEFAULT_PREFS: UserPreferences = {
   language: 'en',
+  backgroundHue: 0,
+  boardHue: 0,
   autoNext: false,
   oneTryMode: false,
   variationMode: 'explore',
@@ -51,6 +55,8 @@ export function useLocalPrefs() {
       const parsed = JSON.parse(raw) as Partial<UserPreferences>;
       return {
         language: parsed.language ?? DEFAULT_PREFS.language,
+        backgroundHue: typeof parsed.backgroundHue === 'number' ? parsed.backgroundHue : DEFAULT_PREFS.backgroundHue,
+        boardHue: typeof parsed.boardHue === 'number' ? parsed.boardHue : DEFAULT_PREFS.boardHue,
         autoNext: parsed.autoNext ?? DEFAULT_PREFS.autoNext,
         oneTryMode: parsed.oneTryMode ?? DEFAULT_PREFS.oneTryMode,
         variationMode: parsed.variationMode ?? DEFAULT_PREFS.variationMode,
