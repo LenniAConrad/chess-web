@@ -378,6 +378,7 @@ export function ChessBoard({
         free: false,
         color: interactive ? orientation : undefined,
         dests: destinations,
+        showDests: true,
         events: {
           after: handleBoardMove
         }
@@ -419,6 +420,7 @@ export function ChessBoard({
         free: false,
         color: interactive ? orientation : undefined,
         dests: interactive ? destinations : new Map(),
+        showDests: true,
         events: {
           after: handleBoardMove
         }
@@ -469,6 +471,21 @@ export function ChessBoard({
     premoveDests,
     turnColor
   ]);
+
+  useEffect(() => {
+    const api = apiRef.current;
+    if (!api) {
+      return;
+    }
+
+    if (!hintSquare) {
+      api.selectSquare(null);
+      return;
+    }
+
+    api.selectSquare(null);
+    api.selectSquare(hintSquare as Key);
+  }, [hintArrow, hintSquare]);
 
   useEffect(() => {
     if (!interactive || !canMoveExecution) {

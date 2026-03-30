@@ -23,6 +23,7 @@ export interface UserPreferences {
   animations: boolean;
   soundEnabled: boolean;
   showEngineEval: boolean;
+  renderPgnPieceSvgs: boolean;
 }
 
 const DEFAULT_PREFS: UserPreferences = {
@@ -43,7 +44,8 @@ const DEFAULT_PREFS: UserPreferences = {
   autoPlay: false,
   animations: true,
   soundEnabled: true,
-  showEngineEval: true
+  showEngineEval: true,
+  renderPgnPieceSvgs: true
 };
 
 export function useLocalPrefs() {
@@ -74,7 +76,8 @@ export function useLocalPrefs() {
         autoPlay: parsed.autoPlay ?? DEFAULT_PREFS.autoPlay,
         animations: parsed.animations ?? DEFAULT_PREFS.animations,
         soundEnabled: parsed.soundEnabled ?? DEFAULT_PREFS.soundEnabled,
-        showEngineEval: parsed.showEngineEval ?? DEFAULT_PREFS.showEngineEval
+        showEngineEval: parsed.showEngineEval ?? DEFAULT_PREFS.showEngineEval,
+        renderPgnPieceSvgs: parsed.renderPgnPieceSvgs ?? DEFAULT_PREFS.renderPgnPieceSvgs
       };
     } catch {
       return DEFAULT_PREFS;

@@ -1,16 +1,16 @@
-import { type AnimationEvent as ReactAnimationEvent, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type AnimationEvent as ReactAnimationEvent, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { ChessBoard } from './components/ChessBoard.js';
 import { AppHeader } from './components/AppHeader.js';
-import { CaptureRainLayer, getPromotionPieceLabels, LoadingScreen, PuzzleActionButtons, ReviewNavigationButtons, ZenExitHint } from './components/AppUiBits.js';
+import { CaptureRainLayer, getPromotionPieceLabels, LoadingScreen, PuzzleActionButtons, ReviewNavigationButtons, TransportControlIcon, ZenExitHint } from './components/AppUiBits.js';
 import { EvalBar } from './components/EvalBar.js';
 import { MiniPreviewBoard } from './components/MiniPreviewBoard.js';
 import { useLocalPrefs } from './hooks/useLocalPrefs.js';
 import { useStockfishEval } from './hooks/useStockfishEval.js';
 import { getHistoryDotSymbol, getHistoryDotTone } from './lib/historyDots.js';
 import { getI18n } from './lib/i18n.js';
-import { appendSimilarVariationStatus, applyUciMove, AUTO_PLAY_DELAY_MS, type AutoPlayAnimationPayload, type AppChromeLink, CAPTURE_RAIN_MAX_PIECES, CORRECT_BREAK_MS, type FallingCapturePiece, formatEngineEval, formatEngineSide, getCapturedPieceSkin, getFeedbackDelay, getFenAfterUciMove, getMoveSoundDecision, getMoveSquares, getMoveSquaresBetweenFens, getTerminalEvalDisplay, HISTORY_PREVIEW_DELAY_MS, type HistoryPreviewData, type HistoryPreviewState, isPuzzleSolved, literalUiMessage, MOBILE_HISTORY_PREVIEW_HOLD_MS, maybeWait, type PrefetchedNextState, type PuzzleHeader, randomBetween, REPO_URL, resolveUiMessage, REWIND_BREAK_MS, REWIND_STEP_DELAY_MS, scaleAnimationDuration, SESSION_HISTORY_FETCH_LIMIT, SHORT_STATUS_DELAY_MS, translatedUiMessage, type UiMessage, wait, withBasePath, WRONG_MOVE_FEEDBACK_MS, playMoveSoundDecision } from './lib/appShared.js';
-import { cacheLoadedSession, getPuzzleCount, getHint, loadSession, refreshSession, getSessionHistory, getSessionTree, nextPuzzle, prefetchNextPuzzle, playMove, restartSession, retainLoadedSessions, revealSolution, skipVariation, startSession } from './lib/api.js';
+import { appendSimilarVariationStatus, applyUciMove, AUTO_PLAY_DELAY_MS, type AutoPlayAnimationPayload, type AppChromeLink, CAPTURE_RAIN_MAX_PIECES, CORRECT_BREAK_MS, type FallingCapturePiece, formatEngineEval, formatEngineSide, formatUciMoveAsSan, getCapturedPieceSkin, getFeedbackDelay, getFenAfterUciMove, getMoveSoundDecision, getMoveSquares, getMoveSquaresBetweenFens, getTerminalEvalDisplay, HISTORY_PREVIEW_DELAY_MS, type HistoryPreviewData, type HistoryPreviewState, isPuzzleSolved, literalUiMessage, MOBILE_HISTORY_PREVIEW_HOLD_MS, maybeWait, type PrefetchedNextState, type PuzzleHeader, randomBetween, REPO_URL, resolveUiMessage, REWIND_BREAK_MS, REWIND_STEP_DELAY_MS, scaleAnimationDuration, SESSION_HISTORY_FETCH_LIMIT, SHORT_STATUS_DELAY_MS, translatedUiMessage, type UiMessage, wait, withBasePath, WRONG_MOVE_FEEDBACK_MS, playMoveSoundDecision } from './lib/appShared.js';
+import { cacheLoadedSession, getPuzzleCount, getHint, loadSession, refreshSession, getSessionHistory, getSessionTree, nextPuzzle, prefetchNextPuzzle, playMove, restartSession, retainLoadedSessions, revealSolution, startSession } from './lib/api.js';
 import { primeMoveSounds } from './lib/moveSounds.js';
 import type { HintPreview, SessionHistoryItem, SessionStatePayload, SessionTreeNode, SessionTreeResponse, StartSessionResponse } from './types/api.js';
 
@@ -54,10 +54,92 @@ function pathsMatch(left: number[], right: number[]): boolean {
   return left.every((nodeId, index) => nodeId === right[index]);
 }
 
-function formatPgnMoveLabel(node: SessionTreeNode): string {
+function normalizeTitleText(value: string): string {
+  return value.trim().replace(/\s+/g, ' ');
+}
+
+function isUntitledPuzzleTitle(title: string, localizedUntitledTitle: string): boolean {
+  const normalizedTitle = normalizeTitleText(title);
+  if (normalizedTitle.length === 0) {
+    return true;
+  }
+
+  const lowerTitle = normalizedTitle.toLocaleLowerCase();
+  const lowerLocalizedUntitledTitle = normalizeTitleText(localizedUntitledTitle).toLocaleLowerCase();
+
+  return (
+    lowerTitle === 'untitled' ||
+    lowerTitle === 'untitled puzzle' ||
+    lowerTitle.startsWith('untitled puzzle ') ||
+    lowerTitle === lowerLocalizedUntitledTitle
+  );
+}
+
+type SanPieceLetter = 'K' | 'Q' | 'R' | 'B' | 'N';
+
+function getSanPieceImageSrc(piece: SanPieceLetter, ply: number): string | null {
+  const color = ply % 2 === 1 ? 'w' : 'b';
+  return withBasePath(`pieces/cburnett/${color}${piece}.svg`);
+}
+
+function buildMoveTextParts(moveText: string, ply: number, renderPieceImages: boolean): Array<string | JSX.Element> {
+  if (!renderPieceImages) {
+    return [moveText];
+  }
+
+  const parts: Array<string | JSX.Element> = [];
+  let cursor = 0;
+  let imageIndex = 0;
+
+  for (const match of moveText.matchAll(/(^[KQRBN])|=([QRBN])/g)) {
+    const index = match.index ?? 0;
+    const piece = (match[1] ?? match[2]) as SanPieceLetter;
+    const isPromotion = Boolean(match[2]);
+
+    if (index > cursor) {
+      parts.push(moveText.slice(cursor, index));
+    }
+
+    if (isPromotion) {
+      parts.push('=');
+    }
+
+    const imageSrc = getSanPieceImageSrc(piece, ply);
+    if (imageSrc) {
+      parts.push(<img key={`piece-${imageIndex}`} className="san-piece-icon" src={imageSrc} alt="" aria-hidden="true" />);
+      imageIndex += 1;
+    } else {
+      parts.push(piece);
+    }
+
+    cursor = index + (isPromotion ? 2 : 1);
+  }
+
+  if (cursor < moveText.length) {
+    parts.push(moveText.slice(cursor));
+  }
+
+  return parts;
+}
+
+function MoveText(props: { moveText: string; ply: number; renderPieceImages: boolean; className?: string }) {
+  const { moveText, ply, renderPieceImages, className } = props;
+  const moveClassName = ['san-move-text', className].filter(Boolean).join(' ');
+
+  return <span className={moveClassName} aria-label={moveText}>{buildMoveTextParts(moveText, ply, renderPieceImages)}</span>;
+}
+
+function formatNodeMoveText(node: SessionTreeNode): string {
+  return node.san || node.uci;
+}
+
+function getPgnMovePrefix(node: SessionTreeNode): string {
   const moveNumber = Math.ceil(node.ply / 2);
-  const prefix = node.ply % 2 === 1 ? `${moveNumber}.` : `${moveNumber}...`;
-  return `${prefix} ${node.san || node.uci}`;
+  return node.ply % 2 === 1 ? `${moveNumber}.` : `${moveNumber}...`;
+}
+
+function formatPgnMoveLabel(node: SessionTreeNode): string {
+  return `${getPgnMovePrefix(node)} ${formatNodeMoveText(node)}`;
 }
 
 function readActiveSessionIdCookie(): string | null {
@@ -158,6 +240,7 @@ export function App() {
   const [oneTryFailed, setOneTryFailed] = useState(false);
   const [historyPreview, setHistoryPreview] = useState<HistoryPreviewState | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const appShellRef = useRef<HTMLDivElement | null>(null);
   const headerSettingsRef = useRef<HTMLDetailsElement | null>(null);
   const headerLanguageRef = useRef<HTMLDetailsElement | null>(null);
   const capturePieceIdRef = useRef(0);
@@ -169,6 +252,7 @@ export function App() {
   const mobileHistoryPendingSessionRef = useRef<string | null>(null);
   const mobileHistoryPreviewSessionRef = useRef<string | null>(null);
   const suppressHistoryDotClickRef = useRef<string | null>(null);
+  const mobileButtonScrollTopRef = useRef<number | null>(null);
   const sessionArtifactsRequestRef = useRef(0);
   const hintSyncRequestRef = useRef(0);
   const prefetchedNextRef = useRef<PrefetchedNextState | null>(null);
@@ -204,6 +288,23 @@ export function App() {
 
     media.addListener(syncViewport);
     return () => media.removeListener(syncViewport);
+  }, []);
+
+  useLayoutEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const previousScrollRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = 'manual';
+    window.scrollTo(0, 0);
+    if (appShellRef.current) {
+      appShellRef.current.scrollTop = 0;
+    }
+
+    return () => {
+      window.history.scrollRestoration = previousScrollRestoration;
+    };
   }, []);
 
   useEffect(() => {
@@ -350,10 +451,6 @@ export function App() {
         .filter((node): node is SessionTreeNode => Boolean(node)),
     [pgnDisplayPath, treeNodeMap]
   );
-  const reviewMoves = useMemo(
-    () => pgnLineNodes.map((node) => node.san || node.uci).filter(Boolean),
-    [pgnLineNodes]
-  );
   const canReviewBackward = useMemo(() => {
     if (livePath.length > 1 && !isReviewMode) {
       return true;
@@ -411,6 +508,9 @@ export function App() {
       : objectiveColor === 'black'
         ? i18n.findBestMoveForBlack
         : '\u00A0';
+  const hideSolvedStatusPill = puzzleComplete && statusText.trim() === i18n.puzzleComplete;
+  const displayStatusText = hideSolvedStatusPill ? '\u00A0' : statusText;
+  const hasDisplayStatusText = displayStatusText.trim().length > 0;
 
   const displayedEngineCp = terminalEvalDisplay?.cp ?? engineEval.cp;
   const displayedEngineMate = terminalEvalDisplay?.mate ?? engineEval.mate;
@@ -618,6 +718,57 @@ export function App() {
       document.removeEventListener('pointerdown', handlePointerDown);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isMobileViewport) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse') {
+        return;
+      }
+
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const button = target.closest('button');
+      if (!(button instanceof HTMLButtonElement) || button.disabled) {
+        return;
+      }
+      mobileButtonScrollTopRef.current = appShellRef.current?.scrollTop ?? 0;
+    };
+
+    const handleClick = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const button = target.closest('button');
+      if (!(button instanceof HTMLButtonElement)) {
+        return;
+      }
+
+      window.requestAnimationFrame(() => {
+        const shell = appShellRef.current;
+        if (shell && mobileButtonScrollTopRef.current !== null) {
+          shell.scrollTop = mobileButtonScrollTopRef.current;
+        }
+        button.blur();
+        mobileButtonScrollTopRef.current = null;
+      });
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    document.addEventListener('click', handleClick, true);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown, true);
+      document.removeEventListener('click', handleClick, true);
+    };
+  }, [isMobileViewport]);
 
   useEffect(() => {
     const menus = [headerSettingsRef.current, headerLanguageRef.current].filter(
@@ -1323,7 +1474,7 @@ export function App() {
         const moveSoundDecision = getMoveSoundDecision(baseFen, response.bestMoveUci);
         spawnCaptureRainPiece(baseFen, response.bestMoveUci);
         playMoveSoundDecision(moveSoundDecision, prefs.soundEnabled);
-        const revealedMove = response.bestMoveUci;
+        const revealedMove = response.bestMoveSan ?? formatUciMoveAsSan(baseFen, response.bestMoveUci) ?? response.bestMoveUci;
 
         setDisplayFen(response.afterFen);
         setStatusMessage(
@@ -1398,59 +1549,6 @@ export function App() {
     ]
   );
 
-  const handleSkipVariation = useCallback(async () => {
-    if (!sessionId || loading || historyLoading || isReviewMode || oneTryLocked) {
-      return;
-    }
-
-    setLoading(true);
-    setErrorMessage(null);
-    resetHints();
-    setPreparedHint(null);
-    try {
-      const response = await skipVariation(sessionId, prefs.skipSimilarVariations);
-      setState(response.nextState);
-      setPreparedHint(null);
-      resetPremoves();
-      setDisplayFen(response.nextState.fen);
-      setLastMoveSquares(null);
-      setWrongMoveSquare(null);
-      setLineCompleteSquare(null);
-      setStatusMessage(
-        translatedUiMessage((copy) =>
-          response.skipped
-            ? appendSimilarVariationStatus(
-                copy.variationSkipped,
-                response.skippedSimilarVariations,
-                copy
-              )
-            : copy.nothingToSkip
-        )
-      );
-
-      void loadSessionArtifacts(sessionId);
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? literalUiMessage(error.message)
-          : translatedUiMessage((copy) => copy.skipVariationFailed)
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [
-    isReviewMode,
-    loadSessionArtifacts,
-    loading,
-    historyLoading,
-    prefs.skipSimilarVariations,
-    resetHints,
-    resetPremoves,
-    sessionId,
-    i18n,
-    oneTryLocked
-  ]);
-
   const handleNextPuzzle = useCallback(async () => {
     if (!sessionId || loading || historyLoading) {
       return;
@@ -1498,7 +1596,7 @@ export function App() {
   ]);
 
   const handleRestartPuzzle = useCallback(async () => {
-    if (!sessionId || !puzzle || !state || loading || historyLoading || isReviewMode || !isPuzzleSolved(state)) {
+    if (!sessionId || loading || historyLoading || isReviewMode) {
       return;
     }
 
@@ -1524,9 +1622,7 @@ export function App() {
     loading,
     prefs.autoNext,
     prefs.variationMode,
-    puzzle,
     sessionId,
-    state,
     i18n
   ]);
 
@@ -2058,10 +2154,6 @@ export function App() {
     });
   }, [livePath, reviewCursor]);
 
-  const handleBackToLive = useCallback(() => {
-    setReviewCursor(null);
-  }, []);
-
   const toggleVariationMode = (checked: boolean) => {
     setPrefs((previous) => ({
       ...previous,
@@ -2074,11 +2166,9 @@ export function App() {
   }
 
   const completedBranchesText = i18n.completedBranches(state.completedBranches, state.totalLines);
-  const expectedMoveText = lastBestMove ? i18n.expectedMove(lastBestMove) : null;
   const reviewModeText = isReviewMode ? 'Reviewing line' : '\u00A0';
-  const normalizedPuzzleTitle = puzzle.title.trim();
-  const isUntitledPuzzle =
-    normalizedPuzzleTitle.length === 0 || normalizedPuzzleTitle.toLowerCase() === 'untitled puzzle';
+  const normalizedPuzzleTitle = normalizeTitleText(puzzle.title);
+  const isUntitledPuzzle = isUntitledPuzzleTitle(normalizedPuzzleTitle, i18n.untitledPuzzle);
   const interactive = boardCanInteract;
   const isZenMode = prefs.zenMode;
   const shellClassName = ['app-shell', isZenMode ? 'is-zen-mode' : null, prefs.showEngineEval ? 'has-eval' : 'no-eval']
@@ -2087,53 +2177,397 @@ export function App() {
   const footerLinks: AppChromeLink[] = [
     { href: REPO_URL, label: i18n.github, external: true }
   ];
+  const isMobileStandardLayout = isMobileViewport && !isZenMode;
+  const zenExitHintLabel = isMobileViewport ? (i18n.exitZenModeHintMobile ?? 'Tap here to exit zen mode') : i18n.exitZenModeHint;
+  const boardColumnClassName = ['board-column', isMobileStandardLayout ? 'mobile-board-column' : null]
+    .filter(Boolean)
+    .join(' ');
+  const boardStackClassName = [
+    'board-stack',
+    prefs.showEngineEval ? null : 'no-eval'
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const statusPanelClassName = ['rail-block', 'header', 'rail-status', isMobileStandardLayout ? 'mobile-status-panel' : null]
+    .filter(Boolean)
+    .join(' ');
+  const controlsPanelClassName = ['rail-block', 'rail-actions', isMobileStandardLayout ? 'mobile-controls-panel' : null]
+    .filter(Boolean)
+    .join(' ');
+  const historyStripClassName = ['history-strip', prefs.autoPlay ? 'is-muted' : null, isMobileViewport ? 'is-mobile' : null]
+    .filter(Boolean)
+    .join(' ');
+  const pathMovesLabel = i18n.pathMoves('').trimEnd();
   const puzzleActionButtons = (
     <PuzzleActionButtons
       disabled={panelControlsDisabled}
       isReviewMode={isReviewMode}
       hintsEnabled={prefs.hintsEnabled}
-      puzzleIsComplete={puzzleIsComplete}
       i18n={i18n}
       onHint={() => void handleHint()}
       onReveal={() => void handleReveal()}
       onRestartPuzzle={() => void handleRestartPuzzle()}
-      onSkipVariation={() => void handleSkipVariation()}
-      onNextPuzzle={() => void handleNextPuzzle()}
-    />
-  );
-  const reviewNavigationButtons = (
-    <ReviewNavigationButtons
-      disabled={panelControlsDisabled}
-      isReviewMode={isReviewMode}
-      canGoBackward={canReviewBackward}
-      canGoForward={canReviewForward}
-      i18n={i18n}
-      onBackOne={handleReviewBackOne}
-      onForwardOne={handleReviewForwardOne}
-      onBackToLive={handleBackToLive}
     />
   );
   const zenReviewNavigationButtons = (
     <ReviewNavigationButtons
       disabled={panelControlsDisabled}
-      isReviewMode={isReviewMode}
       canGoBackward={canReviewBackward}
       canGoForward={canReviewForward}
       secondary
       i18n={i18n}
       onBackOne={handleReviewBackOne}
       onForwardOne={handleReviewForwardOne}
-      onBackToLive={handleBackToLive}
     />
   );
   const promotionPieceLabels = getPromotionPieceLabels(i18n);
+  const statusPanel = (
+    <section className={statusPanelClassName}>
+      <div className="rail-status-meta">
+        {!isMobileStandardLayout && !isUntitledPuzzle ? <p className="subtitle rail-title">{normalizedPuzzleTitle}</p> : null}
+        {!isMobileStandardLayout ? <p className="meta rail-id">{i18n.puzzleId(puzzle.publicId)}</p> : null}
+      </div>
+      <div className="rail-status-main">
+        <p className="turn-kicker">{turnKickerText}</p>
+        <p className="turn-indicator">{objectiveText}</p>
+        {prefs.showEngineEval ? (
+          <p className="meta rail-engine">
+            <span>{engineEvalText}</span>
+            <span className="rail-engine-separator" aria-hidden="true">
+              •
+            </span>
+            <span>{engineDepthText}</span>
+            <span className="rail-engine-separator" aria-hidden="true">
+              •
+            </span>
+            <span>{engineEvalSideText}</span>
+          </p>
+        ) : null}
+        <p className={`status status-line ${hasDisplayStatusText ? '' : 'is-empty'}`}>{displayStatusText}</p>
+        <p className={`correct correct-line ${hasCorrectText ? '' : 'is-empty'}`}>{correctText ?? '\u00A0'}</p>
+        <p className="meta rail-branch">{completedBranchesText}</p>
+        <p className={`meta rail-review ${isReviewMode ? '' : 'is-empty'}`}>{reviewModeText}</p>
+      </div>
+    </section>
+  );
+  const controlsPanel = (
+    <section className={controlsPanelClassName}>
+      <div className="button-row">
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled}
+          onClick={() => void handleHint()}
+        >
+          {i18n.hint}
+        </button>
+        <button
+          type="button"
+          className="btn-secondary"
+          disabled={panelControlsDisabled || isReviewMode}
+          onClick={() => void handleReveal()}
+        >
+          {i18n.showSolution}
+        </button>
+      </div>
+      <div className="button-row next-live-row">
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={panelControlsDisabled || isReviewMode}
+          onClick={() => void handleRestartPuzzle()}
+        >
+          {i18n.restartPuzzle}
+        </button>
+      </div>
+      <div className="button-row arrow-strip-row">
+        <button
+          type="button"
+          className="btn-secondary transport-control-button"
+          disabled={panelControlsDisabled || !previousPuzzleSessionId}
+          onClick={handlePreviousPuzzle}
+          aria-label="Previous puzzle"
+          title="Previous puzzle"
+        >
+          <TransportControlIcon variant="skip-back" />
+        </button>
+        <button
+          type="button"
+          className="btn-secondary transport-control-button"
+          disabled={panelControlsDisabled || !canReviewBackward}
+          onClick={handleReviewBackOne}
+          aria-label={i18n.backOneMove}
+          title={i18n.backOneMove}
+        >
+          <TransportControlIcon variant="back" />
+        </button>
+        <button
+          type="button"
+          className="btn-secondary transport-control-button"
+          disabled={panelControlsDisabled || !canReviewForward}
+          onClick={handleReviewForwardOne}
+          aria-label="Forward one move"
+          title="Forward one move"
+        >
+          <TransportControlIcon variant="forward" />
+        </button>
+        <button
+          type="button"
+          className="btn-secondary transport-control-button"
+          disabled={panelControlsDisabled || (!nextHistoryPuzzleSessionId && !sessionId)}
+          onClick={handleTransportNextPuzzle}
+          aria-label="Next puzzle"
+          title="Next puzzle"
+        >
+          <TransportControlIcon variant="skip-forward" />
+        </button>
+      </div>
+    </section>
+  );
+  const historyPanelContent = (
+    <>
+      <div className="history-head">
+        <p className="history-title">{i18n.recentGames}</p>
+        <p className="history-meta">{i18n.historyCount(recentHistoryItems.length)}</p>
+      </div>
+      <div className="history-list">
+        {recentHistoryItems.map((item) => {
+          const tone = getHistoryDotTone(item);
+          const label = i18n.historyDotLabels[tone] ?? i18n.historyDotLabels.unknown;
+          const symbol = getHistoryDotSymbol(tone);
+          const selected = item.sessionId === sessionId;
+          return (
+            <div
+              key={item.sessionId}
+              className="history-dot-slot"
+              onMouseEnter={(event) => handleHistoryDotMouseEnter(item, event)}
+              onMouseMove={handleHistoryDotMouseMove}
+              onMouseLeave={hideHistoryPreview}
+              onFocus={(event) => handleHistoryDotFocus(item, event)}
+              onBlur={hideHistoryPreview}
+            >
+              <button
+                type="button"
+                className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
+                data-history-session-id={item.sessionId}
+                onPointerDown={(event) => handleHistoryDotPointerDown(item, event)}
+                onPointerUp={(event) => handleHistoryDotPointerEnd(item, event)}
+                onPointerCancel={(event) => handleHistoryDotPointerEnd(item, event)}
+                onPointerLeave={(event) => handleHistoryDotPointerEnd(item, event)}
+                onClick={() => {
+                  if (suppressHistoryDotClickRef.current === item.sessionId) {
+                    suppressHistoryDotClickRef.current = null;
+                    return;
+                  }
+                  void handleLoadHistorySession(item.sessionId);
+                }}
+                disabled={panelControlsDisabled}
+                aria-label={i18n.historyItemAriaLabel(selected, label, item.puzzlePublicId)}
+              >
+                {symbol}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {historyError ? <p className="error">{historyError}</p> : null}
+    </>
+  );
+  const historyPanel = (
+    <section className={`rail-block ${historyStripClassName}`} id="history" aria-label={i18n.recentGameHistory}>
+      {historyPanelContent}
+    </section>
+  );
+  const pgnPanelContent = (
+    <>
+      <div className="pgn-header-row">
+        <p className="pgn-title">{i18n.pgnExplorer}</p>
+      </div>
+
+      {pgnLineNodes.length > 0 ? (
+        <p className="meta pgn-path">
+          <span className="pgn-path-label">{pathMovesLabel}</span>
+          <span className="pgn-path-moves">
+            {pgnLineNodes.map((node) => (
+              <MoveText
+                key={node.id}
+                moveText={formatNodeMoveText(node)}
+                ply={node.ply}
+                renderPieceImages={prefs.renderPgnPieceSvgs}
+                className="pgn-path-move"
+              />
+            ))}
+          </span>
+        </p>
+      ) : (
+        <p className="meta pgn-path">{i18n.pathLivePosition}</p>
+      )}
+
+      {treeError ? <p className="error">{treeError}</p> : null}
+
+      <div className="pgn-sequence" aria-label="PGN line">
+        {pgnLineNodes.length === 0 ? (
+          <span className="pgn-sequence-empty">{i18n.pathLivePosition}</span>
+        ) : (
+          pgnLineNodes.map((node, index) => {
+            const isCurrentMove = activeReviewPath[index + 1] === currentReviewNodeId;
+            return (
+              <button
+                key={node.id}
+                type="button"
+                className={`pgn-sequence-move ${isCurrentMove ? 'is-current' : ''}`}
+                disabled={panelControlsDisabled}
+                aria-label={formatPgnMoveLabel(node)}
+                onClick={() => {
+                  const targetIndex = index + 1;
+                  if (pathsMatch(pgnDisplayPath, livePath) && targetIndex === livePath.length - 1) {
+                    setReviewCursor(null);
+                    return;
+                  }
+
+                  setReviewCursor({
+                    path: pgnDisplayPath,
+                    index: targetIndex
+                  });
+                }}
+              >
+                <span className="pgn-sequence-prefix">{getPgnMovePrefix(node)}</span>{' '}
+                <MoveText moveText={formatNodeMoveText(node)} ply={node.ply} renderPieceImages={prefs.renderPgnPieceSvgs} />
+              </button>
+            );
+          })
+        )}
+      </div>
+
+      <div className="pgn-move-list">
+        {pgnNextMoves.length === 0 ? (
+          <button type="button" className="pgn-move pgn-empty-state" disabled>
+            {i18n.noLegalContinuation}
+          </button>
+        ) : (
+          pgnNextMoves.map((node) => (
+            <button
+              key={node.id}
+              type="button"
+              className={`pgn-move ${node.is_mainline ? 'is-mainline' : ''}`}
+              disabled={panelControlsDisabled}
+              aria-label={formatNodeMoveText(node)}
+              onClick={() => handleReviewMove(node)}
+            >
+              <MoveText moveText={formatNodeMoveText(node)} ply={node.ply} renderPieceImages={prefs.renderPgnPieceSvgs} />
+              <span>{node.is_mainline ? i18n.mainLine : i18n.variationLine}</span>
+            </button>
+          ))
+        )}
+      </div>
+    </>
+  );
+  const pgnPanel = (
+    <section className="rail-block pgn-panel" id="explorer">
+      {pgnPanelContent}
+    </section>
+  );
+  const mobileSecondaryPanel = (
+    <section className="rail-block mobile-secondary-panel">
+      <p className="meta rail-id mobile-secondary-id">{i18n.puzzleId(puzzle.publicId)}</p>
+      <div className={historyStripClassName} id="history" aria-label={i18n.recentGameHistory}>
+        {historyPanelContent}
+      </div>
+      <div className="mobile-secondary-divider" aria-hidden="true" />
+      <div className="pgn-panel" id="explorer">
+        {pgnPanelContent}
+      </div>
+    </section>
+  );
+  const footerContent = (
+    <div className="app-footer-inner">
+      <div className="app-footer-links" aria-label={i18n.footerLinks}>
+        {footerLinks.map((link) => (
+          <a
+            key={link.label}
+            className="app-footer-link"
+            href={link.href}
+            {...(link.external ? { target: '_blank', rel: 'noreferrer' } : {})}
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
+      <p className="app-footer-license">GPL-3.0-or-later.</p>
+    </div>
+  );
+  const headerContent = (
+    <AppHeader
+      i18n={i18n}
+      puzzleCountText={
+        puzzleCount === null ? i18n.livePuzzleCountUnavailable : i18n.puzzleCount(countFormatter.format(puzzleCount))
+      }
+      headerLanguageRef={headerLanguageRef}
+      headerSettingsRef={headerSettingsRef}
+      closeHeaderMenus={closeHeaderMenus}
+      prefs={prefs}
+      setPrefs={setPrefs}
+      toggleVariationMode={toggleVariationMode}
+      puzzleIdInput={puzzleIdInput}
+      setPuzzleIdInput={setPuzzleIdInput}
+      handleLoadById={handleLoadById}
+      loading={loading}
+      historyLoading={historyLoading}
+    />
+  );
+  const boardPanel = (
+    <section className={boardColumnClassName} id="board">
+      <div className={boardStackClassName}>
+        <div className="board-stage">
+          {prefs.showEngineEval ? (
+            <EvalBar cp={displayedEngineCp} mate={displayedEngineMate} />
+          ) : null}
+          <div className="board-shell">
+            <ChessBoard
+              fen={boardFen ?? state.fen}
+              orientation={playerOrientation}
+              checkColor={checkColor}
+              interactive={interactive}
+              canMoveExecution={!loading && !historyLoading}
+              animationsEnabled={prefs.animations}
+              animationDurationMs={boardAnimationDurationMs}
+              premoveResetToken={sessionId ? `${sessionId}:${premoveResetCounter}` : null}
+              autoQueenPromotion={prefs.autoQueenPromotion}
+              hintSquare={hintSquare}
+              hintArrow={hintArrow}
+              lastMove={isReviewMode ? reviewLastMoveSquares : lastMoveSquares}
+              wrongMoveSquare={isReviewMode ? null : wrongMoveSquare}
+              wrongMoveFlashToken={wrongMoveFlashToken}
+              lineCompleteSquare={isReviewMode ? null : lineCompleteSquare}
+              lineCompleteFlashToken={lineCompleteFlashToken}
+              glassEnabled={prefs.boardGlass}
+              promotionDialogLabel={i18n.choosePromotionPiece}
+              cancelPromotionLabel={i18n.cancelPromotion}
+              promotionPieceLabels={promotionPieceLabels}
+              onMove={(uciMove) => void handleMove(uciMove)}
+            />
+          </div>
+        </div>
+        {isZenMode ? (
+          <div className={`zen-controls ${prefs.showEngineEval ? '' : 'no-eval'}`}>
+            <div className="button-row zen-action-row">
+              {puzzleActionButtons}
+            </div>
+            <div className="button-row zen-navigation-row">
+              {zenReviewNavigationButtons}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
 
   return (
     <>
-      <div className={shellClassName}>
+      <div ref={appShellRef} className={shellClassName}>
         <ZenExitHint
           visible={isZenMode}
-          label={i18n.exitZenModeHint}
+          label={zenExitHintLabel}
           onExit={() =>
             setPrefs((previous) => ({
               ...previous,
@@ -2145,323 +2579,43 @@ export function App() {
           pieces={fallingCapturePieces}
           onPieceAnimationEnd={handleCaptureRainPieceAnimationEnd}
         />
-        <AppHeader
-          i18n={i18n}
-          puzzleCountText={
-            puzzleCount === null ? i18n.livePuzzleCountUnavailable : i18n.puzzleCount(countFormatter.format(puzzleCount))
-          }
-          headerLanguageRef={headerLanguageRef}
-          headerSettingsRef={headerSettingsRef}
-          closeHeaderMenus={closeHeaderMenus}
-          prefs={prefs}
-          setPrefs={setPrefs}
-          toggleVariationMode={toggleVariationMode}
-          puzzleIdInput={puzzleIdInput}
-          setPuzzleIdInput={setPuzzleIdInput}
-          handleLoadById={handleLoadById}
-          loading={loading}
-          historyLoading={historyLoading}
-        />
-        <main className="layout split-layout">
-          <section className="board-column" id="board">
-            <div className={`board-stack ${prefs.showEngineEval ? '' : 'no-eval'}`}>
-              <div className="board-stage">
-                {prefs.showEngineEval ? (
-                  <EvalBar cp={displayedEngineCp} mate={displayedEngineMate} />
-                ) : null}
-                <div className="board-shell">
-                  <ChessBoard
-                    fen={boardFen ?? state.fen}
-                    orientation={playerOrientation}
-                    checkColor={checkColor}
-                    interactive={interactive}
-                    canMoveExecution={!loading && !historyLoading}
-                    animationsEnabled={prefs.animations}
-                    animationDurationMs={boardAnimationDurationMs}
-                    premoveResetToken={sessionId ? `${sessionId}:${premoveResetCounter}` : null}
-                    autoQueenPromotion={prefs.autoQueenPromotion}
-                    hintSquare={hintSquare}
-                    hintArrow={hintArrow}
-                    lastMove={isReviewMode ? reviewLastMoveSquares : lastMoveSquares}
-                    wrongMoveSquare={isReviewMode ? null : wrongMoveSquare}
-                    wrongMoveFlashToken={wrongMoveFlashToken}
-                    lineCompleteSquare={isReviewMode ? null : lineCompleteSquare}
-                    lineCompleteFlashToken={lineCompleteFlashToken}
-                    glassEnabled={prefs.boardGlass}
-                    promotionDialogLabel={i18n.choosePromotionPiece}
-                    cancelPromotionLabel={i18n.cancelPromotion}
-                    promotionPieceLabels={promotionPieceLabels}
-                    onMove={(uciMove) => void handleMove(uciMove)}
-                  />
-                </div>
+        {isMobileStandardLayout ? (
+          <>
+            <section className="mobile-snap-screen mobile-primary-screen">
+              {headerContent}
+              <main className="mobile-snap-page-body mobile-primary-page-body">
+                {statusPanel}
+                {boardPanel}
+                {controlsPanel}
+                <footer className="app-footer mobile-inline-footer">
+                  {footerContent}
+                </footer>
+              </main>
+            </section>
+            <section className="mobile-snap-screen mobile-secondary-screen">
+              <div className="mobile-snap-page-body mobile-secondary-page-body">
+                {mobileSecondaryPanel}
               </div>
-              {isZenMode ? (
-                <div className={`zen-controls ${prefs.showEngineEval ? '' : 'no-eval'}`}>
-                  <div className="button-row">
-                    {puzzleActionButtons}
-                    {zenReviewNavigationButtons}
-                  </div>
-                </div>
+            </section>
+          </>
+        ) : (
+          <>
+            {headerContent}
+            <main className="layout split-layout">
+              <>
+                {boardPanel}
+                {!isZenMode ? (
+                <aside className="side-column panel">
+                  {statusPanel}
+                  {controlsPanel}
+                  {historyPanel}
+                  {pgnPanel}
+                </aside>
               ) : null}
-            </div>
-          </section>
-
-          {!isZenMode ? (
-            <aside className="side-column panel">
-            <section className="rail-block header rail-status">
-              <div className="rail-status-meta">
-                <p className={`subtitle rail-title ${isUntitledPuzzle ? 'is-untitled' : ''}`}>
-                  {isUntitledPuzzle ? i18n.untitledPuzzle : normalizedPuzzleTitle}
-                </p>
-                <p className="meta rail-id">{i18n.puzzleId(puzzle.publicId)}</p>
-              </div>
-              <div className="rail-status-main">
-                <p className="turn-kicker">{turnKickerText}</p>
-                <p className="turn-indicator">{objectiveText}</p>
-                {prefs.showEngineEval ? (
-                  <p className="meta rail-engine">
-                    <span>{engineEvalText}</span>
-                    <span className="rail-engine-separator" aria-hidden="true">
-                      •
-                    </span>
-                    <span>{engineDepthText}</span>
-                    <span className="rail-engine-separator" aria-hidden="true">
-                      •
-                    </span>
-                    <span>{engineEvalSideText}</span>
-                  </p>
-                ) : null}
-                <p className={`status status-line ${hasStatusText ? '' : 'is-empty'}`}>{statusText}</p>
-                <p className={`correct correct-line ${hasCorrectText ? '' : 'is-empty'}`}>{correctText ?? '\u00A0'}</p>
-                <p className="meta rail-branch">{completedBranchesText}</p>
-                <p className={`meta expected-line ${expectedMoveText ? '' : 'is-empty'}`}>
-                  {expectedMoveText ?? '\u00A0'}
-                </p>
-                <p className={`meta rail-review ${isReviewMode ? '' : 'is-empty'}`}>{reviewModeText}</p>
-              </div>
-            </section>
-
-            <section className="rail-block rail-actions">
-              <div className="button-row">
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled}
-                  onClick={() => void handleHint()}
-                >
-                  {i18n.hint}
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  disabled={panelControlsDisabled || isReviewMode}
-                  onClick={() => void handleReveal()}
-                >
-                  {i18n.showSolution}
-                </button>
-              </div>
-              <div className="button-row next-live-row">
-                {puzzleIsComplete ? (
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    disabled={panelControlsDisabled || isReviewMode}
-                    onClick={() => void handleRestartPuzzle()}
-                  >
-                    {i18n.restartPuzzle}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn-secondary"
-                    disabled={panelControlsDisabled || isReviewMode}
-                    onClick={() => void handleSkipVariation()}
-                  >
-                    {i18n.skipVariation}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="btn-primary"
-                  disabled={panelControlsDisabled}
-                  onClick={() => void handleNextPuzzle()}
-                >
-                  {i18n.nextPuzzle}
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  disabled={panelControlsDisabled || !isReviewMode}
-                  onClick={handleBackToLive}
-                >
-                  Live
-                </button>
-              </div>
-              <div className="button-row arrow-strip-row">
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  disabled={panelControlsDisabled || !previousPuzzleSessionId}
-                  onClick={handlePreviousPuzzle}
-                  aria-label="Previous puzzle"
-                  title="Previous puzzle"
-                >
-                  ◀◀
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  disabled={panelControlsDisabled || !canReviewBackward}
-                  onClick={handleReviewBackOne}
-                  aria-label={i18n.backOneMove}
-                  title={i18n.backOneMove}
-                >
-                  ◀
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  disabled={panelControlsDisabled || !canReviewForward}
-                  onClick={handleReviewForwardOne}
-                  aria-label="Forward one move"
-                  title="Forward one move"
-                >
-                  ▶
-                </button>
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  disabled={panelControlsDisabled || (!nextHistoryPuzzleSessionId && !sessionId)}
-                  onClick={handleTransportNextPuzzle}
-                  aria-label="Next puzzle"
-                  title="Next puzzle"
-                >
-                  ▶▶
-                </button>
-              </div>
-            </section>
-
-            <section
-              className={`rail-block history-strip ${prefs.autoPlay ? 'is-muted' : ''} ${isMobileViewport ? 'is-mobile' : ''}`}
-              id="history"
-              aria-label={i18n.recentGameHistory}
-            >
-              <div className="history-head">
-                <p className="history-title">{i18n.recentGames}</p>
-                <p className="history-meta">{i18n.historyCount(recentHistoryItems.length)}</p>
-              </div>
-              <div className="history-list">
-                {recentHistoryItems.map((item) => {
-                  const tone = getHistoryDotTone(item);
-                  const label = i18n.historyDotLabels[tone] ?? i18n.historyDotLabels.unknown;
-                  const symbol = getHistoryDotSymbol(tone);
-                  const selected = item.sessionId === sessionId;
-                  return (
-                    <div
-                      key={item.sessionId}
-                      className="history-dot-slot"
-                      onMouseEnter={(event) => handleHistoryDotMouseEnter(item, event)}
-                      onMouseMove={handleHistoryDotMouseMove}
-                      onMouseLeave={hideHistoryPreview}
-                      onFocus={(event) => handleHistoryDotFocus(item, event)}
-                      onBlur={hideHistoryPreview}
-                    >
-                      <button
-                        type="button"
-                        className={`history-dot tone-${tone} ${selected ? 'current' : ''}`}
-                        data-history-session-id={item.sessionId}
-                        onPointerDown={(event) => handleHistoryDotPointerDown(item, event)}
-                        onPointerUp={(event) => handleHistoryDotPointerEnd(item, event)}
-                        onPointerCancel={(event) => handleHistoryDotPointerEnd(item, event)}
-                        onPointerLeave={(event) => handleHistoryDotPointerEnd(item, event)}
-                        onClick={() => {
-                          if (suppressHistoryDotClickRef.current === item.sessionId) {
-                            suppressHistoryDotClickRef.current = null;
-                            return;
-                          }
-                          void handleLoadHistorySession(item.sessionId);
-                        }}
-                        disabled={panelControlsDisabled}
-                        aria-label={i18n.historyItemAriaLabel(selected, label, item.puzzlePublicId)}
-                      >
-                        {symbol}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-              {historyError ? <p className="error">{historyError}</p> : null}
-            </section>
-
-            <section className="rail-block pgn-panel" id="explorer">
-              <div className="pgn-header-row">
-                <p className="pgn-title">{i18n.pgnExplorer}</p>
-              </div>
-
-              <p className="meta pgn-path">
-                {reviewMoves.length > 0
-                  ? i18n.pathMoves(reviewMoves.join(' '))
-                  : i18n.pathLivePosition}
-              </p>
-
-              {treeError ? <p className="error">{treeError}</p> : null}
-
-              <div className="pgn-sequence" aria-label="PGN line">
-                {pgnLineNodes.length === 0 ? (
-                  <span className="pgn-sequence-empty">{i18n.pathLivePosition}</span>
-                ) : (
-                  pgnLineNodes.map((node, index) => {
-                    const isCurrentMove = activeReviewPath[index + 1] === currentReviewNodeId;
-                    return (
-                      <button
-                        key={node.id}
-                        type="button"
-                        className={`pgn-sequence-move ${isCurrentMove ? 'is-current' : ''}`}
-                        disabled={panelControlsDisabled}
-                        onClick={() => {
-                          const targetIndex = index + 1;
-                          if (pathsMatch(pgnDisplayPath, livePath) && targetIndex === livePath.length - 1) {
-                            setReviewCursor(null);
-                            return;
-                          }
-
-                          setReviewCursor({
-                            path: pgnDisplayPath,
-                            index: targetIndex
-                          });
-                        }}
-                      >
-                        {formatPgnMoveLabel(node)}
-                      </button>
-                    );
-                  })
-                )}
-              </div>
-
-              <div className="pgn-move-list">
-                {pgnNextMoves.length === 0 ? (
-                  <button type="button" className="pgn-move pgn-empty-state" disabled>
-                    {i18n.noLegalContinuation}
-                  </button>
-                ) : (
-                  pgnNextMoves.map((node) => (
-                    <button
-                      key={node.id}
-                      type="button"
-                      className={`pgn-move ${node.is_mainline ? 'is-mainline' : ''}`}
-                      disabled={panelControlsDisabled}
-                      onClick={() => handleReviewMove(node)}
-                    >
-                      <span>{node.san || node.uci}</span>
-                      <span>{node.is_mainline ? i18n.mainLine : i18n.variationLine}</span>
-                    </button>
-                  ))
-                )}
-              </div>
-            </section>
-            </aside>
-          ) : null}
-        </main>
+              </>
+            </main>
+          </>
+        )}
         {historyPreview && historyPreviewPosition ? (
           <aside
             className={`history-preview-card tone-${historyPreview.tone} ${historyPreview.loading ? 'is-loading' : ''}`}
@@ -2492,23 +2646,7 @@ export function App() {
             </div>
           </aside>
         ) : null}
-        <footer className="app-footer">
-          <div className="app-footer-inner">
-            <div className="app-footer-links" aria-label={i18n.footerLinks}>
-              {footerLinks.map((link) => (
-                <a
-                  key={link.label}
-                  className="app-footer-link"
-                  href={link.href}
-                  {...(link.external ? { target: '_blank', rel: 'noreferrer' } : {})}
-                >
-                  {link.label}
-                </a>
-              ))}
-            </div>
-            <p className="app-footer-license">GPL-3.0-or-later.</p>
-          </div>
-        </footer>
+        {!isMobileStandardLayout ? <footer className="app-footer">{footerContent}</footer> : null}
       </div>
       {errorText ? (
         <p className="global-error-toast" role="alert" aria-live="assertive">

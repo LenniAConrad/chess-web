@@ -85,6 +85,7 @@ export interface FrontendI18n {
   failedToLoadNextPuzzle: string;
   enterPuzzleId: string;
   exitZenModeHint: string;
+  exitZenModeHintMobile?: string;
   livePuzzleCountUnavailable: string;
   settings: string;
   gameplay: string;
@@ -101,6 +102,7 @@ export interface FrontendI18n {
   zenMode: string;
   boardGlass: string;
   engineEval: string;
+  pgnPieceSvgs?: string;
   animations: string;
   sound: string;
   captureRain: string;
@@ -239,6 +241,7 @@ const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
     failedToLoadNextPuzzle: 'Failed to load next puzzle',
     enterPuzzleId: 'Enter a puzzle ID',
     exitZenModeHint: 'Click here or press Esc to exit zen mode',
+    exitZenModeHintMobile: 'Tap here to exit zen mode',
     livePuzzleCountUnavailable: 'Live puzzle count unavailable',
     settings: 'Settings',
     gameplay: 'Gameplay',
@@ -255,6 +258,7 @@ const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
     zenMode: 'Zen mode',
     boardGlass: 'Board glass',
     engineEval: 'Engine + eval',
+    pgnPieceSvgs: 'PGN piece SVGs',
     animations: 'Animations',
     sound: 'Sound',
     captureRain: 'Capture rain',
@@ -263,7 +267,7 @@ const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
     puzzleIdPlaceholder: 'Puzzle ID (UUID)',
     loadId: 'Load ID',
     hint: 'Hint',
-    showSolution: 'Show solution',
+    showSolution: 'Show next move',
     restartPuzzle: 'Restart puzzle',
     skipVariation: 'Skip variation',
     nextPuzzle: 'Next puzzle',
@@ -396,7 +400,7 @@ const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
     puzzleIdPlaceholder: 'Aufgaben-ID (UUID)',
     loadId: 'ID laden',
     hint: 'Tipp',
-    showSolution: 'Lösung zeigen',
+    showSolution: 'Nächsten Zug zeigen',
     restartPuzzle: 'Aufgabe neu starten',
     skipVariation: 'Variante überspringen',
     nextPuzzle: 'Nächste Aufgabe',
@@ -505,6 +509,7 @@ const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
     failedToLoadNextPuzzle: '加载下一题失败',
     enterPuzzleId: '请输入题目 ID',
     exitZenModeHint: '点击这里或按 Esc 退出禅模式',
+    exitZenModeHintMobile: '点击这里退出禅模式',
     livePuzzleCountUnavailable: '实时题库数量不可用',
     settings: '设置',
     gameplay: '玩法',
@@ -521,6 +526,7 @@ const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
     zenMode: '禅模式',
     boardGlass: '棋盘玻璃效果',
     engineEval: '引擎 + 评估',
+    pgnPieceSvgs: 'PGN 棋子 SVG',
     animations: '动画',
     sound: '声音',
     captureRain: '吃子雨',
@@ -529,7 +535,7 @@ const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
     puzzleIdPlaceholder: '题目 ID（UUID）',
     loadId: '加载 ID',
     hint: '提示',
-    showSolution: '显示答案',
+    showSolution: '显示下一步',
     restartPuzzle: '重新开始',
     skipVariation: '跳过分支',
     nextPuzzle: '下一题',
@@ -662,7 +668,7 @@ const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
     puzzleIdPlaceholder: 'ID del problema (UUID)',
     loadId: 'Cargar ID',
     hint: 'Pista',
-    showSolution: 'Mostrar solución',
+    showSolution: 'Mostrar siguiente jugada',
     restartPuzzle: 'Reiniciar problema',
     skipVariation: 'Omitir variante',
     nextPuzzle: 'Siguiente problema',
@@ -795,7 +801,7 @@ const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
     puzzleIdPlaceholder: 'ID du problème (UUID)',
     loadId: 'Charger l’ID',
     hint: 'Indice',
-    showSolution: 'Montrer la solution',
+    showSolution: 'Montrer le coup suivant',
     restartPuzzle: 'Redémarrer le problème',
     skipVariation: 'Ignorer la variante',
     nextPuzzle: 'Problème suivant',
@@ -928,7 +934,7 @@ const I18N: Partial<Record<LanguageCode, FrontendI18n>> = {
     puzzleIdPlaceholder: 'ID задачи (UUID)',
     loadId: 'Загрузить ID',
     hint: 'Подсказка',
-    showSolution: 'Показать решение',
+    showSolution: 'Показать следующий ход',
     restartPuzzle: 'Начать заново',
     skipVariation: 'Пропустить вариант',
     nextPuzzle: 'Следующая задача',
@@ -1067,7 +1073,7 @@ I18N.he = {
   puzzleIdPlaceholder: 'מזהה חידה (UUID)',
   loadId: 'טען מזהה',
   hint: 'רמז',
-  showSolution: 'הצג פתרון',
+  showSolution: 'הצג את המסע הבא',
   restartPuzzle: 'הפעל מחדש חידה',
   skipVariation: 'דלג על וריאציה',
   nextPuzzle: 'החידה הבאה',
@@ -1196,7 +1202,7 @@ I18N.ar = {
   puzzleIdPlaceholder: 'معرّف اللغز (UUID)',
   loadId: 'تحميل المعرّف',
   hint: 'تلميح',
-  showSolution: 'عرض الحل',
+  showSolution: 'اعرض النقلة التالية',
   restartPuzzle: 'إعادة اللغز',
   skipVariation: 'تخطي التفرع',
   nextPuzzle: 'اللغز التالي',
@@ -1325,7 +1331,7 @@ I18N.ja = {
   puzzleIdPlaceholder: '問題ID (UUID)',
   loadId: 'IDを読み込む',
   hint: 'ヒント',
-  showSolution: '解答を表示',
+  showSolution: '次の手を表示',
   restartPuzzle: '問題をやり直す',
   skipVariation: '変化をスキップ',
   nextPuzzle: '次の問題',
@@ -1454,7 +1460,7 @@ I18N.ko = {
   puzzleIdPlaceholder: '퍼즐 ID (UUID)',
   loadId: 'ID 불러오기',
   hint: '힌트',
-  showSolution: '정답 보기',
+  showSolution: '다음 수 보기',
   restartPuzzle: '퍼즐 다시 시작',
   skipVariation: '변형 건너뛰기',
   nextPuzzle: '다음 퍼즐',
@@ -1583,7 +1589,7 @@ I18N.mn = {
   puzzleIdPlaceholder: 'Бодлогын ID (UUID)',
   loadId: 'ID ачаалах',
   hint: 'Сэжүүр',
-  showSolution: 'Шийдэл харах',
+  showSolution: 'Дараагийн нүүдэл харах',
   restartPuzzle: 'Бодлогыг дахин эхлүүлэх',
   skipVariation: 'Хувилбар алгасах',
   nextPuzzle: 'Дараагийн бодлого',
@@ -1712,7 +1718,7 @@ I18N.la = {
   puzzleIdPlaceholder: 'ID problematis (UUID)',
   loadId: 'ID onera',
   hint: 'Indicium',
-  showSolution: 'Solutionem ostende',
+  showSolution: 'Motum proximum ostende',
   restartPuzzle: 'Problema repete',
   skipVariation: 'Variationem praetere',
   nextPuzzle: 'Problema proximum',
@@ -1841,7 +1847,7 @@ I18N.hy = {
   puzzleIdPlaceholder: 'Փազլի ID (UUID)',
   loadId: 'Բեռնել ID',
   hint: 'Հուշում',
-  showSolution: 'Ցույց տալ լուծումը',
+  showSolution: 'Ցույց տալ հաջորդ քայլը',
   restartPuzzle: 'Վերսկսել փազլը',
   skipVariation: 'Բաց թողնել տարբերակը',
   nextPuzzle: 'Հաջորդ փազլ',

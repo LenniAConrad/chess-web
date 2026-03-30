@@ -2,6 +2,8 @@ import { createElement, type AnimationEvent as ReactAnimationEvent } from 'react
 import type { FallingCapturePiece } from '../lib/appShared.js';
 import type { FrontendI18n, PromotionPieceCode } from '../lib/i18n.js';
 
+export type TransportControlVariant = 'skip-back' | 'back' | 'forward' | 'skip-forward';
+
 export function LoadingScreen(props: { i18n: FrontendI18n; errorText: string | null; pieceSrc: string }) {
   const { i18n, errorText, pieceSrc } = props;
 
@@ -24,30 +26,53 @@ export function LoadingScreen(props: { i18n: FrontendI18n; errorText: string | n
   );
 }
 
+export function TransportControlIcon(props: { variant: TransportControlVariant }) {
+  const { variant } = props;
+
+  switch (variant) {
+    case 'skip-back':
+      return (
+        <svg className="transport-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <rect x="2.4" y="5" width="2.3" height="14" rx="0.75" />
+          <path d="M11.3 6.2 5.7 12l5.6 5.8V6.2Z" />
+          <path d="M18.8 6.2 13.2 12l5.6 5.8V6.2Z" />
+        </svg>
+      );
+    case 'back':
+      return (
+        <svg className="transport-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <rect x="3.8" y="5" width="2.3" height="14" rx="0.75" />
+          <path d="M18.2 6.1 9.2 12l9 5.9V6.1Z" />
+        </svg>
+      );
+    case 'forward':
+      return (
+        <svg className="transport-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M5.8 6.1 14.8 12l-9 5.9V6.1Z" />
+          <rect x="17.9" y="5" width="2.3" height="14" rx="0.75" />
+        </svg>
+      );
+    case 'skip-forward':
+      return (
+        <svg className="transport-control-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M5.2 6.2 10.8 12l-5.6 5.8V6.2Z" />
+          <path d="M12.7 6.2 18.3 12l-5.6 5.8V6.2Z" />
+          <rect x="19.3" y="5" width="2.3" height="14" rx="0.75" />
+        </svg>
+      );
+  }
+}
+
 export function PuzzleActionButtons(props: {
   disabled: boolean;
   isReviewMode: boolean;
   hintsEnabled: boolean;
-  puzzleIsComplete: boolean;
   i18n: FrontendI18n;
   onHint: () => void;
   onReveal: () => void;
   onRestartPuzzle: () => void;
-  onSkipVariation: () => void;
-  onNextPuzzle: () => void;
 }) {
-  const {
-    disabled,
-    isReviewMode,
-    hintsEnabled,
-    puzzleIsComplete,
-    i18n,
-    onHint,
-    onReveal,
-    onRestartPuzzle,
-    onSkipVariation,
-    onNextPuzzle
-  } = props;
+  const { disabled, isReviewMode, hintsEnabled, i18n, onHint, onReveal, onRestartPuzzle } = props;
 
   return (
     <>
@@ -57,17 +82,8 @@ export function PuzzleActionButtons(props: {
       <button type="button" className="btn-secondary" disabled={disabled || isReviewMode} onClick={onReveal}>
         {i18n.showSolution}
       </button>
-      {puzzleIsComplete ? (
-        <button type="button" className="btn-secondary" disabled={disabled || isReviewMode} onClick={onRestartPuzzle}>
-          {i18n.restartPuzzle}
-        </button>
-      ) : (
-        <button type="button" className="btn-secondary" disabled={disabled || isReviewMode} onClick={onSkipVariation}>
-          {i18n.skipVariation}
-        </button>
-      )}
-      <button type="button" className="btn-primary" disabled={disabled} onClick={onNextPuzzle}>
-        {i18n.nextPuzzle}
+      <button type="button" className="btn-primary" disabled={disabled || isReviewMode} onClick={onRestartPuzzle}>
+        {i18n.restartPuzzle}
       </button>
     </>
   );
@@ -86,23 +102,23 @@ export function PuzzleTransportButtons(props: {
     <>
       <button
         type="button"
-        className="btn-secondary"
+        className="btn-secondary transport-control-button"
         disabled={disabled || !canGoPrevious}
         onClick={onPrevious}
         aria-label="Previous puzzle"
         title="Previous puzzle"
       >
-        ◀◀
+        <TransportControlIcon variant="skip-back" />
       </button>
       <button
         type="button"
-        className="btn-secondary"
+        className="btn-secondary transport-control-button"
         disabled={disabled || !canGoNext}
         onClick={onNext}
         aria-label="Next puzzle"
         title="Next puzzle"
       >
-        ▶▶
+        <TransportControlIcon variant="skip-forward" />
       </button>
     </>
   );
@@ -110,52 +126,37 @@ export function PuzzleTransportButtons(props: {
 
 export function ReviewNavigationButtons(props: {
   disabled: boolean;
-  isReviewMode: boolean;
   canGoBackward: boolean;
   canGoForward: boolean;
   secondary?: boolean;
   i18n: FrontendI18n;
   onBackOne: () => void;
   onForwardOne: () => void;
-  onBackToLive: () => void;
 }) {
-  const {
-    disabled,
-    isReviewMode,
-    canGoBackward,
-    canGoForward,
-    secondary = false,
-    i18n,
-    onBackOne,
-    onForwardOne,
-    onBackToLive
-  } = props;
-  const className = secondary ? 'btn-secondary' : undefined;
+  const { disabled, canGoBackward, canGoForward, secondary = false, i18n, onBackOne, onForwardOne } = props;
+  const iconButtonClassName = secondary ? 'btn-secondary transport-control-button' : 'transport-control-button';
 
   return (
     <>
       <button
         type="button"
-        className={className}
+        className={iconButtonClassName}
         disabled={disabled || !canGoBackward}
         onClick={onBackOne}
         aria-label={i18n.backOneMove}
         title={i18n.backOneMove}
       >
-        ◀
+        <TransportControlIcon variant="back" />
       </button>
       <button
         type="button"
-        className={className}
+        className={iconButtonClassName}
         disabled={disabled || !canGoForward}
         onClick={onForwardOne}
         aria-label="Forward one move"
         title="Forward one move"
       >
-        ▶
-      </button>
-      <button type="button" className={className} disabled={disabled || !isReviewMode} onClick={onBackToLive}>
-        Live
+        <TransportControlIcon variant="forward" />
       </button>
     </>
   );

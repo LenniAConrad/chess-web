@@ -47,9 +47,10 @@ function RangeSetting(props: {
   valueLabel?: string;
   min: number;
   max: number;
+  step?: number;
   onChange: (value: number) => void;
 }) {
-  const { label, value, valueLabel, min, max, onChange } = props;
+  const { label, value, valueLabel, min, max, step = 5, onChange } = props;
 
   return (
     <label className="settings-range-control">
@@ -62,6 +63,7 @@ function RangeSetting(props: {
         type="range"
         min={min}
         max={max}
+        step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
       />
@@ -248,6 +250,16 @@ export function AppHeader(props: AppHeaderProps) {
                           setPrefs((previous) => ({
                             ...previous,
                             showEngineEval: !previous.showEngineEval
+                          }))
+                        }
+                      />
+                      <ToggleChip
+                        active={prefs.renderPgnPieceSvgs}
+                        label={i18n.pgnPieceSvgs ?? 'PGN piece SVGs'}
+                        onClick={() =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            renderPgnPieceSvgs: !previous.renderPgnPieceSvgs
                           }))
                         }
                       />

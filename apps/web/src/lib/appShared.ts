@@ -152,6 +152,24 @@ export function applyUciMove(chess: Chess, uciMove: string): boolean {
   }
 }
 
+export function formatUciMoveAsSan(fen: string, uciMove: string): string | null {
+  if (uciMove.length < 4) {
+    return null;
+  }
+
+  const chess = new Chess(fen);
+  const from = uciMove.slice(0, 2) as Square;
+  const to = uciMove.slice(2, 4) as Square;
+  const promotion = (uciMove[4] as PieceSymbol | undefined) ?? undefined;
+
+  try {
+    const move = chess.move({ from, to, promotion });
+    return move?.san ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export function getMoveSoundDecision(fen: string, uciMove: string): MoveSoundDecision {
   if (uciMove.length < 4) {
     return { primary: null, isCheck: false };
