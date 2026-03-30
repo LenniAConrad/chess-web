@@ -2465,15 +2465,48 @@ export function App() {
     />
   );
   const zenReviewNavigationButtons = (
-    <ReviewNavigationButtons
-      disabled={panelControlsDisabled}
-      canGoBackward={canReviewBackward}
-      canGoForward={canReviewForward}
-      secondary
-      i18n={i18n}
-      onBackOne={handleReviewBackOne}
-      onForwardOne={handleReviewForwardOne}
-    />
+    <>
+      <button
+        type="button"
+        className="btn-secondary transport-control-button"
+        disabled={panelControlsDisabled || !previousPuzzleSessionId}
+        onClick={handlePreviousPuzzle}
+        aria-label="Previous puzzle"
+        title="Previous puzzle"
+      >
+        <TransportControlIcon variant="skip-back" />
+      </button>
+      <button
+        type="button"
+        className="btn-secondary transport-control-button"
+        disabled={panelControlsDisabled || !canReviewBackward}
+        onClick={handleReviewBackOne}
+        aria-label={i18n.backOneMove}
+        title={i18n.backOneMove}
+      >
+        <TransportControlIcon variant="back" />
+      </button>
+      <button
+        type="button"
+        className="btn-secondary transport-control-button"
+        disabled={panelControlsDisabled || !canReviewForward}
+        onClick={handleReviewForwardOne}
+        aria-label="Forward one move"
+        title="Forward one move"
+      >
+        <TransportControlIcon variant="forward" />
+      </button>
+      <button
+        type="button"
+        className="btn-secondary transport-control-button"
+        disabled={panelControlsDisabled || (!nextHistoryPuzzleSessionId && !sessionId)}
+        onClick={handleTransportNextPuzzle}
+        aria-label="Next puzzle"
+        title="Next puzzle"
+      >
+        <TransportControlIcon variant="skip-forward" />
+      </button>
+    </>
   );
   const promotionPieceLabels = getPromotionPieceLabels(i18n);
   const statusPanel = (
@@ -2507,7 +2540,7 @@ export function App() {
   );
   const controlsPanel = (
     <section ref={mobileControlsPanelRef} className={controlsPanelClassName}>
-      <div className="button-row">
+      <div className="button-row next-live-row">
         <button
           type="button"
           className="btn-secondary"
@@ -2516,6 +2549,8 @@ export function App() {
         >
           {i18n.hint}
         </button>
+      </div>
+      <div className="button-row">
         <button
           type="button"
           className="btn-secondary"
@@ -2524,8 +2559,6 @@ export function App() {
         >
           {i18n.showSolution}
         </button>
-      </div>
-      <div className="button-row next-live-row">
         <button
           type="button"
           className="btn-primary"
@@ -2725,12 +2758,15 @@ export function App() {
   const mobileSecondaryPanel = (
     <section className="rail-block mobile-secondary-panel">
       <p className="meta rail-id mobile-secondary-id">{i18n.puzzleId(puzzle.publicId)}</p>
-      <div className={historyStripClassName} id="history" aria-label={i18n.recentGameHistory}>
-        {historyPanelContent}
-      </div>
-      <div className="mobile-secondary-divider" aria-hidden="true" />
       <div className="pgn-panel" id="explorer">
         {pgnPanelContent}
+      </div>
+    </section>
+  );
+  const mobileHistoryPanel = (
+    <section className="rail-block mobile-secondary-panel mobile-history-panel">
+      <div className={historyStripClassName} id="history" aria-label={i18n.recentGameHistory}>
+        {historyPanelContent}
       </div>
     </section>
   );
@@ -2855,6 +2891,11 @@ export function App() {
               <div className="mobile-snap-page-body mobile-secondary-page-body">
                 {statusPanel}
                 {mobileSecondaryPanel}
+              </div>
+            </section>
+            <section className="mobile-snap-screen mobile-tertiary-screen">
+              <div className="mobile-snap-page-body mobile-secondary-page-body">
+                {mobileHistoryPanel}
                 <footer className="app-footer mobile-inline-footer">
                   {footerContent}
                 </footer>
