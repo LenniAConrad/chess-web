@@ -2591,6 +2591,9 @@ export function App() {
   const statusPanelClassName = ['rail-block', 'header', 'rail-status', isMobileStandardLayout ? 'mobile-status-panel' : null]
     .filter(Boolean)
     .join(' ');
+  const desktopStatusSectionClassName = ['desktop-side-panel-section', 'header', 'rail-status']
+    .filter(Boolean)
+    .join(' ');
   const controlsPanelClassName = ['rail-block', 'rail-actions', isMobileStandardLayout ? 'mobile-controls-panel' : null]
     .filter(Boolean)
     .join(' ');
@@ -2656,8 +2659,8 @@ export function App() {
     </>
   );
   const promotionPieceLabels = getPromotionPieceLabels(i18n);
-  const statusPanel = (
-    <section className={statusPanelClassName}>
+  const statusPanelContent = (
+    <>
       <div className="rail-status-meta">
         {!isMobileStandardLayout && !isUntitledPuzzle ? <p className="subtitle rail-title">{normalizedPuzzleTitle}</p> : null}
         {!isMobileStandardLayout ? <p className="meta rail-id">{i18n.puzzleId(puzzle.publicId)}</p> : null}
@@ -2682,10 +2685,15 @@ export function App() {
         <p className={`correct correct-line ${hasCorrectText ? '' : 'is-empty'}`}>{correctText ?? '\u00A0'}</p>
         <p className="meta rail-branch">{completedBranchesText}</p>
       </div>
+    </>
+  );
+  const statusPanel = (
+    <section className={statusPanelClassName}>
+      {statusPanelContent}
     </section>
   );
-  const controlsPanel = (
-    <section ref={mobileControlsPanelRef} className={controlsPanelClassName}>
+  const controlsPanelContent = (
+    <>
       <div className="button-row next-live-row">
         <button
           type="button"
@@ -2756,6 +2764,11 @@ export function App() {
           <TransportControlIcon variant="skip-forward" />
         </button>
       </div>
+    </>
+  );
+  const controlsPanel = (
+    <section ref={mobileControlsPanelRef} className={controlsPanelClassName}>
+      {controlsPanelContent}
     </section>
   );
   const historyPanelContent = (
@@ -2806,11 +2819,6 @@ export function App() {
       </div>
       {historyError ? <p className="error">{historyError}</p> : null}
     </>
-  );
-  const historyPanel = (
-    <section className={`rail-block ${historyStripClassName}`} id="history" aria-label={i18n.recentGameHistory}>
-      {historyPanelContent}
-    </section>
   );
   const pgnPanelContent = (
     <>
@@ -2896,14 +2904,12 @@ export function App() {
       </div>
     </>
   );
-  const pgnPanel = (
-    <section className="rail-block pgn-panel" id="explorer">
-      {pgnPanelContent}
-    </section>
-  );
   const mobileSecondaryPanel = (
     <section className="rail-block mobile-secondary-panel">
-      <p className="meta rail-id mobile-secondary-id">{i18n.puzzleId(puzzle.publicId)}</p>
+      <div className="mobile-secondary-meta">
+        {!isUntitledPuzzle ? <p className="subtitle rail-title mobile-secondary-title">{normalizedPuzzleTitle}</p> : null}
+        <p className="meta rail-id mobile-secondary-id">{i18n.puzzleId(puzzle.publicId)}</p>
+      </div>
       <div className="pgn-panel" id="explorer">
         {pgnPanelContent}
       </div>
@@ -3007,6 +3013,22 @@ export function App() {
       {controlsPanel}
     </div>
   );
+  const desktopSidePanel = (
+    <section className="rail-block desktop-side-panel">
+      <div className={desktopStatusSectionClassName}>
+        {statusPanelContent}
+      </div>
+      <div className="desktop-side-panel-section rail-actions">
+        {controlsPanelContent}
+      </div>
+      <div className={`desktop-side-panel-section ${historyStripClassName}`} id="history" aria-label={i18n.recentGameHistory}>
+        {historyPanelContent}
+      </div>
+      <div className="desktop-side-panel-section pgn-panel" id="explorer">
+        {pgnPanelContent}
+      </div>
+    </section>
+  );
 
   return (
     <>
@@ -3060,10 +3082,7 @@ export function App() {
                 {boardPanel}
                 {!isZenMode ? (
                 <aside className="side-column">
-                  {statusPanel}
-                  {controlsPanel}
-                  {historyPanel}
-                  {pgnPanel}
+                  {desktopSidePanel}
                 </aside>
               ) : null}
               </>
