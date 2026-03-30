@@ -73,24 +73,89 @@ export function PuzzleActionButtons(props: {
   );
 }
 
+export function PuzzleTransportButtons(props: {
+  disabled: boolean;
+  canGoPrevious: boolean;
+  canGoNext: boolean;
+  onPrevious: () => void;
+  onNext: () => void;
+}) {
+  const { disabled, canGoPrevious, canGoNext, onPrevious, onNext } = props;
+
+  return (
+    <>
+      <button
+        type="button"
+        className="btn-secondary"
+        disabled={disabled || !canGoPrevious}
+        onClick={onPrevious}
+        aria-label="Previous puzzle"
+        title="Previous puzzle"
+      >
+        ◀◀
+      </button>
+      <button
+        type="button"
+        className="btn-secondary"
+        disabled={disabled || !canGoNext}
+        onClick={onNext}
+        aria-label="Next puzzle"
+        title="Next puzzle"
+      >
+        ▶▶
+      </button>
+    </>
+  );
+}
+
 export function ReviewNavigationButtons(props: {
   disabled: boolean;
   isReviewMode: boolean;
+  canGoBackward: boolean;
+  canGoForward: boolean;
   secondary?: boolean;
   i18n: FrontendI18n;
   onBackOne: () => void;
+  onForwardOne: () => void;
   onBackToLive: () => void;
 }) {
-  const { disabled, isReviewMode, secondary = false, i18n, onBackOne, onBackToLive } = props;
+  const {
+    disabled,
+    isReviewMode,
+    canGoBackward,
+    canGoForward,
+    secondary = false,
+    i18n,
+    onBackOne,
+    onForwardOne,
+    onBackToLive
+  } = props;
   const className = secondary ? 'btn-secondary' : undefined;
 
   return (
     <>
-      <button type="button" className={className} disabled={disabled || !isReviewMode} onClick={onBackOne}>
-        {i18n.backOneMove}
+      <button
+        type="button"
+        className={className}
+        disabled={disabled || !canGoBackward}
+        onClick={onBackOne}
+        aria-label={i18n.backOneMove}
+        title={i18n.backOneMove}
+      >
+        ◀
+      </button>
+      <button
+        type="button"
+        className={className}
+        disabled={disabled || !canGoForward}
+        onClick={onForwardOne}
+        aria-label="Forward one move"
+        title="Forward one move"
+      >
+        ▶
       </button>
       <button type="button" className={className} disabled={disabled || !isReviewMode} onClick={onBackToLive}>
-        {i18n.backToLivePuzzle}
+        Live
       </button>
     </>
   );

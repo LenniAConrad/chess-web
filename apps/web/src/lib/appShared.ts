@@ -24,6 +24,9 @@ export const MOBILE_HISTORY_PREVIEW_HOLD_MS = 260;
 export const CAPTURE_RAIN_MAX_PIECES = 64;
 export const REPO_URL = 'https://github.com/LenniAConrad/chess-web';
 export const HISTORY_PREVIEW_DELAY_MS = 110;
+const DEFAULT_ANIMATION_SPEED = 100;
+const MIN_ANIMATION_SPEED = 25;
+const MAX_ANIMATION_SPEED = 300;
 
 type PrimaryMoveSoundType = Exclude<MoveSoundType, 'check'>;
 
@@ -108,12 +111,29 @@ export function maybeWait(ms: number, enabled: boolean): Promise<void> {
   return wait(ms);
 }
 
-export function getFeedbackDelay(ms: number, animationsEnabled: boolean): number {
+export function normalizeAnimationSpeed(speed: number): number {
+  if (!Number.isFinite(speed)) {
+    return DEFAULT_ANIMATION_SPEED;
+  }
+
+  return Math.min(MAX_ANIMATION_SPEED, Math.max(MIN_ANIMATION_SPEED, speed));
+}
+
+export function scaleAnimationDuration(ms: number, animationSpeed: number): number {
   if (ms <= 0) {
     return 0;
   }
 
-  return animationsEnabled ? ms : NO_ANIMATION_DELAY_MS;
+  const normalizedSpeed = normalizeAnimationSpeed(animationSpeed);
+  return Math.max(0, Math.round((ms * DEFAULT_ANIMATION_SPEED) / normalizedSpeed));
+}
+
+export function getFeedbackDelay(ms: number, animationsEnabled: boolean, animationSpeed = DEFAULT_ANIMATION_SPEED): number {
+  if (ms <= 0) {
+    return 0;
+  }
+
+  return animationsEnabled ? scaleAnimationDuration(ms, animationSpeed) : NO_ANIMATION_DELAY_MS;
 }
 
 export function applyUciMove(chess: Chess, uciMove: string): boolean {

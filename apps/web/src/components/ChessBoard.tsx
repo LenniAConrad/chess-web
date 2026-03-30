@@ -14,6 +14,7 @@ interface ChessBoardProps {
   interactive: boolean;
   canMoveExecution: boolean;
   animationsEnabled: boolean;
+  animationDurationMs: number;
   premoveResetToken: string | null;
   autoQueenPromotion: boolean;
   hintSquare: string | null;
@@ -197,6 +198,7 @@ export function ChessBoard({
   interactive,
   canMoveExecution,
   animationsEnabled,
+  animationDurationMs,
   premoveResetToken,
   autoQueenPromotion,
   hintSquare,
@@ -370,7 +372,7 @@ export function ChessBoard({
       coordinates: false,
       animation: {
         enabled: animationsEnabled,
-        duration: animationsEnabled ? 200 : 0
+        duration: animationsEnabled ? animationDurationMs : 0
       },
       movable: {
         free: false,
@@ -388,6 +390,7 @@ export function ChessBoard({
     });
   }, [
     animationsEnabled,
+    animationDurationMs,
     checkColor,
     chessgroundLastMove,
     destinations,
@@ -410,7 +413,7 @@ export function ChessBoard({
       coordinates: false,
       animation: {
         enabled: animationsEnabled,
-        duration: animationsEnabled ? 200 : 0
+        duration: animationsEnabled ? animationDurationMs : 0
       },
       movable: {
         free: false,
@@ -452,6 +455,7 @@ export function ChessBoard({
     });
   }, [
     animationsEnabled,
+    animationDurationMs,
     checkColor,
     chessgroundLastMove,
     destinations,

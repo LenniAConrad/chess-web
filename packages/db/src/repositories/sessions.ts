@@ -179,6 +179,43 @@ export async function updatePuzzleSession(
   return mapSession(result.rows[0] as Record<string, unknown>);
 }
 
+export async function resetPuzzleSession(
+  pool: Pool,
+  input: {
+    sessionId: string;
+    mode: VariationMode;
+    nodeId: number;
+    branchCursor: Record<string, unknown>;
+    startedFromHistory?: boolean;
+  }
+): Promise<PuzzleSessionRecord> {
+  const result = await pool.query(
+    `UPDATE puzzle_sessions
+     SET mode = $2,
+         node_id = $3,
+         branch_cursor = $4,
+         started_from_history = $5,
+         prefetched = false,
+         solved = false,
+         revealed = false,
+         autoplay_used = false,
+         wrong_move_count = 0,
+         hint_count = 0,
+         updated_at = now()
+     WHERE id = $1
+     RETURNING *`,
+    [
+      input.sessionId,
+      input.mode,
+      input.nodeId,
+      JSON.stringify(input.branchCursor),
+      input.startedFromHistory ?? false
+    ]
+  );
+
+  return mapSession(result.rows[0] as Record<string, unknown>);
+}
+
 export async function setPuzzleSessionPrefetched(
   pool: Pool,
   input: {

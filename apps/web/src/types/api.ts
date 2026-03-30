@@ -10,6 +10,11 @@ export interface SessionStatePayload {
   completedBranches: number;
 }
 
+export interface HintPreview {
+  pieceFromSquare: string | null;
+  bestMoveUci: string | null;
+}
+
 export interface StartSessionResponse {
   sessionId: string;
   puzzle: {
@@ -20,6 +25,7 @@ export interface StartSessionResponse {
   state: SessionStatePayload;
   ui: {
     autoNextDefault: boolean;
+    hintPreview: HintPreview | null;
   };
 }
 
@@ -70,6 +76,10 @@ export interface NextResponse {
     title: string;
   };
   state: SessionStatePayload;
+  ui: {
+    autoNextDefault: boolean;
+    hintPreview: HintPreview | null;
+  };
 }
 
 export type SessionHistoryStatus = 'correct' | 'half' | 'incorrect';

@@ -14,6 +14,7 @@ import {
   getPuzzleSession,
   getRandomPuzzle,
   listPuzzleSessionHistory,
+  resetPuzzleSession,
   setPuzzleSessionPrefetched,
   updatePuzzleSession,
   type PuzzleSessionHistoryRecord,
@@ -103,6 +104,11 @@ export interface SessionStatePayload {
   completedBranches: number;
 }
 
+export interface HintPreviewPayload {
+  pieceFromSquare: string | null;
+  bestMoveUci: string | null;
+}
+
 function toStatePayload(snapshot: {
   nodeId: number;
   fen: string;
@@ -123,6 +129,16 @@ function toStatePayload(snapshot: {
   };
 }
 
+function toHintPreviewPayload(preview: {
+  pieceFromSquare: string | null;
+  bestMoveUci: string | null;
+}): HintPreviewPayload {
+  return {
+    pieceFromSquare: preview.pieceFromSquare,
+    bestMoveUci: preview.bestMoveUci
+  };
+}
+
 export class SessionService {
   constructor(private readonly pool: Pool) {}
 
@@ -140,7 +156,7 @@ export class SessionService {
     sessionId: string;
     puzzle: { publicId: string; startFen: string; title: string };
     state: SessionStatePayload;
-    ui: { autoNextDefault: boolean };
+    ui: { autoNextDefault: boolean; hintPreview: HintPreviewPayload | null };
   }> {
     const nodes = await getPuzzleNodes(this.pool, input.puzzle.id);
     const rootNodeId = rootNodeIdForPuzzle(input.puzzle, nodes);
@@ -152,6 +168,7 @@ export class SessionService {
 
     const initialCursor = engine.getInitialCursor();
     const snapshot = engine.buildSnapshot(initialCursor, false);
+    const hintPreview = toHintPreviewPayload(engine.hint(initialCursor));
 
     const dbSession = await createPuzzleSession(this.pool, {
       anonSessionId: input.anonSessionId,
@@ -176,7 +193,8 @@ export class SessionService {
       },
       state: toStatePayload(snapshot),
       ui: {
-        autoNextDefault: input.autoNext
+        autoNextDefault: input.autoNext,
+        hintPreview
       }
     };
   }
@@ -192,7 +210,7 @@ export class SessionService {
     sessionId: string;
     puzzle: { publicId: string; startFen: string; title: string };
     state: SessionStatePayload;
-    ui: { autoNextDefault: boolean };
+    ui: { autoNextDefault: boolean; hintPreview: HintPreviewPayload | null };
   }> {
     const puzzle = await getRandomPuzzle(this.pool, input.excludePuzzleId);
     if (!puzzle) {
@@ -220,7 +238,7 @@ export class SessionService {
     sessionId: string;
     puzzle: { publicId: string; startFen: string; title: string };
     state: SessionStatePayload;
-    ui: { autoNextDefault: boolean };
+    ui: { autoNextDefault: boolean; hintPreview: HintPreviewPayload | null };
   }> {
     const puzzle = await this.findPuzzleByPublicId(input.publicId);
     return this.startSessionForPuzzle({
@@ -435,6 +453,7 @@ export class SessionService {
     newSessionId: string;
     puzzle: { publicId: string; startFen: string; title: string };
     state: SessionStatePayload;
+    ui: { autoNextDefault: boolean; hintPreview: HintPreviewPayload | null };
   }> {
     const existing = await getPuzzleSession(this.pool, input.sessionId);
     if (!existing) {
@@ -456,7 +475,8 @@ export class SessionService {
       return {
         newSessionId: loaded.sessionId,
         puzzle: loaded.puzzle,
-        state: loaded.state
+        state: loaded.state,
+        ui: loaded.ui
       };
     }
 
@@ -467,11 +487,12 @@ export class SessionService {
           sessionId: pending.id,
           anonSessionId: input.anonSessionId
         });
-        return {
-          newSessionId: loaded.sessionId,
-          puzzle: loaded.puzzle,
-          state: loaded.state
-        };
+      return {
+        newSessionId: loaded.sessionId,
+        puzzle: loaded.puzzle,
+        state: loaded.state,
+        ui: loaded.ui
+      };
       }
     }
 
@@ -485,7 +506,8 @@ export class SessionService {
     return {
       newSessionId: next.sessionId,
       puzzle: next.puzzle,
-      state: next.state
+      state: next.state,
+      ui: next.ui
     };
   }
 
@@ -498,7 +520,7 @@ export class SessionService {
     sessionId: string;
     puzzle: { publicId: string; startFen: string; title: string };
     state: SessionStatePayload;
-    ui: { autoNextDefault: boolean };
+    ui: { autoNextDefault: boolean; hintPreview: HintPreviewPayload | null };
   }> {
     const existing = await getPuzzleSession(this.pool, input.sessionId);
     if (!existing || existing.anon_session_id !== input.anonSessionId) {
@@ -543,24 +565,37 @@ export class SessionService {
     });
   }
 
-  /** Load an existing session owned by the calling anon session id. */
-  async loadSession(input: {
+  async restartSession(input: {
     sessionId: string;
     anonSessionId: string;
-    activatePrefetched?: boolean;
-    autoNextDefault?: boolean;
+    mode?: VariationMode;
+    autoNext: boolean;
   }): Promise<{
     sessionId: string;
     puzzle: { publicId: string; startFen: string; title: string };
     state: SessionStatePayload;
-    ui: { autoNextDefault: boolean };
+    ui: { autoNextDefault: boolean; hintPreview: HintPreviewPayload | null };
   }> {
     const context = await this.loadContext(input.sessionId, input.anonSessionId);
-    if (input.activatePrefetched ?? true) {
-      context.dbSession = await this.activatePrefetchedSession(context.dbSession);
-    }
-    const cursor = context.engine.normalizeCursor(context.dbSession.branch_cursor);
-    const snapshot = context.engine.buildSnapshot(cursor, context.dbSession.solved);
+    const mode = input.mode ?? context.dbSession.mode;
+    const rootNodeId = rootNodeIdForPuzzle(context.puzzle, context.nodes);
+    const engine = new PuzzleSessionEngine({
+      nodes: toCoreNodes(context.nodes),
+      rootNodeId,
+      mode
+    });
+
+    const initialCursor = engine.getInitialCursor();
+    const snapshot = engine.buildSnapshot(initialCursor, false);
+    const hintPreview = toHintPreviewPayload(engine.hint(initialCursor));
+
+    await resetPuzzleSession(this.pool, {
+      sessionId: context.dbSession.id,
+      mode,
+      nodeId: snapshot.nodeId,
+      branchCursor: initialCursor as unknown as Record<string, unknown>,
+      startedFromHistory: false
+    });
 
     return {
       sessionId: context.dbSession.id,
@@ -571,7 +606,43 @@ export class SessionService {
       },
       state: toStatePayload(snapshot),
       ui: {
-        autoNextDefault: input.autoNextDefault ?? true
+        autoNextDefault: input.autoNext,
+        hintPreview
+      }
+    };
+  }
+
+  /** Load an existing session owned by the calling anon session id. */
+  async loadSession(input: {
+    sessionId: string;
+    anonSessionId: string;
+    activatePrefetched?: boolean;
+    autoNextDefault?: boolean;
+  }): Promise<{
+    sessionId: string;
+    puzzle: { publicId: string; startFen: string; title: string };
+    state: SessionStatePayload;
+    ui: { autoNextDefault: boolean; hintPreview: HintPreviewPayload | null };
+  }> {
+    const context = await this.loadContext(input.sessionId, input.anonSessionId);
+    if (input.activatePrefetched ?? true) {
+      context.dbSession = await this.activatePrefetchedSession(context.dbSession);
+    }
+    const cursor = context.engine.normalizeCursor(context.dbSession.branch_cursor);
+    const snapshot = context.engine.buildSnapshot(cursor, context.dbSession.solved);
+    const hintPreview = toHintPreviewPayload(context.engine.hint(cursor));
+
+    return {
+      sessionId: context.dbSession.id,
+      puzzle: {
+        publicId: context.puzzle.public_id,
+        startFen: context.puzzle.start_fen,
+        title: context.puzzle.title
+      },
+      state: toStatePayload(snapshot),
+      ui: {
+        autoNextDefault: input.autoNextDefault ?? true,
+        hintPreview
       }
     };
   }

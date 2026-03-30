@@ -9,10 +9,10 @@ import { useLocalPrefs } from './hooks/useLocalPrefs.js';
 import { useStockfishEval } from './hooks/useStockfishEval.js';
 import { getHistoryDotSymbol, getHistoryDotTone } from './lib/historyDots.js';
 import { getI18n } from './lib/i18n.js';
-import { appendSimilarVariationStatus, applyUciMove, AUTO_PLAY_DELAY_MS, type AutoPlayAnimationPayload, type AppChromeLink, CAPTURE_RAIN_MAX_PIECES, CORRECT_BREAK_MS, type FallingCapturePiece, formatEngineEval, formatEngineSide, getCapturedPieceSkin, getFeedbackDelay, getFenAfterUciMove, getMoveSoundDecision, getMoveSquares, getMoveSquaresBetweenFens, getTerminalEvalDisplay, HISTORY_PREVIEW_DELAY_MS, type HistoryPreviewData, type HistoryPreviewState, isPuzzleSolved, literalUiMessage, MOBILE_HISTORY_PREVIEW_HOLD_MS, maybeWait, type PrefetchedNextState, type PuzzleHeader, randomBetween, REPO_URL, resolveUiMessage, REWIND_BREAK_MS, REWIND_STEP_DELAY_MS, SESSION_HISTORY_FETCH_LIMIT, SHORT_STATUS_DELAY_MS, translatedUiMessage, type UiMessage, wait, withBasePath, WRONG_MOVE_FEEDBACK_MS, playMoveSoundDecision } from './lib/appShared.js';
-import { cacheLoadedSession, getPuzzleCount, getHint, loadSession, refreshSession, getSessionHistory, getSessionTree, nextPuzzle, prefetchNextPuzzle, playMove, retainLoadedSessions, revealSolution, skipVariation, startSession } from './lib/api.js';
+import { appendSimilarVariationStatus, applyUciMove, AUTO_PLAY_DELAY_MS, type AutoPlayAnimationPayload, type AppChromeLink, CAPTURE_RAIN_MAX_PIECES, CORRECT_BREAK_MS, type FallingCapturePiece, formatEngineEval, formatEngineSide, getCapturedPieceSkin, getFeedbackDelay, getFenAfterUciMove, getMoveSoundDecision, getMoveSquares, getMoveSquaresBetweenFens, getTerminalEvalDisplay, HISTORY_PREVIEW_DELAY_MS, type HistoryPreviewData, type HistoryPreviewState, isPuzzleSolved, literalUiMessage, MOBILE_HISTORY_PREVIEW_HOLD_MS, maybeWait, type PrefetchedNextState, type PuzzleHeader, randomBetween, REPO_URL, resolveUiMessage, REWIND_BREAK_MS, REWIND_STEP_DELAY_MS, scaleAnimationDuration, SESSION_HISTORY_FETCH_LIMIT, SHORT_STATUS_DELAY_MS, translatedUiMessage, type UiMessage, wait, withBasePath, WRONG_MOVE_FEEDBACK_MS, playMoveSoundDecision } from './lib/appShared.js';
+import { cacheLoadedSession, getPuzzleCount, getHint, loadSession, refreshSession, getSessionHistory, getSessionTree, nextPuzzle, prefetchNextPuzzle, playMove, restartSession, retainLoadedSessions, revealSolution, skipVariation, startSession } from './lib/api.js';
 import { primeMoveSounds } from './lib/moveSounds.js';
-import type { SessionHistoryItem, SessionStatePayload, SessionTreeNode, SessionTreeResponse, StartSessionResponse } from './types/api.js';
+import type { HintPreview, SessionHistoryItem, SessionStatePayload, SessionTreeNode, SessionTreeResponse, StartSessionResponse } from './types/api.js';
 
 const ACTIVE_SESSION_COOKIE = 'active_sid';
 const ACTIVE_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
@@ -21,6 +21,44 @@ const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 let initialSessionRequest: Promise<StartSessionResponse> | null = null;
+
+interface PreparedHintState extends HintPreview {
+  nodeId: number;
+}
+
+interface ReviewCursorState {
+  path: number[];
+  index: number;
+}
+
+function buildNodePath(nodeMap: Map<number, SessionTreeNode>, nodeId: number): number[] {
+  const path: number[] = [];
+  const seen = new Set<number>();
+  let currentId: number | null = nodeId;
+
+  while (currentId !== null && !seen.has(currentId)) {
+    seen.add(currentId);
+    path.push(currentId);
+    currentId = nodeMap.get(currentId)?.parent_id ?? null;
+  }
+
+  path.reverse();
+  return path;
+}
+
+function pathsMatch(left: number[], right: number[]): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((nodeId, index) => nodeId === right[index]);
+}
+
+function formatPgnMoveLabel(node: SessionTreeNode): string {
+  const moveNumber = Math.ceil(node.ply / 2);
+  const prefix = node.ply % 2 === 1 ? `${moveNumber}.` : `${moveNumber}...`;
+  return `${prefix} ${node.san || node.uci}`;
+}
 
 function readActiveSessionIdCookie(): string | null {
   if (typeof document === 'undefined') {
@@ -110,7 +148,8 @@ export function App() {
   const [historyErrorMessage, setHistoryErrorMessage] = useState<UiMessage | null>(null);
   const [sessionTree, setSessionTree] = useState<SessionTreeResponse | null>(null);
   const [treeErrorMessage, setTreeErrorMessage] = useState<UiMessage | null>(null);
-  const [reviewPath, setReviewPath] = useState<number[] | null>(null);
+  const [preparedHint, setPreparedHint] = useState<PreparedHintState | null>(null);
+  const [reviewCursor, setReviewCursor] = useState<ReviewCursorState | null>(null);
   const [wrongMoveSquare, setWrongMoveSquare] = useState<Square | null>(null);
   const [wrongMoveFlashToken, setWrongMoveFlashToken] = useState(0);
   const [lineCompleteSquare, setLineCompleteSquare] = useState<Square | null>(null);
@@ -131,12 +170,14 @@ export function App() {
   const mobileHistoryPreviewSessionRef = useRef<string | null>(null);
   const suppressHistoryDotClickRef = useRef<string | null>(null);
   const sessionArtifactsRequestRef = useRef(0);
+  const hintSyncRequestRef = useRef(0);
   const prefetchedNextRef = useRef<PrefetchedNextState | null>(null);
   const prefetchedNextRequestRef = useRef(0);
   const autoPlaySolveStateRef = useRef<{ sessionId: string | null; solved: boolean }>({
     sessionId: null,
     solved: false
   });
+  const previousAutoNextRef = useRef(prefs.autoNext);
   const initialPrefsRef = useRef({
     autoNext: prefs.autoNext,
     variationMode: prefs.variationMode
@@ -227,7 +268,6 @@ export function App() {
     [treeErrorMessage, i18n]
   );
 
-  const reviewNodeId = reviewPath?.at(-1) ?? null;
   const treeNodeMap = useMemo(() => {
     const map = new Map<number, SessionTreeNode>();
     if (!sessionTree) {
@@ -264,17 +304,30 @@ export function App() {
     return map;
   }, [sessionTree]);
 
-  const isReviewMode = Boolean(reviewPath && reviewPath.length > 1);
-  const reviewNode = reviewNodeId ? (treeNodeMap.get(reviewNodeId) ?? null) : null;
-  const reviewFen = reviewNode?.fen_after ?? null;
+  const livePath = useMemo(() => {
+    if (!state) {
+      return [];
+    }
+
+    const path = buildNodePath(treeNodeMap, state.nodeId);
+    return path.length > 0 ? path : [state.nodeId];
+  }, [state, treeNodeMap]);
+
+  const pgnDisplayPath = reviewCursor?.path ?? livePath;
+  const activeReviewPath = reviewCursor ? reviewCursor.path.slice(0, reviewCursor.index + 1) : livePath;
+  const currentReviewNodeId = activeReviewPath.at(-1) ?? state?.nodeId ?? null;
+  const isReviewMode = Boolean(reviewCursor);
+  const reviewNode = currentReviewNodeId ? (treeNodeMap.get(currentReviewNodeId) ?? null) : null;
+  const reviewFen = isReviewMode ? (reviewNode?.fen_after ?? null) : null;
   const liveFen = displayFen ?? state?.fen ?? null;
   const boardFen = reviewFen ?? liveFen;
+  const objectiveFen = reviewFen ?? state?.fen ?? null;
   const reviewLastMoveSquares = useMemo(() => {
-    if (!isReviewMode || !reviewPath || reviewPath.length < 2) {
+    if (!isReviewMode || activeReviewPath.length < 2) {
       return null;
     }
 
-    const nodeId = reviewPath[reviewPath.length - 1];
+    const nodeId = activeReviewPath[activeReviewPath.length - 1];
     if (!nodeId) {
       return null;
     }
@@ -285,24 +338,48 @@ export function App() {
     }
 
     return getMoveSquares(node.uci);
-  }, [isReviewMode, reviewPath, treeNodeMap]);
+  }, [activeReviewPath, isReviewMode, treeNodeMap]);
 
-  const pgnCurrentNodeId = reviewNodeId ?? state?.nodeId ?? null;
+  const pgnCurrentNodeId = currentReviewNodeId;
   const pgnNextMoves = pgnCurrentNodeId ? (treeChildrenMap.get(pgnCurrentNodeId) ?? []) : [];
-  const reviewMoves = useMemo(() => {
-    if (!reviewPath || reviewPath.length < 2) {
-      return [];
+  const pgnLineNodes = useMemo(
+    () =>
+      pgnDisplayPath
+        .slice(1)
+        .map((nodeId) => treeNodeMap.get(nodeId) ?? null)
+        .filter((node): node is SessionTreeNode => Boolean(node)),
+    [pgnDisplayPath, treeNodeMap]
+  );
+  const reviewMoves = useMemo(
+    () => pgnLineNodes.map((node) => node.san || node.uci).filter(Boolean),
+    [pgnLineNodes]
+  );
+  const canReviewBackward = useMemo(() => {
+    if (livePath.length > 1 && !isReviewMode) {
+      return true;
     }
 
-    return reviewPath
-      .slice(1)
-      .map((nodeId) => treeNodeMap.get(nodeId)?.san ?? null)
-      .filter((san): san is string => Boolean(san));
-  }, [reviewPath, treeNodeMap]);
+    return Boolean(reviewCursor && reviewCursor.index > 0);
+  }, [isReviewMode, livePath.length, reviewCursor]);
+  const canReviewForward = useMemo(() => {
+    if (!reviewCursor) {
+      return false;
+    }
+
+    return reviewCursor.index < reviewCursor.path.length - 1;
+  }, [reviewCursor]);
   const recentHistoryItemMap = useMemo(
     () => new Map(recentHistoryItems.map((item) => [item.sessionId, item])),
     [recentHistoryItems]
   );
+  const currentHistoryIndex = useMemo(
+    () => recentHistoryItems.findIndex((item) => item.sessionId === sessionId),
+    [recentHistoryItems, sessionId]
+  );
+  const previousPuzzleSessionId =
+    currentHistoryIndex >= 0 ? (recentHistoryItems[currentHistoryIndex + 1]?.sessionId ?? null) : null;
+  const nextHistoryPuzzleSessionId =
+    currentHistoryIndex > 0 ? (recentHistoryItems[currentHistoryIndex - 1]?.sessionId ?? null) : null;
 
   const engineEval = useStockfishEval(boardFen, prefs.showEngineEval);
   const terminalEvalDisplay = useMemo(() => getTerminalEvalDisplay(boardFen, i18n), [boardFen, i18n]);
@@ -318,13 +395,22 @@ export function App() {
 
     return chess.turn() === 'w' ? 'white' : 'black';
   })();
-  const turnLabel = (() => {
-    if (!boardFen) {
-      return '\u00A0';
+  const objectiveColor = (() => {
+    if (!objectiveFen) {
+      return null;
     }
-    const turn = new Chess(boardFen).turn();
-    return turn === 'w' ? i18n.whiteToMove : i18n.blackToMove;
+
+    return new Chess(objectiveFen).turn() === 'w' ? 'white' : 'black';
   })();
+  const puzzleComplete = state ? isPuzzleSolved(state) : false;
+  const turnKickerText = puzzleComplete ? '\u00A0' : i18n.yourTurn;
+  const objectiveText = puzzleComplete
+    ? i18n.puzzleComplete
+    : objectiveColor === 'white'
+      ? i18n.findBestMoveForWhite
+      : objectiveColor === 'black'
+        ? i18n.findBestMoveForBlack
+        : '\u00A0';
 
   const displayedEngineCp = terminalEvalDisplay?.cp ?? engineEval.cp;
   const displayedEngineMate = terminalEvalDisplay?.mate ?? engineEval.mate;
@@ -335,8 +421,12 @@ export function App() {
     terminalEvalDisplay?.sideText ??
     formatEngineSide(displayedEngineCp, displayedEngineMate, displayedEngineError, i18n);
   const engineDepthText = terminalEvalDisplay?.depthText ?? `d${engineEval.depth}`;
-  const getDelay = useCallback((ms: number) => ms, []);
-  const getFeedbackPause = useCallback((ms: number, animationsEnabled: boolean) => getFeedbackDelay(ms, animationsEnabled), []);
+  const getDelay = useCallback((ms: number) => scaleAnimationDuration(ms, prefs.animationSpeed), [prefs.animationSpeed]);
+  const getFeedbackPause = useCallback(
+    (ms: number, animationsEnabled: boolean) => getFeedbackDelay(ms, animationsEnabled, prefs.animationSpeed),
+    [prefs.animationSpeed]
+  );
+  const boardAnimationDurationMs = getDelay(200);
 
   const resetHints = useCallback(() => {
     setHintSquare(null);
@@ -347,6 +437,22 @@ export function App() {
   const resetPremoves = useCallback(() => {
     setPremoveResetCounter((current) => current + 1);
   }, []);
+
+  const setPreparedHintForNode = useCallback(
+    (nodeId: number, hintPreview: HintPreview | null | undefined) => {
+      if (!hintPreview) {
+        setPreparedHint(null);
+        return;
+      }
+
+      setPreparedHint({
+        nodeId,
+        pieceFromSquare: hintPreview.pieceFromSquare,
+        bestMoveUci: hintPreview.bestMoveUci
+      });
+    },
+    []
+  );
 
   const loadSessionArtifacts = useCallback(async (activeSessionId: string) => {
     const requestId = ++sessionArtifactsRequestRef.current;
@@ -411,10 +517,17 @@ export function App() {
       puzzle,
       state,
       ui: {
-        autoNextDefault: prefs.autoNext
+        autoNextDefault: prefs.autoNext,
+        hintPreview:
+          preparedHint?.nodeId === state.nodeId
+            ? {
+                pieceFromSquare: preparedHint.pieceFromSquare,
+                bestMoveUci: preparedHint.bestMoveUci
+              }
+            : null
       }
     });
-  }, [prefs.autoNext, puzzle, sessionId, state]);
+  }, [prefs.autoNext, preparedHint, puzzle, sessionId, state]);
 
   useEffect(() => {
     if (!sessionId) {
@@ -670,9 +783,10 @@ export function App() {
       setPlayerOrientation(response.state.toMove === 'w' ? 'white' : 'black');
       setLastMoveSquares(null);
       resetHints();
+      setPreparedHintForNode(response.state.nodeId, response.ui.hintPreview);
       setLastBestMove(null);
       setCorrectMessage(null);
-      setReviewPath(null);
+      setReviewCursor(null);
       setSessionTree(null);
       setWrongMoveSquare(null);
       setLineCompleteSquare(null);
@@ -680,7 +794,7 @@ export function App() {
       resetPremoves();
       setStatusMessage(status);
     },
-    [resetHints, resetPremoves]
+    [resetHints, resetPremoves, setPreparedHintForNode]
   );
 
   const removeCaptureRainPiece = useCallback((id: number) => {
@@ -805,9 +919,10 @@ export function App() {
       setHistoryErrorMessage(null);
       setTreeErrorMessage(null);
       resetHints();
+      setPreparedHint(null);
       setLastBestMove(null);
       setLastMoveSquares(null);
-      setReviewPath(null);
+      setReviewCursor(null);
 
       try {
         const response = await getInitialSession(
@@ -893,11 +1008,13 @@ export function App() {
 
       setLoading(true);
       resetHints();
+      setPreparedHint(null);
       setErrorMessage(null);
 
       try {
         const response = await playMove(sessionId, uciMove, prefs.skipSimilarVariations);
         setState(response.nextState);
+        setPreparedHint(null);
         setLastBestMove(response.bestMoveUci ?? null);
         setCorrectMessage(null);
         let artifactSessionId = sessionId;
@@ -931,7 +1048,7 @@ export function App() {
                     sessionId: next.newSessionId,
                     puzzle: next.puzzle,
                     state: next.state,
-                    ui: { autoNextDefault: prefs.autoNext }
+                    ui: next.ui
                   },
                   translatedUiMessage((copy) => copy.incorrectNextPuzzle)
                 );
@@ -1016,7 +1133,7 @@ export function App() {
                   sessionId: next.newSessionId,
                   puzzle: next.puzzle,
                   state: next.state,
-                  ui: { autoNextDefault: prefs.autoNext }
+                  ui: next.ui
                 },
                 translatedUiMessage((copy) => copy.newPuzzleLoaded)
               );
@@ -1068,35 +1185,78 @@ export function App() {
   );
 
   const handleHint = useCallback(async () => {
-    if (!sessionId || loading || historyLoading || isReviewMode || oneTryLocked) {
+    if (!sessionId || loading || historyLoading || isReviewMode || oneTryLocked || !state) {
       return;
     }
 
-    setLoading(true);
     setErrorMessage(null);
-    try {
-      const response = await getHint(sessionId);
-      const nextHintLevel = response.pieceFromSquare ? Math.min(hintLevel + 1, 2) : 0;
+    const activePreparedHint = preparedHint?.nodeId === state.nodeId ? preparedHint : null;
+
+    const applyHintDisplay = (pieceFromSquare: string | null, bestMoveUci: string | null) => {
+      const nextHintLevel = pieceFromSquare ? Math.min(hintLevel + 1, 2) : 0;
       setHintLevel(nextHintLevel);
-      setHintSquare(response.pieceFromSquare);
-      setHintArrow(
-        nextHintLevel >= 2 && response.bestMoveUci ? getMoveSquares(response.bestMoveUci) : null
-      );
-      setState(response.state);
+      setHintSquare(pieceFromSquare);
+      setHintArrow(nextHintLevel >= 2 && bestMoveUci ? getMoveSquares(bestMoveUci) : null);
       resetPremoves();
-      setDisplayFen(response.state.fen);
+      setDisplayFen(state.fen);
       setLastMoveSquares(null);
       setWrongMoveSquare(null);
       setLineCompleteSquare(null);
       setStatusMessage(
         translatedUiMessage((copy) =>
-          response.pieceFromSquare
+          pieceFromSquare
             ? nextHintLevel >= 2
               ? copy.hintShownPieceAndArrow
               : copy.hintShownPiece
             : copy.noHintAvailable
         )
       );
+    };
+
+    if (activePreparedHint) {
+      applyHintDisplay(activePreparedHint.pieceFromSquare, activePreparedHint.bestMoveUci);
+
+      const requestId = ++hintSyncRequestRef.current;
+      void getHint(sessionId)
+        .then((response) => {
+          if (hintSyncRequestRef.current !== requestId) {
+            return;
+          }
+
+          setState(response.state);
+          setPreparedHintForNode(response.state.nodeId, response);
+          resetPremoves();
+          setDisplayFen(response.state.fen);
+          setLastMoveSquares(null);
+          setWrongMoveSquare(null);
+          setLineCompleteSquare(null);
+          void loadSessionArtifacts(sessionId);
+        })
+        .catch((error) => {
+          if (hintSyncRequestRef.current !== requestId) {
+            return;
+          }
+
+          setErrorMessage(
+            error instanceof Error
+              ? literalUiMessage(error.message)
+              : translatedUiMessage((copy) => copy.hintFailed)
+          );
+        });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await getHint(sessionId);
+      applyHintDisplay(response.pieceFromSquare, response.bestMoveUci);
+      setState(response.state);
+      setPreparedHintForNode(response.state.nodeId, response);
+      resetPremoves();
+      setDisplayFen(response.state.fen);
+      setLastMoveSquares(null);
+      setWrongMoveSquare(null);
+      setLineCompleteSquare(null);
 
       void loadSessionArtifacts(sessionId);
     } catch (error) {
@@ -1115,8 +1275,11 @@ export function App() {
     loadSessionArtifacts,
     loading,
     historyLoading,
+    preparedHint,
     resetPremoves,
     sessionId,
+    setPreparedHintForNode,
+    state,
     oneTryLocked
   ]);
 
@@ -1130,9 +1293,11 @@ export function App() {
       setLoading(true);
       setErrorMessage(null);
       resetHints();
+      setPreparedHint(null);
       try {
         const response = await revealSolution(sessionId, mode, prefs.skipSimilarVariations);
         setState(response.nextState);
+        setPreparedHint(null);
         setLastBestMove(response.bestMoveUci);
         setWrongMoveSquare(null);
         setLineCompleteSquare(null);
@@ -1241,9 +1406,11 @@ export function App() {
     setLoading(true);
     setErrorMessage(null);
     resetHints();
+    setPreparedHint(null);
     try {
       const response = await skipVariation(sessionId, prefs.skipSimilarVariations);
       setState(response.nextState);
+      setPreparedHint(null);
       resetPremoves();
       setDisplayFen(response.nextState.fen);
       setLastMoveSquares(null);
@@ -1304,7 +1471,7 @@ export function App() {
             sessionId: next.newSessionId,
             puzzle: next.puzzle,
             state: next.state,
-            ui: { autoNextDefault: prefs.autoNext }
+            ui: next.ui
           },
           translatedUiMessage((copy) => copy.newPuzzleLoaded)
         );
@@ -1331,7 +1498,7 @@ export function App() {
   ]);
 
   const handleRestartPuzzle = useCallback(async () => {
-    if (!puzzle || !state || loading || historyLoading || isReviewMode || !isPuzzleSolved(state)) {
+    if (!sessionId || !puzzle || !state || loading || historyLoading || isReviewMode || !isPuzzleSolved(state)) {
       return;
     }
 
@@ -1339,7 +1506,7 @@ export function App() {
     setErrorMessage(null);
 
     try {
-      const response = await startSession(prefs.variationMode, prefs.autoNext, puzzle.publicId);
+      const response = await restartSession(sessionId, prefs.variationMode, prefs.autoNext);
       applyStartedSession(response, translatedUiMessage((copy) => copy.puzzleRestarted));
     } catch (error) {
       setErrorMessage(
@@ -1358,6 +1525,7 @@ export function App() {
     prefs.autoNext,
     prefs.variationMode,
     puzzle,
+    sessionId,
     state,
     i18n
   ]);
@@ -1369,11 +1537,15 @@ export function App() {
     }
 
     const solved = isPuzzleSolved(state);
+    if (loading || historyLoading || isReviewMode || oneTryLocked) {
+      return;
+    }
+
     const previous = autoPlaySolveStateRef.current;
     const justSolved = previous.sessionId === sessionId && solved && !previous.solved;
     autoPlaySolveStateRef.current = { sessionId, solved };
 
-    if (!prefs.autoPlay || !sessionId || !state || loading || historyLoading || isReviewMode || oneTryLocked) {
+    if (!prefs.autoPlay) {
       return;
     }
 
@@ -1404,6 +1576,34 @@ export function App() {
     sessionId,
     state,
     oneTryLocked
+  ]);
+
+  useEffect(() => {
+    const autoNextJustEnabled = !previousAutoNextRef.current && prefs.autoNext;
+    previousAutoNextRef.current = prefs.autoNext;
+
+    if (!autoNextJustEnabled) {
+      return;
+    }
+
+    if (!sessionId || !state || loading || historyLoading || isReviewMode || oneTryLocked) {
+      return;
+    }
+
+    if (!isPuzzleSolved(state)) {
+      return;
+    }
+
+    void handleNextPuzzle();
+  }, [
+    handleNextPuzzle,
+    historyLoading,
+    isReviewMode,
+    loading,
+    oneTryLocked,
+    prefs.autoNext,
+    sessionId,
+    state
   ]);
 
   const hideHistoryPreview = useCallback(() => {
@@ -1711,10 +1911,11 @@ export function App() {
     setLoading(true);
     setErrorMessage(null);
     resetHints();
+    setPreparedHint(null);
     setLastBestMove(null);
     setLastMoveSquares(null);
     setCorrectMessage(null);
-    setReviewPath(null);
+    setReviewCursor(null);
 
     try {
       const response = await startSession(prefs.variationMode, prefs.autoNext, trimmedId);
@@ -1749,10 +1950,11 @@ export function App() {
       setHistoryLoading(true);
       setErrorMessage(null);
       resetHints();
+      setPreparedHint(null);
       setLastBestMove(null);
       setLastMoveSquares(null);
       setCorrectMessage(null);
-      setReviewPath(null);
+      setReviewCursor(null);
 
       try {
         const response = await loadSession(targetSessionId);
@@ -1770,42 +1972,94 @@ export function App() {
     [applyStartedSession, loading, historyLoading, resetHints, i18n]
   );
 
+  const handlePreviousPuzzle = useCallback(() => {
+    if (!previousPuzzleSessionId) {
+      return;
+    }
+
+    void handleLoadHistorySession(previousPuzzleSessionId);
+  }, [handleLoadHistorySession, previousPuzzleSessionId]);
+
+  const handleTransportNextPuzzle = useCallback(() => {
+    if (nextHistoryPuzzleSessionId) {
+      void handleLoadHistorySession(nextHistoryPuzzleSessionId);
+      return;
+    }
+
+    void handleNextPuzzle();
+  }, [handleLoadHistorySession, handleNextPuzzle, nextHistoryPuzzleSessionId]);
+
   const handleReviewMove = useCallback(
     (node: SessionTreeNode) => {
-      if (!state) {
+      if (!state || !currentReviewNodeId) {
         return;
       }
 
-      setReviewPath((previous) => {
-        if (previous && previous.length > 0) {
-          const currentNodeId = previous[previous.length - 1];
-          if (node.parent_id !== currentNodeId) {
-            return previous;
-          }
-          return [...previous, node.id];
-        }
+      if (node.parent_id !== currentReviewNodeId) {
+        return;
+      }
 
-        if (node.parent_id !== state.nodeId) {
-          return previous;
-        }
-
-        return [state.nodeId, node.id];
+      const basePath = reviewCursor ? reviewCursor.path.slice(0, reviewCursor.index + 1) : livePath;
+      setReviewCursor({
+        path: [...basePath, node.id],
+        index: basePath.length
       });
     },
-    [state]
+    [currentReviewNodeId, livePath, reviewCursor, state]
   );
 
   const handleReviewBackOne = useCallback(() => {
-    setReviewPath((previous) => {
-      if (!previous || previous.length <= 2) {
+    if (livePath.length <= 1 && !reviewCursor) {
+      return;
+    }
+
+    setReviewCursor((previous) => {
+      if (!previous) {
+        if (livePath.length <= 1) {
+          return null;
+        }
+
+        return {
+          path: livePath,
+          index: livePath.length - 2
+        };
+      }
+
+      if (previous.index <= 0) {
         return null;
       }
-      return previous.slice(0, -1);
+
+      return {
+        ...previous,
+        index: previous.index - 1
+      };
     });
-  }, []);
+  }, [livePath, reviewCursor]);
+
+  const handleReviewForwardOne = useCallback(() => {
+    if (!reviewCursor) {
+      return;
+    }
+
+    const nextIndex = reviewCursor.index + 1;
+    if (nextIndex >= reviewCursor.path.length) {
+      return;
+    }
+
+    const nextPath = reviewCursor.path.slice(0, nextIndex + 1);
+    if (pathsMatch(nextPath, livePath)) {
+      setReviewCursor(null);
+      return;
+    }
+
+    setReviewCursor({
+      ...reviewCursor,
+      index: nextIndex
+    });
+  }, [livePath, reviewCursor]);
 
   const handleBackToLive = useCallback(() => {
-    setReviewPath(null);
+    setReviewCursor(null);
   }, []);
 
   const toggleVariationMode = (checked: boolean) => {
@@ -1821,6 +2075,10 @@ export function App() {
 
   const completedBranchesText = i18n.completedBranches(state.completedBranches, state.totalLines);
   const expectedMoveText = lastBestMove ? i18n.expectedMove(lastBestMove) : null;
+  const reviewModeText = isReviewMode ? 'Reviewing line' : '\u00A0';
+  const normalizedPuzzleTitle = puzzle.title.trim();
+  const isUntitledPuzzle =
+    normalizedPuzzleTitle.length === 0 || normalizedPuzzleTitle.toLowerCase() === 'untitled puzzle';
   const interactive = boardCanInteract;
   const isZenMode = prefs.zenMode;
   const shellClassName = ['app-shell', isZenMode ? 'is-zen-mode' : null, prefs.showEngineEval ? 'has-eval' : 'no-eval']
@@ -1847,8 +2105,11 @@ export function App() {
     <ReviewNavigationButtons
       disabled={panelControlsDisabled}
       isReviewMode={isReviewMode}
+      canGoBackward={canReviewBackward}
+      canGoForward={canReviewForward}
       i18n={i18n}
       onBackOne={handleReviewBackOne}
+      onForwardOne={handleReviewForwardOne}
       onBackToLive={handleBackToLive}
     />
   );
@@ -1856,9 +2117,12 @@ export function App() {
     <ReviewNavigationButtons
       disabled={panelControlsDisabled}
       isReviewMode={isReviewMode}
+      canGoBackward={canReviewBackward}
+      canGoForward={canReviewForward}
       secondary
       i18n={i18n}
       onBackOne={handleReviewBackOne}
+      onForwardOne={handleReviewForwardOne}
       onBackToLive={handleBackToLive}
     />
   );
@@ -1913,6 +2177,7 @@ export function App() {
                     interactive={interactive}
                     canMoveExecution={!loading && !historyLoading}
                     animationsEnabled={prefs.animations}
+                    animationDurationMs={boardAnimationDurationMs}
                     premoveResetToken={sessionId ? `${sessionId}:${premoveResetCounter}` : null}
                     autoQueenPromotion={prefs.autoQueenPromotion}
                     hintSquare={hintSquare}
@@ -1945,13 +2210,14 @@ export function App() {
             <aside className="side-column panel">
             <section className="rail-block header rail-status">
               <div className="rail-status-meta">
-                <p className={`subtitle rail-title ${!puzzle.title ? 'is-untitled' : ''}`}>
-                  {puzzle.title || i18n.untitledPuzzle}
+                <p className={`subtitle rail-title ${isUntitledPuzzle ? 'is-untitled' : ''}`}>
+                  {isUntitledPuzzle ? i18n.untitledPuzzle : normalizedPuzzleTitle}
                 </p>
                 <p className="meta rail-id">{i18n.puzzleId(puzzle.publicId)}</p>
               </div>
               <div className="rail-status-main">
-                <p className="turn-indicator">{turnLabel}</p>
+                <p className="turn-kicker">{turnKickerText}</p>
+                <p className="turn-indicator">{objectiveText}</p>
                 {prefs.showEngineEval ? (
                   <p className="meta rail-engine">
                     <span>{engineEvalText}</span>
@@ -1968,14 +2234,110 @@ export function App() {
                 <p className={`status status-line ${hasStatusText ? '' : 'is-empty'}`}>{statusText}</p>
                 <p className={`correct correct-line ${hasCorrectText ? '' : 'is-empty'}`}>{correctText ?? '\u00A0'}</p>
                 <p className="meta rail-branch">{completedBranchesText}</p>
-                {expectedMoveText ? <p className="meta expected-line">{expectedMoveText}</p> : null}
-                {isReviewMode ? <p className="meta rail-review">{i18n.reviewModeActive}</p> : null}
+                <p className={`meta expected-line ${expectedMoveText ? '' : 'is-empty'}`}>
+                  {expectedMoveText ?? '\u00A0'}
+                </p>
+                <p className={`meta rail-review ${isReviewMode ? '' : 'is-empty'}`}>{reviewModeText}</p>
               </div>
             </section>
 
             <section className="rail-block rail-actions">
               <div className="button-row">
-                {puzzleActionButtons}
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled}
+                  onClick={() => void handleHint()}
+                >
+                  {i18n.hint}
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={panelControlsDisabled || isReviewMode}
+                  onClick={() => void handleReveal()}
+                >
+                  {i18n.showSolution}
+                </button>
+              </div>
+              <div className="button-row next-live-row">
+                {puzzleIsComplete ? (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={panelControlsDisabled || isReviewMode}
+                    onClick={() => void handleRestartPuzzle()}
+                  >
+                    {i18n.restartPuzzle}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    disabled={panelControlsDisabled || isReviewMode}
+                    onClick={() => void handleSkipVariation()}
+                  >
+                    {i18n.skipVariation}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn-primary"
+                  disabled={panelControlsDisabled}
+                  onClick={() => void handleNextPuzzle()}
+                >
+                  {i18n.nextPuzzle}
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={panelControlsDisabled || !isReviewMode}
+                  onClick={handleBackToLive}
+                >
+                  Live
+                </button>
+              </div>
+              <div className="button-row arrow-strip-row">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={panelControlsDisabled || !previousPuzzleSessionId}
+                  onClick={handlePreviousPuzzle}
+                  aria-label="Previous puzzle"
+                  title="Previous puzzle"
+                >
+                  ◀◀
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={panelControlsDisabled || !canReviewBackward}
+                  onClick={handleReviewBackOne}
+                  aria-label={i18n.backOneMove}
+                  title={i18n.backOneMove}
+                >
+                  ◀
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={panelControlsDisabled || !canReviewForward}
+                  onClick={handleReviewForwardOne}
+                  aria-label="Forward one move"
+                  title="Forward one move"
+                >
+                  ▶
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  disabled={panelControlsDisabled || (!nextHistoryPuzzleSessionId && !sessionId)}
+                  onClick={handleTransportNextPuzzle}
+                  aria-label="Next puzzle"
+                  title="Next puzzle"
+                >
+                  ▶▶
+                </button>
               </div>
             </section>
 
@@ -2034,16 +2396,47 @@ export function App() {
             <section className="rail-block pgn-panel" id="explorer">
               <div className="pgn-header-row">
                 <p className="pgn-title">{i18n.pgnExplorer}</p>
-                <div className="pgn-actions">{reviewNavigationButtons}</div>
               </div>
 
               <p className="meta pgn-path">
-                {isReviewMode && reviewMoves.length > 0
+                {reviewMoves.length > 0
                   ? i18n.pathMoves(reviewMoves.join(' '))
                   : i18n.pathLivePosition}
               </p>
 
               {treeError ? <p className="error">{treeError}</p> : null}
+
+              <div className="pgn-sequence" aria-label="PGN line">
+                {pgnLineNodes.length === 0 ? (
+                  <span className="pgn-sequence-empty">{i18n.pathLivePosition}</span>
+                ) : (
+                  pgnLineNodes.map((node, index) => {
+                    const isCurrentMove = activeReviewPath[index + 1] === currentReviewNodeId;
+                    return (
+                      <button
+                        key={node.id}
+                        type="button"
+                        className={`pgn-sequence-move ${isCurrentMove ? 'is-current' : ''}`}
+                        disabled={panelControlsDisabled}
+                        onClick={() => {
+                          const targetIndex = index + 1;
+                          if (pathsMatch(pgnDisplayPath, livePath) && targetIndex === livePath.length - 1) {
+                            setReviewCursor(null);
+                            return;
+                          }
+
+                          setReviewCursor({
+                            path: pgnDisplayPath,
+                            index: targetIndex
+                          });
+                        }}
+                      >
+                        {formatPgnMoveLabel(node)}
+                      </button>
+                    );
+                  })
+                )}
+              </div>
 
               <div className="pgn-move-list">
                 {pgnNextMoves.length === 0 ? (

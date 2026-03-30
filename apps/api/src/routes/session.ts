@@ -54,6 +54,12 @@ const nextSchema = z.object({
   autoNext: z.boolean().optional().default(true)
 });
 
+const restartSchema = z.object({
+  sessionId: z.string().uuid(),
+  mode: z.enum(['explore', 'mainline']).optional(),
+  autoNext: z.boolean().optional().default(true)
+});
+
 const adminImportSchema = z.object({
   replaceExisting: z.boolean().optional().default(true)
 });
@@ -285,6 +291,34 @@ export async function registerSessionRoutes(
     const result = await sessionService.loadSession({
       sessionId: body.sessionId,
       anonSessionId
+    });
+    reply.send(result);
+  });
+
+  app.post('/api/v1/session/restart', async (request, reply) => {
+    const body = restartSchema.parse(request.body ?? {});
+    const anonSessionId = await ensureAnonSession(request, reply, pool);
+
+    const allowed = await enforceRateLimit({
+      request,
+      reply,
+      pool,
+      limiter,
+      key: `restart:${body.sessionId}`,
+      policy: actionPolicy,
+      route: '/api/v1/session/restart',
+      anonSessionId
+    });
+
+    if (!allowed) {
+      return;
+    }
+
+    const result = await sessionService.restartSession({
+      sessionId: body.sessionId,
+      anonSessionId,
+      mode: body.mode,
+      autoNext: body.autoNext
     });
     reply.send(result);
   });

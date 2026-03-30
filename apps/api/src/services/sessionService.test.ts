@@ -95,6 +95,9 @@ describe('SessionService', () => {
         autoNext: true
       });
 
+      expect(started.ui.hintPreview?.pieceFromSquare).toBe('e4');
+      expect(started.ui.hintPreview?.bestMoveUci).toBe('e4d6');
+
       const hint = await ctx.service.hint({ sessionId: started.sessionId });
       expect(hint.pieceFromSquare).toBe('e4');
       expect(hint.bestMoveUci).toBe('e4d6');
@@ -142,6 +145,8 @@ describe('SessionService', () => {
       expect(loaded.state.fen).toBe(move.nextState.fen);
       expect(loaded.state.lineIndex).toBe(move.nextState.lineIndex);
       expect(loaded.state.completedBranches).toBe(move.nextState.completedBranches);
+      expect(loaded.ui.hintPreview?.pieceFromSquare).toBe('d6');
+      expect(loaded.ui.hintPreview?.bestMoveUci).toBe('d6e4');
 
       await expect(
         ctx.service.loadSession({
@@ -149,6 +154,55 @@ describe('SessionService', () => {
           anonSessionId: randomUUID()
         })
       ).rejects.toThrow('Session not found');
+    } finally {
+      await ctx.pool.end();
+    }
+  });
+
+  it('restarts the current session in place without creating a clone', async () => {
+    const ctx = await createServiceContext();
+    try {
+      const started = await ctx.service.startRandomSession({
+        anonSessionId: ctx.anonSessionId,
+        mode: 'explore',
+        autoNext: true
+      });
+
+      const beforeRestartCount = await ctx.pool.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM puzzle_sessions');
+      expect(beforeRestartCount.rows[0]?.count).toBe('1');
+
+      const moved = await ctx.service.playMove({
+        sessionId: started.sessionId,
+        uciMove: 'e4d6'
+      });
+      expect(moved.nextState.nodeId).not.toBe(started.state.nodeId);
+
+      const restarted = await ctx.service.restartSession({
+        sessionId: started.sessionId,
+        anonSessionId: ctx.anonSessionId,
+        mode: 'explore',
+        autoNext: true
+      });
+
+      expect(restarted.sessionId).toBe(started.sessionId);
+      expect(restarted.puzzle.publicId).toBe(started.puzzle.publicId);
+      expect(restarted.state.nodeId).toBe(started.state.nodeId);
+      expect(restarted.state.fen).toBe(started.state.fen);
+      expect(restarted.state.lineIndex).toBe(started.state.lineIndex);
+      expect(restarted.state.completedBranches).toEqual(started.state.completedBranches);
+      expect(restarted.ui.hintPreview?.pieceFromSquare).toBe(started.ui.hintPreview?.pieceFromSquare);
+      expect(restarted.ui.hintPreview?.bestMoveUci).toBe(started.ui.hintPreview?.bestMoveUci);
+
+      const afterRestartCount = await ctx.pool.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM puzzle_sessions');
+      expect(afterRestartCount.rows[0]?.count).toBe('1');
+
+      const history = await ctx.service.getSessionHistory({
+        sessionId: restarted.sessionId,
+        anonSessionId: ctx.anonSessionId,
+        limit: 20,
+        includeCurrent: true
+      });
+      expect(history.items.filter((item) => item.sessionId === restarted.sessionId)).toHaveLength(1);
     } finally {
       await ctx.pool.end();
     }

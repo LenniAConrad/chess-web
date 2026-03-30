@@ -15,9 +15,11 @@ No-account chess puzzle trainer built as a `pnpm` monorepo. It serves PGN-based 
 - PGN puzzle import with full variation-tree support
 - Server-side move validation and session orchestration
 - Explore and mainline solving modes
-- Puzzle history with replay, tree review, and direct loading by public ID
-- Optional autoplay, auto-next, one-try mode, hints, reveal, skip variation, and auto-queen
-- Browser Stockfish eval bar and local UI preferences
+- Puzzle history with replay, previous/next transport, tree review, and direct loading by public ID
+- Optional autoplay, auto-next, one-try mode, restart-in-place, hints, reveal, skip variation, and auto-queen
+- Lichess-style PGN explorer review with back/forward/live navigation
+- Browser Stockfish eval bar, prepared instant hints, and local UI preferences
+- Adjustable animation speed alongside theme and presentation settings
 - Multilingual UI with native-language labels and RTL handling
 - Local Postgres support with `pg-mem` fallback for lightweight development
 
@@ -163,12 +165,20 @@ npx pnpm@10.5.2 --filter @chess-web/api dev
 npx pnpm@10.5.2 --filter @chess-web/web dev
 ```
 
+## Puzzle UX Notes
+
+- Restarting a solved puzzle resets the current session in place instead of creating a duplicate history entry.
+- Hint previews are prepared when a puzzle loads so the first hint action can appear immediately.
+- The PGN explorer supports in-line review plus back, forward, and live-position controls.
+- Animation speed is configurable from the settings panel and affects both board motion and puzzle feedback timing.
+
 ## API Surface
 
 Session routes:
 
 - `POST /api/v1/session/start`
 - `POST /api/v1/session/load`
+- `POST /api/v1/session/restart`
 - `POST /api/v1/session/move`
 - `POST /api/v1/session/hint`
 - `POST /api/v1/session/reveal`

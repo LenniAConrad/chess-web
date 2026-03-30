@@ -44,17 +44,18 @@ function ToggleChip(props: {
 function RangeSetting(props: {
   label: string;
   value: number;
+  valueLabel?: string;
   min: number;
   max: number;
   onChange: (value: number) => void;
 }) {
-  const { label, value, min, max, onChange } = props;
+  const { label, value, valueLabel, min, max, onChange } = props;
 
   return (
     <label className="settings-range-control">
       <span className="settings-range-head">
         <span className="settings-range-label">{label}</span>
-        <span className="settings-range-value">{value}deg</span>
+        <span className="settings-range-value">{valueLabel ?? `${value}`}</span>
       </span>
       <input
         className="settings-range-slider"
@@ -255,6 +256,7 @@ export function AppHeader(props: AppHeaderProps) {
                       <RangeSetting
                         label="Board hue"
                         value={prefs.boardHue}
+                        valueLabel={`${prefs.boardHue}deg`}
                         min={-180}
                         max={180}
                         onChange={(value) =>
@@ -267,6 +269,7 @@ export function AppHeader(props: AppHeaderProps) {
                       <RangeSetting
                         label="Background hue"
                         value={prefs.backgroundHue}
+                        valueLabel={`${prefs.backgroundHue}deg`}
                         min={-180}
                         max={180}
                         onChange={(value) =>
@@ -313,6 +316,21 @@ export function AppHeader(props: AppHeaderProps) {
                           setPrefs((previous) => ({
                             ...previous,
                             captureRain: !previous.captureRain
+                          }))
+                        }
+                      />
+                    </div>
+                    <div className="settings-range-grid">
+                      <RangeSetting
+                        label="Animation speed"
+                        value={prefs.animationSpeed}
+                        valueLabel={`${prefs.animationSpeed}%`}
+                        min={50}
+                        max={200}
+                        onChange={(value) =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            animationSpeed: value
                           }))
                         }
                       />

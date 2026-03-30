@@ -147,6 +147,19 @@ export function refreshSession(sessionId: string): Promise<StartSessionResponse>
   });
 }
 
+export function restartSession(
+  sessionId: string,
+  mode: VariationMode,
+  autoNext: boolean
+): Promise<StartSessionResponse> {
+  return requestJson<StartSessionResponse>('/api/v1/session/restart', { sessionId, mode, autoNext }).then(
+    (response) => {
+      cacheLoadedSession(response);
+      return response;
+    }
+  );
+}
+
 export function getHint(sessionId: string): Promise<HintResponse> {
   return requestJson<HintResponse>('/api/v1/session/hint', { sessionId });
 }
