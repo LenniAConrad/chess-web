@@ -133,6 +133,8 @@ describe('SessionService', () => {
         sessionId: started.sessionId,
         uciMove: 'e4d6'
       });
+      expect(move.ui.hintPreview?.pieceFromSquare).toBe('d6');
+      expect(move.ui.hintPreview?.bestMoveUci).toBe('d6e4');
 
       const loaded = await ctx.service.loadSession({
         sessionId: started.sessionId,
@@ -235,7 +237,9 @@ describe('SessionService', () => {
         mode: 'mainline',
         autoNext: true
       });
-      await ctx.service.reveal({ sessionId: incorrect.sessionId });
+      const revealed = await ctx.service.reveal({ sessionId: incorrect.sessionId });
+      expect(revealed.ui.hintPreview?.pieceFromSquare).toBe('d6');
+      expect(revealed.ui.hintPreview?.bestMoveUci).toBe('d6e4');
 
       const autoplay = await ctx.service.startRandomSession({
         anonSessionId: ctx.anonSessionId,

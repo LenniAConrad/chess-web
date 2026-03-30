@@ -2876,15 +2876,21 @@ button:disabled {
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     gap: 0.75rem;
+    overflow: hidden;
   }
 
   .mobile-secondary-stack {
     width: 100%;
+    max-height: 100%;
+    min-height: 0;
     display: grid;
-    align-content: center;
+    align-content: start;
     gap: 0.75rem;
+    margin-block: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 
   .mobile-tertiary-page-body {
@@ -2892,13 +2898,19 @@ button:disabled {
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
     align-content: stretch;
+    overflow: hidden;
   }
 
   .mobile-tertiary-stack {
     width: 100%;
+    max-height: 100%;
     min-height: 0;
     display: grid;
-    align-content: center;
+    align-content: start;
+    margin-block: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 
   .mobile-tertiary-page-body .mobile-inline-footer {

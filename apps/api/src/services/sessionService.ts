@@ -278,6 +278,7 @@ export class SessionService {
     nextState: SessionStatePayload;
     completedBranches: number;
     totalBranches: number;
+    ui: { hintPreview: HintPreviewPayload | null };
   }> {
     const context = await this.loadContext(input.sessionId);
     context.dbSession = await this.activatePrefetchedSession(context.dbSession);
@@ -311,7 +312,10 @@ export class SessionService {
       skippedSimilarVariations: step.skippedSimilarVariations,
       nextState: toStatePayload(step.snapshot),
       completedBranches: step.snapshot.completedBranches,
-      totalBranches: step.snapshot.totalLines
+      totalBranches: step.snapshot.totalLines,
+      ui: {
+        hintPreview: toHintPreviewPayload(context.engine.hint(step.cursor))
+      }
     };
   }
 
@@ -363,6 +367,7 @@ export class SessionService {
     rewindFens: string[];
     skippedSimilarVariations: number;
     nextState: SessionStatePayload;
+    ui: { hintPreview: HintPreviewPayload | null };
   }> {
     const context = await this.loadContext(input.sessionId);
     context.dbSession = await this.activatePrefetchedSession(context.dbSession);
@@ -393,7 +398,10 @@ export class SessionService {
       autoPlayStartFen: result.autoPlayStartFen,
       rewindFens: result.rewindFens,
       skippedSimilarVariations: result.skippedSimilarVariations,
-      nextState: toStatePayload(result.snapshot)
+      nextState: toStatePayload(result.snapshot),
+      ui: {
+        hintPreview: toHintPreviewPayload(context.engine.hint(result.cursor))
+      }
     };
   }
 
@@ -408,6 +416,7 @@ export class SessionService {
     skippedSimilarVariations: number;
     nextState: SessionStatePayload;
     remainingBranches: number;
+    ui: { hintPreview: HintPreviewPayload | null };
   }> {
     const context = await this.loadContext(input.sessionId);
     context.dbSession = await this.activatePrefetchedSession(context.dbSession);
@@ -435,7 +444,10 @@ export class SessionService {
       rewindFens: result.rewindFens,
       skippedSimilarVariations: result.skippedSimilarVariations,
       nextState: toStatePayload(result.snapshot),
-      remainingBranches: result.remainingBranches
+      remainingBranches: result.remainingBranches,
+      ui: {
+        hintPreview: toHintPreviewPayload(context.engine.hint(result.cursor))
+      }
     };
   }
 

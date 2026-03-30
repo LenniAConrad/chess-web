@@ -39,6 +39,9 @@ export interface MoveResponse {
   nextState: SessionStatePayload;
   completedBranches: number;
   totalBranches: number;
+  ui: {
+    hintPreview: HintPreview | null;
+  };
 }
 
 export interface HintResponse {
@@ -56,6 +59,9 @@ export interface RevealResponse {
   rewindFens: string[];
   skippedSimilarVariations: number;
   nextState: SessionStatePayload;
+  ui: {
+    hintPreview: HintPreview | null;
+  };
 }
 
 export interface SkipVariationResponse {
@@ -66,6 +72,9 @@ export interface SkipVariationResponse {
   skippedSimilarVariations: number;
   nextState: SessionStatePayload;
   remainingBranches: number;
+  ui: {
+    hintPreview: HintPreview | null;
+  };
 }
 
 export interface NextResponse {

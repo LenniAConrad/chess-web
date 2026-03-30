@@ -540,8 +540,9 @@ export function App() {
       : objectiveColor === 'black'
         ? i18n.findBestMoveForBlack
         : '\u00A0';
-  const hideSolvedStatusPill = puzzleComplete && statusText.trim() === i18n.puzzleComplete;
-  const displayStatusText = hideSolvedStatusPill ? '\u00A0' : statusText;
+  const reviewModeInlineText = isReviewMode ? 'Reviewing line' : null;
+  const hideSolvedStatusPill = !reviewModeInlineText && puzzleComplete && statusText.trim() === i18n.puzzleComplete;
+  const displayStatusText = reviewModeInlineText ?? (hideSolvedStatusPill ? '\u00A0' : statusText);
   const hasDisplayStatusText = displayStatusText.trim().length > 0;
 
   const displayedEngineCp = terminalEvalDisplay?.cp ?? engineEval.cp;
@@ -1442,7 +1443,7 @@ export function App() {
       try {
         const response = await playMove(sessionId, uciMove, prefs.skipSimilarVariations);
         setState(response.nextState);
-        setPreparedHint(null);
+        setPreparedHintForNode(response.nextState.nodeId, response.ui.hintPreview);
         setLastBestMove(response.bestMoveUci ?? null);
         setCorrectMessage(null);
         let artifactSessionId = sessionId;
@@ -1725,7 +1726,7 @@ export function App() {
       try {
         const response = await revealSolution(sessionId, mode, prefs.skipSimilarVariations);
         setState(response.nextState);
-        setPreparedHint(null);
+        setPreparedHintForNode(response.nextState.nodeId, response.ui.hintPreview);
         setLastBestMove(response.bestMoveUci);
         setWrongMoveSquare(null);
         setLineCompleteSquare(null);
@@ -2439,11 +2440,10 @@ export function App() {
   };
 
   if (!state || !puzzle) {
-    return <LoadingScreen i18n={i18n} errorText={errorText} pieceSrc={withBasePath('pieces/cburnett/wR.svg')} />;
+    return <LoadingScreen i18n={i18n} errorText={errorText} pieceSrc={withBasePath('pieces/cburnett/wK.svg')} />;
   }
 
   const completedBranchesText = i18n.completedBranches(state.completedBranches, state.totalLines);
-  const reviewModeText = isReviewMode ? 'Reviewing line' : '\u00A0';
   const normalizedPuzzleTitle = normalizeTitleText(puzzle.title);
   const isUntitledPuzzle = isUntitledPuzzleTitle(normalizedPuzzleTitle, i18n.untitledPuzzle);
   const interactive = boardCanInteract;
@@ -2556,7 +2556,6 @@ export function App() {
         <p className={`status status-line ${hasDisplayStatusText ? '' : 'is-empty'}`}>{displayStatusText}</p>
         <p className={`correct correct-line ${hasCorrectText ? '' : 'is-empty'}`}>{correctText ?? '\u00A0'}</p>
         <p className="meta rail-branch">{completedBranchesText}</p>
-        <p className={`meta rail-review ${isReviewMode ? '' : 'is-empty'}`}>{reviewModeText}</p>
       </div>
     </section>
   );
