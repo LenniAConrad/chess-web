@@ -77,9 +77,64 @@ function isUntitledPuzzleTitle(title: string, localizedUntitledTitle: string): b
 
 type SanPieceLetter = 'K' | 'Q' | 'R' | 'B' | 'N';
 
+const SAN_PIECE_IMAGE_URLS = {
+  wK: withBasePath('pieces/cburnett/wK.svg'),
+  wQ: withBasePath('pieces/cburnett/wQ.svg'),
+  wR: withBasePath('pieces/cburnett/wR.svg'),
+  wB: withBasePath('pieces/cburnett/wB.svg'),
+  wN: withBasePath('pieces/cburnett/wN.svg'),
+  bK: withBasePath('pieces/cburnett/bK.svg'),
+  bQ: withBasePath('pieces/cburnett/bQ.svg'),
+  bR: withBasePath('pieces/cburnett/bR.svg'),
+  bB: withBasePath('pieces/cburnett/bB.svg'),
+  bN: withBasePath('pieces/cburnett/bN.svg')
+} as const;
+
+let sanPiecePreloadLinksInjected = false;
+let sanPieceImagesPrimed = false;
+const primedSanPieceImages: HTMLImageElement[] = [];
+
+function primeSanPieceImages(): void {
+  if (typeof document === 'undefined' || typeof Image === 'undefined') {
+    return;
+  }
+
+  const urls = Object.values(SAN_PIECE_IMAGE_URLS);
+
+  if (!sanPiecePreloadLinksInjected) {
+    sanPiecePreloadLinksInjected = true;
+
+    for (const href of urls) {
+      const existing = document.head.querySelector(`link[rel="preload"][as="image"][href="${href}"]`);
+      if (existing) {
+        continue;
+      }
+
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = href;
+      document.head.append(link);
+    }
+  }
+
+  if (sanPieceImagesPrimed) {
+    return;
+  }
+
+  sanPieceImagesPrimed = true;
+
+  for (const href of urls) {
+    const image = new Image();
+    image.decoding = 'async';
+    image.src = href;
+    primedSanPieceImages.push(image);
+  }
+}
+
 function getSanPieceImageSrc(piece: SanPieceLetter, ply: number): string | null {
   const color = ply % 2 === 1 ? 'w' : 'b';
-  return withBasePath(`pieces/cburnett/${color}${piece}.svg`);
+  return SAN_PIECE_IMAGE_URLS[`${color}${piece}` as keyof typeof SAN_PIECE_IMAGE_URLS] ?? null;
 }
 
 function buildMoveTextParts(moveText: string, ply: number, renderPieceImages: boolean): Array<string | JSX.Element> {
@@ -348,6 +403,14 @@ export function App() {
 
     primeMoveSounds();
   }, [prefs.soundEnabled]);
+
+  useEffect(() => {
+    if (!prefs.renderPgnPieceSvgs) {
+      return;
+    }
+
+    primeSanPieceImages();
+  }, [prefs.renderPgnPieceSvgs]);
 
   useEffect(() => {
     i18nRef.current = i18n;
