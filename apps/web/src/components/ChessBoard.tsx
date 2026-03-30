@@ -542,18 +542,10 @@ export function ChessBoard({
     });
   }, [chessgroundLastMove, fen]);
 
-  const boardWrapStyle =
-    boardSize === null
-      ? undefined
-      : {
-          width: `min(100%, ${boardSize}px)`
-        };
-
   return (
     <div
       ref={boardWrapRef}
       className={`board-wrap ${glassEnabled ? 'glass-enabled' : ''} ${animationsEnabled ? '' : 'animations-disabled'}`}
-      style={boardWrapStyle}
     >
       <div ref={containerRef} className="board" />
       <div className="board-coordinates" aria-hidden="true">

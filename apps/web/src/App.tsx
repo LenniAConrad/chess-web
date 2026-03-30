@@ -241,11 +241,10 @@ export function App() {
   const [historyPreview, setHistoryPreview] = useState<HistoryPreviewState | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const appShellRef = useRef<HTMLDivElement | null>(null);
+  const mobileSecondaryScreenRef = useRef<HTMLElement | null>(null);
   const mobileHeaderRef = useRef<HTMLElement | null>(null);
   const mobilePrimaryPageBodyRef = useRef<HTMLElement | null>(null);
-  const mobileStatusPanelRef = useRef<HTMLElement | null>(null);
   const mobileControlsPanelRef = useRef<HTMLElement | null>(null);
-  const mobileFooterRef = useRef<HTMLElement | null>(null);
   const mobileEvalWrapRef = useRef<HTMLDivElement | null>(null);
   const headerSettingsRef = useRef<HTMLDetailsElement | null>(null);
   const headerLanguageRef = useRef<HTMLDetailsElement | null>(null);
@@ -259,6 +258,10 @@ export function App() {
   const mobileHistoryPreviewSessionRef = useRef<string | null>(null);
   const suppressHistoryDotClickRef = useRef<string | null>(null);
   const mobileButtonScrollTopRef = useRef<number | null>(null);
+  const mobileSnapTouchStartYRef = useRef<number | null>(null);
+  const mobileSnapTouchStartScrollTopRef = useRef<number | null>(null);
+  const mobileSnapLockedRef = useRef(false);
+  const mobileSnapUnlockTimeoutRef = useRef<number | null>(null);
   const sessionArtifactsRequestRef = useRef(0);
   const hintSyncRequestRef = useRef(0);
   const prefetchedNextRef = useRef<PrefetchedNextState | null>(null);
@@ -887,24 +890,39 @@ export function App() {
 
     const updateBoardSize = () => {
       const computedStyle = window.getComputedStyle(primaryBody);
+      const shellStyle = window.getComputedStyle(shell);
+      const paddingLeft = parseFloat(computedStyle.paddingLeft) || 0;
+      const paddingRight = parseFloat(computedStyle.paddingRight) || 0;
       const paddingTop = parseFloat(computedStyle.paddingTop) || 0;
       const paddingBottom = parseFloat(computedStyle.paddingBottom) || 0;
       const rowGap = parseFloat(computedStyle.rowGap || computedStyle.gap) || 0;
+      const evalGap = parseFloat(shellStyle.getPropertyValue('--layout-eval-gap')) || 0;
       const fixedBlockHeights = [
-        measureVisibleHeight(mobileStatusPanelRef.current),
-        measureVisibleHeight(mobileControlsPanelRef.current),
-        measureVisibleHeight(mobileFooterRef.current)
+        measureVisibleHeight(mobileControlsPanelRef.current)
       ];
       const visibleFixedBlockCount = fixedBlockHeights.filter((height) => height > 0.5).length;
+      const evalHeight = measureVisibleHeight(mobileEvalWrapRef.current);
+      const availableInlineSize =
+        primaryBody.getBoundingClientRect().width -
+        paddingLeft -
+        paddingRight;
       const availableBoardSize =
         primaryBody.getBoundingClientRect().height -
         paddingTop -
         paddingBottom -
         fixedBlockHeights.reduce((sum, height) => sum + height, 0) -
         (rowGap * visibleFixedBlockCount) -
-        measureVisibleHeight(mobileEvalWrapRef.current);
+        evalHeight -
+        (evalHeight > 0.5 ? evalGap : 0);
+      const normalizedInlineSize = Math.max(0, Math.floor(availableInlineSize));
+      const normalizedBoardSize = Math.max(0, Math.floor(availableBoardSize));
+      if (normalizedInlineSize <= 0 || normalizedBoardSize <= 0) {
+        shell.style.removeProperty('--mobile-primary-board-max-size');
+        return;
+      }
 
-      shell.style.setProperty('--mobile-primary-board-max-size', `${Math.max(0, Math.floor(availableBoardSize))}px`);
+      const nextBoardSize = Math.min(normalizedInlineSize, normalizedBoardSize);
+      shell.style.setProperty('--mobile-primary-board-max-size', `${nextBoardSize}px`);
     };
 
     const scheduleBoardResize = () => {
@@ -924,9 +942,7 @@ export function App() {
     for (const element of [
       primaryBody,
       mobileHeaderRef.current,
-      mobileStatusPanelRef.current,
       mobileControlsPanelRef.current,
-      mobileFooterRef.current,
       mobileEvalWrapRef.current
     ]) {
       if (element) {
@@ -948,6 +964,151 @@ export function App() {
       shell.style.removeProperty('--mobile-primary-board-max-size');
     };
   }, [isMobileStandardLayout, prefs.showEngineEval]);
+
+  useEffect(() => {
+    const shell = appShellRef.current;
+    const secondaryScreen = mobileSecondaryScreenRef.current;
+
+    if (!shell || !secondaryScreen || !isMobileStandardLayout) {
+      mobileSnapTouchStartYRef.current = null;
+      mobileSnapTouchStartScrollTopRef.current = null;
+      mobileSnapLockedRef.current = false;
+      if (mobileSnapUnlockTimeoutRef.current !== null) {
+        window.clearTimeout(mobileSnapUnlockTimeoutRef.current);
+        mobileSnapUnlockTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    const snapThresholdPx = 24;
+    const snapTopTolerancePx = 48;
+
+    const clearSnapUnlockTimeout = () => {
+      if (mobileSnapUnlockTimeoutRef.current === null) {
+        return;
+      }
+
+      window.clearTimeout(mobileSnapUnlockTimeoutRef.current);
+      mobileSnapUnlockTimeoutRef.current = null;
+    };
+
+    const releaseSnapLockSoon = () => {
+      clearSnapUnlockTimeout();
+      mobileSnapUnlockTimeoutRef.current = window.setTimeout(() => {
+        mobileSnapLockedRef.current = false;
+        mobileSnapUnlockTimeoutRef.current = null;
+      }, 380);
+    };
+
+    const snapToTop = (top: number) => {
+      if (mobileSnapLockedRef.current) {
+        return;
+      }
+
+      mobileSnapLockedRef.current = true;
+      shell.scrollTo({
+        top,
+        behavior: 'smooth'
+      });
+      releaseSnapLockSoon();
+    };
+
+    const getSecondaryTop = () => secondaryScreen.offsetTop;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (Math.abs(event.deltaY) < 10 || headerSettingsRef.current?.open || headerLanguageRef.current?.open) {
+        return;
+      }
+
+      const secondaryTop = getSecondaryTop();
+
+      if (event.deltaY > 0 && shell.scrollTop < secondaryTop - snapTopTolerancePx) {
+        event.preventDefault();
+        snapToTop(secondaryTop);
+        return;
+      }
+
+      if (
+        event.deltaY < 0 &&
+        shell.scrollTop >= secondaryTop - snapTopTolerancePx &&
+        shell.scrollTop <= secondaryTop + snapTopTolerancePx
+      ) {
+        event.preventDefault();
+        snapToTop(0);
+      }
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1 || headerSettingsRef.current?.open || headerLanguageRef.current?.open) {
+        mobileSnapTouchStartYRef.current = null;
+        mobileSnapTouchStartScrollTopRef.current = null;
+        return;
+      }
+
+      mobileSnapTouchStartYRef.current = event.touches[0]?.clientY ?? null;
+      mobileSnapTouchStartScrollTopRef.current = shell.scrollTop;
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const startY = mobileSnapTouchStartYRef.current;
+      const startScrollTop = mobileSnapTouchStartScrollTopRef.current;
+
+      if (startY === null || startScrollTop === null || event.touches.length !== 1 || mobileSnapLockedRef.current) {
+        return;
+      }
+
+      const currentY = event.touches[0]?.clientY;
+      if (typeof currentY !== 'number') {
+        return;
+      }
+
+      const deltaY = startY - currentY;
+      const secondaryTop = getSecondaryTop();
+
+      if (deltaY > snapThresholdPx && startScrollTop < secondaryTop - snapTopTolerancePx && shell.scrollTop < secondaryTop) {
+        event.preventDefault();
+        mobileSnapTouchStartYRef.current = null;
+        mobileSnapTouchStartScrollTopRef.current = null;
+        snapToTop(secondaryTop);
+        return;
+      }
+
+      if (
+        deltaY < -snapThresholdPx &&
+        startScrollTop >= secondaryTop - snapTopTolerancePx &&
+        startScrollTop <= secondaryTop + snapTopTolerancePx &&
+        shell.scrollTop <= secondaryTop + snapTopTolerancePx
+      ) {
+        event.preventDefault();
+        mobileSnapTouchStartYRef.current = null;
+        mobileSnapTouchStartScrollTopRef.current = null;
+        snapToTop(0);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      mobileSnapTouchStartYRef.current = null;
+      mobileSnapTouchStartScrollTopRef.current = null;
+    };
+
+    shell.addEventListener('wheel', handleWheel, { passive: false });
+    shell.addEventListener('touchstart', handleTouchStart, { passive: true });
+    shell.addEventListener('touchmove', handleTouchMove, { passive: false });
+    shell.addEventListener('touchend', handleTouchEnd);
+    shell.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      shell.removeEventListener('wheel', handleWheel);
+      shell.removeEventListener('touchstart', handleTouchStart);
+      shell.removeEventListener('touchmove', handleTouchMove);
+      shell.removeEventListener('touchend', handleTouchEnd);
+      shell.removeEventListener('touchcancel', handleTouchEnd);
+      mobileSnapTouchStartYRef.current = null;
+      mobileSnapTouchStartScrollTopRef.current = null;
+      mobileSnapLockedRef.current = false;
+      clearSnapUnlockTimeout();
+    };
+  }, [isMobileStandardLayout]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -2316,7 +2477,7 @@ export function App() {
   );
   const promotionPieceLabels = getPromotionPieceLabels(i18n);
   const statusPanel = (
-    <section ref={mobileStatusPanelRef} className={statusPanelClassName}>
+    <section className={statusPanelClassName}>
       <div className="rail-status-meta">
         {!isMobileStandardLayout && !isUntitledPuzzle ? <p className="subtitle rail-title">{normalizedPuzzleTitle}</p> : null}
         {!isMobileStandardLayout ? <p className="meta rail-id">{i18n.puzzleId(puzzle.publicId)}</p> : null}
@@ -2658,6 +2819,12 @@ export function App() {
       </div>
     </section>
   );
+  const mobilePrimaryStack = (
+    <div className="mobile-primary-stack">
+      {boardPanel}
+      {controlsPanel}
+    </div>
+  );
 
   return (
     <>
@@ -2681,17 +2848,16 @@ export function App() {
             <section className="mobile-snap-screen mobile-primary-screen">
               {headerContent}
               <main ref={mobilePrimaryPageBodyRef} className="mobile-snap-page-body mobile-primary-page-body">
-                {statusPanel}
-                {boardPanel}
-                {controlsPanel}
-                <footer ref={mobileFooterRef} className="app-footer mobile-inline-footer">
-                  {footerContent}
-                </footer>
+                {mobilePrimaryStack}
               </main>
             </section>
-            <section className="mobile-snap-screen mobile-secondary-screen">
+            <section ref={mobileSecondaryScreenRef} className="mobile-snap-screen mobile-secondary-screen">
               <div className="mobile-snap-page-body mobile-secondary-page-body">
+                {statusPanel}
                 {mobileSecondaryPanel}
+                <footer className="app-footer mobile-inline-footer">
+                  {footerContent}
+                </footer>
               </div>
             </section>
           </>
@@ -2702,7 +2868,7 @@ export function App() {
               <>
                 {boardPanel}
                 {!isZenMode ? (
-                <aside className="side-column panel">
+                <aside className="side-column">
                   {statusPanel}
                   {controlsPanel}
                   {historyPanel}
