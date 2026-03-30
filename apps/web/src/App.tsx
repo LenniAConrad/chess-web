@@ -2,14 +2,14 @@ import { type AnimationEvent as ReactAnimationEvent, type FocusEvent as ReactFoc
 import { Chess, type Square } from 'chess.js';
 import { ChessBoard } from './components/ChessBoard.js';
 import { AppHeader } from './components/AppHeader.js';
-import { CaptureRainLayer, getPromotionPieceLabels, LoadingScreen, PuzzleActionButtons, ReviewNavigationButtons, TransportControlIcon, ZenExitHint } from './components/AppUiBits.js';
+import { CaptureRainLayer, getPromotionPieceLabels, LoadingScreen, TransportControlIcon, ZenExitHint } from './components/AppUiBits.js';
 import { EvalBar } from './components/EvalBar.js';
 import { MiniPreviewBoard } from './components/MiniPreviewBoard.js';
 import { useLocalPrefs } from './hooks/useLocalPrefs.js';
 import { useStockfishEval } from './hooks/useStockfishEval.js';
 import { getHistoryDotSymbol, getHistoryDotTone } from './lib/historyDots.js';
 import { getI18n } from './lib/i18n.js';
-import { appendSimilarVariationStatus, applyUciMove, AUTO_PLAY_DELAY_MS, type AutoPlayAnimationPayload, type AppChromeLink, CAPTURE_RAIN_MAX_PIECES, CORRECT_BREAK_MS, type FallingCapturePiece, formatEngineEval, formatEngineSide, formatUciMoveAsSan, getCapturedPieceSkin, getFeedbackDelay, getFenAfterUciMove, getMoveSoundDecision, getMoveSquares, getMoveSquaresBetweenFens, getTerminalEvalDisplay, HISTORY_PREVIEW_DELAY_MS, type HistoryPreviewData, type HistoryPreviewState, isPuzzleSolved, literalUiMessage, MOBILE_HISTORY_PREVIEW_HOLD_MS, maybeWait, type PrefetchedNextState, type PuzzleHeader, randomBetween, REPO_URL, resolveUiMessage, REWIND_BREAK_MS, REWIND_STEP_DELAY_MS, scaleAnimationDuration, SESSION_HISTORY_FETCH_LIMIT, SHORT_STATUS_DELAY_MS, translatedUiMessage, type UiMessage, wait, withBasePath, WRONG_MOVE_FEEDBACK_MS, playMoveSoundDecision } from './lib/appShared.js';
+import { appendSimilarVariationStatus, applyUciMove, AUTO_PLAY_DELAY_MS, type AutoPlayAnimationPayload, type AppChromeLink, CAPTURE_RAIN_MAX_PIECES, CORRECT_BREAK_MS, type FallingCapturePiece, formatEngineEval, formatEngineSide, formatUciMoveAsSan, getCapturedPieceSkin, getFeedbackDelay, getFenAfterUciMove, getMoveSoundDecision, getMoveSquares, getMoveSquaresBetweenFens, getTerminalEvalDisplay, HISTORY_PREVIEW_DELAY_MS, type HistoryPreviewData, type HistoryPreviewState, isPuzzleSolved, literalUiMessage, MOBILE_HISTORY_PREVIEW_HOLD_MS, maybeWait, type PrefetchedNextState, type PuzzleHeader, randomBetween, REPO_URL, resolveUiMessage, REWIND_BREAK_MS, REWIND_STEP_DELAY_MS, scaleAnimationDuration, SESSION_HISTORY_FETCH_LIMIT, SHORT_STATUS_DELAY_MS, shouldAutoAdvanceSolvedSession, translatedUiMessage, type UiMessage, wait, withBasePath, WRONG_MOVE_FEEDBACK_MS, playMoveSoundDecision } from './lib/appShared.js';
 import { cacheLoadedSession, getPuzzleCount, getHint, loadSession, refreshSession, getSessionHistory, getSessionTree, nextPuzzle, prefetchNextPuzzle, playMove, restartSession, retainLoadedSessions, revealSolution, startSession } from './lib/api.js';
 import { primeMoveSounds } from './lib/moveSounds.js';
 import type { HintPreview, SessionHistoryItem, SessionStatePayload, SessionTreeNode, SessionTreeResponse, StartSessionResponse } from './types/api.js';
@@ -2041,7 +2041,12 @@ export function App() {
     }
 
     const previous = autoPlaySolveStateRef.current;
-    const justSolved = previous.sessionId === sessionId && solved && !previous.solved;
+    const shouldAdvanceSolvedSession = shouldAutoAdvanceSolvedSession({
+      currentSessionId: sessionId,
+      previousSessionId: previous.sessionId,
+      solved,
+      previousSolved: previous.solved
+    });
     autoPlaySolveStateRef.current = { sessionId, solved };
 
     if (!prefs.autoPlay) {
@@ -2049,7 +2054,7 @@ export function App() {
     }
 
     if (solved) {
-      if (prefs.autoNext && justSolved) {
+      if (prefs.autoNext && shouldAdvanceSolvedSession) {
         void handleNextPuzzle();
       }
       return;
@@ -2601,70 +2606,9 @@ export function App() {
     .filter(Boolean)
     .join(' ');
   const pathMovesLabel = i18n.pathMoves('').trimEnd();
-  const puzzleActionButtons = (
-    <PuzzleActionButtons
-      disabled={panelControlsDisabled}
-      isReviewMode={isReviewMode}
-      hintsEnabled={prefs.hintsEnabled}
-      canHint={canRequestContinuation}
-      canReveal={canRequestContinuation}
-      i18n={i18n}
-      onHint={() => void handleHint()}
-      onReveal={() => void handleReveal()}
-      onRestartPuzzle={() => void handleRestartPuzzle()}
-    />
-  );
-  const zenReviewNavigationButtons = (
-    <>
-      <button
-        type="button"
-        className="btn-secondary transport-control-button"
-        disabled={panelControlsDisabled || !previousPuzzleSessionId}
-        onClick={handlePreviousPuzzle}
-        aria-label="Previous puzzle"
-        title="Previous puzzle"
-      >
-        <TransportControlIcon variant="skip-back" />
-      </button>
-      <button
-        type="button"
-        className="btn-secondary transport-control-button"
-        disabled={panelControlsDisabled || !canReviewBackward}
-        onClick={handleReviewBackOne}
-        aria-label={i18n.backOneMove}
-        title={i18n.backOneMove}
-      >
-        <TransportControlIcon variant="back" />
-      </button>
-      <button
-        type="button"
-        className="btn-secondary transport-control-button"
-        disabled={panelControlsDisabled || !canReviewForward}
-        onClick={handleReviewForwardOne}
-        aria-label="Forward one move"
-        title="Forward one move"
-      >
-        <TransportControlIcon variant="forward" />
-      </button>
-      <button
-        type="button"
-        className="btn-secondary transport-control-button"
-        disabled={panelControlsDisabled || (!nextHistoryPuzzleSessionId && !sessionId)}
-        onClick={handleTransportNextPuzzle}
-        aria-label="Next puzzle"
-        title="Next puzzle"
-      >
-        <TransportControlIcon variant="skip-forward" />
-      </button>
-    </>
-  );
   const promotionPieceLabels = getPromotionPieceLabels(i18n);
   const statusPanelContent = (
     <>
-      <div className="rail-status-meta">
-        {!isMobileStandardLayout && !isUntitledPuzzle ? <p className="subtitle rail-title">{normalizedPuzzleTitle}</p> : null}
-        {!isMobileStandardLayout ? <p className="meta rail-id">{i18n.puzzleId(puzzle.publicId)}</p> : null}
-      </div>
       <div className="rail-status-main">
         <p className="turn-kicker">{turnKickerText}</p>
         <p className="turn-indicator">{objectiveText}</p>
@@ -2823,27 +2767,14 @@ export function App() {
   const pgnPanelContent = (
     <>
       <div className="pgn-header-row">
-        <p className="pgn-title">{i18n.pgnExplorer}</p>
+        <div className="pgn-header-copy">
+          <p className="pgn-title">{i18n.pgnExplorer}</p>
+          <div className="pgn-puzzle-meta">
+            {!isUntitledPuzzle ? <p className="subtitle rail-title pgn-puzzle-title">{normalizedPuzzleTitle}</p> : null}
+            <p className="meta rail-id pgn-puzzle-id">{i18n.puzzleId(puzzle.publicId)}</p>
+          </div>
+        </div>
       </div>
-
-      {pgnLineNodes.length > 0 ? (
-        <p className="meta pgn-path">
-          <span className="pgn-path-label">{pathMovesLabel}</span>
-          <span className="pgn-path-moves">
-            {pgnLineNodes.map((node) => (
-              <MoveText
-                key={node.id}
-                moveText={formatNodeMoveText(node)}
-                ply={node.ply}
-                renderPieceImages={prefs.renderPgnPieceSvgs}
-                className="pgn-path-move"
-              />
-            ))}
-          </span>
-        </p>
-      ) : (
-        <p className="meta pgn-path">{i18n.pathLivePosition}</p>
-      )}
 
       {treeError ? <p className="error">{treeError}</p> : null}
 
@@ -2851,33 +2782,36 @@ export function App() {
         {pgnLineNodes.length === 0 ? (
           <span className="pgn-sequence-empty">{i18n.pathLivePosition}</span>
         ) : (
-          pgnLineNodes.map((node, index) => {
-            const isCurrentMove = activeReviewPath[index + 1] === currentReviewNodeId;
-            return (
-              <button
-                key={node.id}
-                type="button"
-                className={`pgn-sequence-move ${isCurrentMove ? 'is-current' : ''}`}
-                disabled={panelControlsDisabled}
-                aria-label={formatPgnMoveLabel(node)}
-                onClick={() => {
-                  const targetIndex = index + 1;
-                  if (pathsMatch(pgnDisplayPath, livePath) && targetIndex === livePath.length - 1) {
-                    setReviewCursor(null);
-                    return;
-                  }
+          <>
+            <span className="pgn-sequence-label">{pathMovesLabel}</span>
+            {pgnLineNodes.map((node, index) => {
+              const isCurrentMove = activeReviewPath[index + 1] === currentReviewNodeId;
+              return (
+                <button
+                  key={node.id}
+                  type="button"
+                  className={`pgn-sequence-move ${isCurrentMove ? 'is-current' : ''}`}
+                  disabled={panelControlsDisabled}
+                  aria-label={formatPgnMoveLabel(node)}
+                  onClick={() => {
+                    const targetIndex = index + 1;
+                    if (pathsMatch(pgnDisplayPath, livePath) && targetIndex === livePath.length - 1) {
+                      setReviewCursor(null);
+                      return;
+                    }
 
-                  setReviewCursor({
-                    path: pgnDisplayPath,
-                    index: targetIndex
-                  });
-                }}
-              >
-                <span className="pgn-sequence-prefix">{getPgnMovePrefix(node)}</span>{' '}
-                <MoveText moveText={formatNodeMoveText(node)} ply={node.ply} renderPieceImages={prefs.renderPgnPieceSvgs} />
-              </button>
-            );
-          })
+                    setReviewCursor({
+                      path: pgnDisplayPath,
+                      index: targetIndex
+                    });
+                  }}
+                >
+                  <span className="pgn-sequence-prefix">{getPgnMovePrefix(node)}</span>{' '}
+                  <MoveText moveText={formatNodeMoveText(node)} ply={node.ply} renderPieceImages={prefs.renderPgnPieceSvgs} />
+                </button>
+              );
+            })}
+          </>
         )}
       </div>
 
@@ -2906,10 +2840,6 @@ export function App() {
   );
   const mobileSecondaryPanel = (
     <section className="rail-block mobile-secondary-panel">
-      <div className="mobile-secondary-meta">
-        {!isUntitledPuzzle ? <p className="subtitle rail-title mobile-secondary-title">{normalizedPuzzleTitle}</p> : null}
-        <p className="meta rail-id mobile-secondary-id">{i18n.puzzleId(puzzle.publicId)}</p>
-      </div>
       <div className="pgn-panel" id="explorer">
         {pgnPanelContent}
       </div>
@@ -2996,12 +2926,7 @@ export function App() {
         </div>
         {isZenMode ? (
           <div className={`zen-controls ${prefs.showEngineEval ? '' : 'no-eval'}`}>
-            <div className="button-row zen-action-row">
-              {puzzleActionButtons}
-            </div>
-            <div className="button-row zen-navigation-row">
-              {zenReviewNavigationButtons}
-            </div>
+            {controlsPanelContent}
           </div>
         ) : null}
       </div>

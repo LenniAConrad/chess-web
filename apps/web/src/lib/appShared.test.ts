@@ -1,6 +1,12 @@
 import { expect, it, describe } from 'vitest';
 import { Chess } from 'chess.js';
-import { applyUciMove, getCapturedPieceSkin, getFenAfterUciMove, getMoveSoundDecision } from './appShared.js';
+import {
+  applyUciMove,
+  getCapturedPieceSkin,
+  getFenAfterUciMove,
+  getMoveSoundDecision,
+  shouldAutoAdvanceSolvedSession
+} from './appShared.js';
 
 describe('appShared move helpers', () => {
   const fen = '8/8/8/8/8/8/8/K6k w - - 0 1';
@@ -20,5 +26,51 @@ describe('appShared move helpers', () => {
     });
 
     expect(getCapturedPieceSkin(fen, 'b5b6')).toBeNull();
+  });
+});
+
+describe('shouldAutoAdvanceSolvedSession', () => {
+  it('advances when the current session was just solved', () => {
+    expect(
+      shouldAutoAdvanceSolvedSession({
+        currentSessionId: 'session-a',
+        previousSessionId: 'session-a',
+        solved: true,
+        previousSolved: false
+      })
+    ).toBe(true);
+  });
+
+  it('advances when a new session arrives already solved', () => {
+    expect(
+      shouldAutoAdvanceSolvedSession({
+        currentSessionId: 'session-b',
+        previousSessionId: 'session-a',
+        solved: true,
+        previousSolved: true
+      })
+    ).toBe(true);
+  });
+
+  it('does not advance repeatedly for the same solved session', () => {
+    expect(
+      shouldAutoAdvanceSolvedSession({
+        currentSessionId: 'session-a',
+        previousSessionId: 'session-a',
+        solved: true,
+        previousSolved: true
+      })
+    ).toBe(false);
+  });
+
+  it('does not advance unsolved sessions', () => {
+    expect(
+      shouldAutoAdvanceSolvedSession({
+        currentSessionId: 'session-a',
+        previousSessionId: 'session-a',
+        solved: false,
+        previousSolved: false
+      })
+    ).toBe(false);
   });
 });

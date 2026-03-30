@@ -306,6 +306,21 @@ export function isPuzzleSolved(snapshot: SessionStatePayload): boolean {
   return snapshot.completedBranches >= snapshot.totalLines;
 }
 
+export function shouldAutoAdvanceSolvedSession(input: {
+  currentSessionId: string;
+  previousSessionId: string | null;
+  solved: boolean;
+  previousSolved: boolean;
+}): boolean {
+  const { currentSessionId, previousSessionId, solved, previousSolved } = input;
+
+  if (!solved) {
+    return false;
+  }
+
+  return previousSessionId !== currentSessionId || !previousSolved;
+}
+
 export function getTerminalEvalDisplay(fen: string | null, i18n: FrontendI18n): TerminalEvalDisplay | null {
   if (!fen) {
     return null;
