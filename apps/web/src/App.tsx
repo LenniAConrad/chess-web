@@ -284,20 +284,24 @@ export function App() {
       return;
     }
 
-    const media = window.matchMedia('(max-width: 900px)');
+    const visualViewport = window.visualViewport;
     const syncViewport = () => {
-      setIsMobileViewport(media.matches);
+      const viewportWidth = visualViewport?.width ?? window.innerWidth;
+      const viewportHeight = visualViewport?.height ?? window.innerHeight;
+      const isPortraitViewport = viewportHeight >= viewportWidth;
+      setIsMobileViewport(viewportWidth <= 900 && isPortraitViewport);
     };
 
     syncViewport();
+    window.addEventListener('resize', syncViewport);
+    window.addEventListener('orientationchange', syncViewport);
+    visualViewport?.addEventListener('resize', syncViewport);
 
-    if (typeof media.addEventListener === 'function') {
-      media.addEventListener('change', syncViewport);
-      return () => media.removeEventListener('change', syncViewport);
-    }
-
-    media.addListener(syncViewport);
-    return () => media.removeListener(syncViewport);
+    return () => {
+      window.removeEventListener('resize', syncViewport);
+      window.removeEventListener('orientationchange', syncViewport);
+      visualViewport?.removeEventListener('resize', syncViewport);
+    };
   }, []);
 
   useLayoutEffect(() => {
@@ -494,10 +498,20 @@ export function App() {
     () => recentHistoryItems.findIndex((item) => item.sessionId === sessionId),
     [recentHistoryItems, sessionId]
   );
-  const previousPuzzleSessionId =
-    currentHistoryIndex >= 0 ? (recentHistoryItems[currentHistoryIndex + 1]?.sessionId ?? null) : null;
-  const nextHistoryPuzzleSessionId =
-    currentHistoryIndex > 0 ? (recentHistoryItems[currentHistoryIndex - 1]?.sessionId ?? null) : null;
+  const previousPuzzleSessionId = useMemo(() => {
+    if (currentHistoryIndex >= 0) {
+      return recentHistoryItems[currentHistoryIndex + 1]?.sessionId ?? null;
+    }
+
+    return recentHistoryItems[0]?.sessionId ?? null;
+  }, [currentHistoryIndex, recentHistoryItems]);
+  const nextHistoryPuzzleSessionId = useMemo(() => {
+    if (currentHistoryIndex > 0) {
+      return recentHistoryItems[currentHistoryIndex - 1]?.sessionId ?? null;
+    }
+
+    return null;
+  }, [currentHistoryIndex, recentHistoryItems]);
 
   const engineEval = useStockfishEval(boardFen, prefs.showEngineEval);
   const terminalEvalDisplay = useMemo(() => getTerminalEvalDisplay(boardFen, i18n), [boardFen, i18n]);
@@ -1730,6 +1744,7 @@ export function App() {
         setLastBestMove(response.bestMoveUci);
         setWrongMoveSquare(null);
         setLineCompleteSquare(null);
+        let artifactSessionId = sessionId;
 
         if (!response.bestMoveUci || !response.afterFen) {
           resetPremoves();
@@ -1740,7 +1755,28 @@ export function App() {
               isPuzzleSolved(response.nextState) ? copy.puzzleComplete : copy.noMoveToReveal
             )
           );
-          void loadSessionArtifacts(sessionId);
+          if (mode === 'auto' && prefs.autoNext && isPuzzleSolved(response.nextState)) {
+            await maybeWait(getDelay(SHORT_STATUS_DELAY_MS), prefs.animations);
+            const prefetchedNext = takePrefetchedNextSession(sessionId, prefs.variationMode, prefs.autoNext);
+            if (prefetchedNext) {
+              applyStartedSession(prefetchedNext, translatedUiMessage((copy) => copy.newPuzzleLoaded));
+              activatePrefetchedSession(prefetchedNext.sessionId);
+              artifactSessionId = prefetchedNext.sessionId;
+            } else {
+              const next = await nextPuzzle(sessionId, prefs.variationMode, prefs.autoNext);
+              applyStartedSession(
+                {
+                  sessionId: next.newSessionId,
+                  puzzle: next.puzzle,
+                  state: next.state,
+                  ui: next.ui
+                },
+                translatedUiMessage((copy) => copy.newPuzzleLoaded)
+              );
+              artifactSessionId = next.newSessionId;
+            }
+          }
+          void loadSessionArtifacts(artifactSessionId);
           return;
         }
 
@@ -1774,6 +1810,27 @@ export function App() {
               )
             )
           );
+          if (mode === 'auto' && prefs.autoNext) {
+            await maybeWait(getDelay(SHORT_STATUS_DELAY_MS), prefs.animations);
+            const prefetchedNext = takePrefetchedNextSession(sessionId, prefs.variationMode, prefs.autoNext);
+            if (prefetchedNext) {
+              applyStartedSession(prefetchedNext, translatedUiMessage((copy) => copy.newPuzzleLoaded));
+              activatePrefetchedSession(prefetchedNext.sessionId);
+              artifactSessionId = prefetchedNext.sessionId;
+            } else {
+              const next = await nextPuzzle(sessionId, prefs.variationMode, prefs.autoNext);
+              applyStartedSession(
+                {
+                  sessionId: next.newSessionId,
+                  puzzle: next.puzzle,
+                  state: next.state,
+                  ui: next.ui
+                },
+                translatedUiMessage((copy) => copy.newPuzzleLoaded)
+              );
+              artifactSessionId = next.newSessionId;
+            }
+          }
         } else {
           setStatusMessage(
             translatedUiMessage((copy) =>
@@ -1794,7 +1851,7 @@ export function App() {
           );
         }
 
-        void loadSessionArtifacts(sessionId);
+        void loadSessionArtifacts(artifactSessionId);
       } catch (error) {
         setErrorMessage(
           error instanceof Error
@@ -1814,7 +1871,9 @@ export function App() {
       historyLoading,
       getDelay,
       getFeedbackPause,
+      prefs.autoNext,
       prefs.animations,
+      prefs.variationMode,
       prefs.skipSimilarVariations,
       prefs.soundEnabled,
       resetHints,
@@ -1822,6 +1881,9 @@ export function App() {
       sessionId,
       spawnCaptureRainPiece,
       state,
+      activatePrefetchedSession,
+      applyStartedSession,
+      takePrefetchedNextSession,
       i18n,
       oneTryLocked
     ]
@@ -2440,7 +2502,7 @@ export function App() {
   };
 
   if (!state || !puzzle) {
-    return <LoadingScreen i18n={i18n} errorText={errorText} pieceSrc={withBasePath('pieces/cburnett/wK.svg')} />;
+    return <LoadingScreen i18n={i18n} errorText={errorText} pieceSrc={withBasePath('pieces/cburnett/wR.svg')} />;
   }
 
   const completedBranchesText = i18n.completedBranches(state.completedBranches, state.totalLines);

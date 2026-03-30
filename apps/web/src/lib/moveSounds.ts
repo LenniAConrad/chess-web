@@ -22,7 +22,6 @@ const SOUND_UNLOCK_EVENTS = ['pointerdown', 'touchstart', 'keydown'] as const;
 let cachedPools: Partial<Record<BaseSoundType, HTMLAudioElement[]>> = {};
 let preloadLinksInjected = false;
 let soundUnlockListenersAttached = false;
-let soundUnlockInFlight = false;
 let soundUnlocked = false;
 let poolCursorByType: Partial<Record<BaseSoundType, number>> = {};
 
@@ -81,46 +80,17 @@ function detachSoundUnlockListeners(): void {
   soundUnlockListenersAttached = false;
 }
 
-async function unlockMoveSoundsFromGesture(): Promise<void> {
-  if (typeof window === 'undefined' || soundUnlocked || soundUnlockInFlight) {
+function unlockMoveSoundsFromGesture(): void {
+  if (typeof window === 'undefined' || soundUnlocked) {
     return;
   }
 
-  soundUnlockInFlight = true;
-
-  try {
-    const audioElements = BASE_SOUND_TYPES.flatMap((type) => getSoundPool(type) ?? []);
-    let unlockedAny = false;
-
-    for (const audio of audioElements) {
-      try {
-        audio.muted = true;
-        const playback = audio.play();
-        if (playback) {
-          await playback;
-        }
-        audio.pause();
-        audio.currentTime = 0;
-        unlockedAny = true;
-      } catch {
-        audio.pause();
-        audio.currentTime = 0;
-      } finally {
-        audio.muted = false;
-      }
-    }
-
-    if (unlockedAny) {
-      soundUnlocked = true;
-      detachSoundUnlockListeners();
-    }
-  } finally {
-    soundUnlockInFlight = false;
-  }
+  soundUnlocked = true;
+  detachSoundUnlockListeners();
 }
 
 function handleSoundUnlockGesture(): void {
-  void unlockMoveSoundsFromGesture();
+  unlockMoveSoundsFromGesture();
 }
 
 function attachSoundUnlockListeners(): void {

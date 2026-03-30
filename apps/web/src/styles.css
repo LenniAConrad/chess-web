@@ -1519,15 +1519,17 @@ body::before {
   width: 12.5%;
   height: 50%;
   display: flex;
-  gap: min(0.22rem, 0.8vw);
-  padding: min(0.22rem, 0.8vw);
+  gap: min(0.18rem, 0.55vw);
+  padding: min(0.28rem, 0.75vw);
   overflow: hidden;
-  border-radius: 4px;
-  border: 1px solid var(--color-panel-border);
-  background: var(--color-panel-bg);
-  box-shadow: none;
-  backdrop-filter: blur(20px) brightness(1.06);
-  -webkit-backdrop-filter: blur(20px) brightness(1.06);
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-panel-border) 115%, transparent);
+  background: color-mix(in srgb, var(--color-panel-bg) 92%, transparent);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.18),
+    0 1px 0 rgba(255, 255, 255, 0.12) inset;
+  backdrop-filter: blur(18px) saturate(118%) brightness(1.04);
+  -webkit-backdrop-filter: blur(18px) saturate(118%) brightness(1.04);
   box-sizing: border-box;
   transform-origin: center;
   animation: settings-dropdown-in 180ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -1546,22 +1548,30 @@ body::before {
   width: 100%;
   min-height: 0;
   border: 1px solid transparent;
-  border-radius: 3px;
+  border-radius: 9px;
   padding: 0;
   margin: 0;
-  background: var(--color-toggle-bg);
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   transition:
     border-color 160ms ease,
     background-color 160ms ease,
-    transform 160ms ease;
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .promotion-option:hover {
-  border-color: var(--color-toggle-focus);
-  background: var(--color-button-bg-hover);
+  border-color: color-mix(in srgb, var(--color-toggle-focus) 70%, transparent);
+  background: color-mix(in srgb, var(--color-button-bg) 26%, transparent);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  transform: translateY(-1px);
+}
+
+.promotion-option:active {
+  background: color-mix(in srgb, var(--color-button-bg) 34%, transparent);
+  transform: translateY(0);
 }
 
 .promotion-option:focus-visible {
@@ -1570,12 +1580,13 @@ body::before {
 }
 
 .promotion-piece-swatch {
-  width: 84%;
-  height: 84%;
+  width: 80%;
+  height: 80%;
   display: block;
   position: relative;
   pointer-events: none;
   -webkit-user-drag: none;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
 }
 
 .promotion-piece-swatch piece {
