@@ -223,7 +223,6 @@ export function App() {
   const [hintArrow, setHintArrow] = useState<[Square, Square] | null>(null);
   const [hintLevel, setHintLevel] = useState(0);
   const [lastBestMove, setLastBestMove] = useState<string | null>(null);
-  const [playerOrientation, setPlayerOrientation] = useState<'white' | 'black'>('white');
   const [lastMoveSquares, setLastMoveSquares] = useState<[Square, Square] | null>(null);
   const [puzzleIdInput, setPuzzleIdInput] = useState('');
   const [historyItems, setHistoryItems] = useState<SessionHistoryItem[]>([]);
@@ -454,6 +453,17 @@ export function App() {
 
   const pgnCurrentNodeId = currentReviewNodeId;
   const pgnNextMoves = pgnCurrentNodeId ? (treeChildrenMap.get(pgnCurrentNodeId) ?? []) : [];
+  const canRequestContinuation = useMemo(() => {
+    if (isReviewMode) {
+      return false;
+    }
+
+    if (!sessionTree) {
+      return true;
+    }
+
+    return pgnNextMoves.length > 0;
+  }, [isReviewMode, pgnNextMoves.length, sessionTree]);
   const pgnLineNodes = useMemo(
     () =>
       pgnDisplayPath
@@ -510,6 +520,17 @@ export function App() {
 
     return new Chess(objectiveFen).turn() === 'w' ? 'white' : 'black';
   })();
+  const playerOrientation = useMemo<'white' | 'black'>(() => {
+    if (!puzzle) {
+      return 'white';
+    }
+
+    try {
+      return new Chess(puzzle.startFen).turn() === 'w' ? 'white' : 'black';
+    } catch {
+      return 'white';
+    }
+  }, [puzzle]);
   const puzzleComplete = state ? isPuzzleSolved(state) : false;
   const turnKickerText = puzzleComplete ? '\u00A0' : i18n.yourTurn;
   const objectiveText = puzzleComplete
@@ -1188,7 +1209,6 @@ export function App() {
       setPuzzleIdInput(response.puzzle.publicId);
       setState(response.state);
       setDisplayFen(response.state.fen);
-      setPlayerOrientation(response.state.toMove === 'w' ? 'white' : 'black');
       setLastMoveSquares(null);
       resetHints();
       setPreparedHintForNode(response.state.nodeId, response.ui.hintPreview);
@@ -2458,6 +2478,8 @@ export function App() {
       disabled={panelControlsDisabled}
       isReviewMode={isReviewMode}
       hintsEnabled={prefs.hintsEnabled}
+      canHint={canRequestContinuation}
+      canReveal={canRequestContinuation}
       i18n={i18n}
       onHint={() => void handleHint()}
       onReveal={() => void handleReveal()}
@@ -2544,7 +2566,7 @@ export function App() {
         <button
           type="button"
           className="btn-secondary"
-          disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled}
+          disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled || !canRequestContinuation}
           onClick={() => void handleHint()}
         >
           {i18n.hint}
@@ -2554,7 +2576,7 @@ export function App() {
         <button
           type="button"
           className="btn-secondary"
-          disabled={panelControlsDisabled || isReviewMode}
+          disabled={panelControlsDisabled || isReviewMode || !canRequestContinuation}
           onClick={() => void handleReveal()}
         >
           {i18n.showSolution}
@@ -2889,13 +2911,17 @@ export function App() {
             </section>
             <section ref={mobileSecondaryScreenRef} className="mobile-snap-screen mobile-secondary-screen">
               <div className="mobile-snap-page-body mobile-secondary-page-body">
-                {statusPanel}
-                {mobileSecondaryPanel}
+                <div className="mobile-secondary-stack">
+                  {statusPanel}
+                  {mobileSecondaryPanel}
+                </div>
               </div>
             </section>
             <section className="mobile-snap-screen mobile-tertiary-screen">
-              <div className="mobile-snap-page-body mobile-secondary-page-body">
-                {mobileHistoryPanel}
+              <div className="mobile-snap-page-body mobile-secondary-page-body mobile-tertiary-page-body">
+                <div className="mobile-tertiary-stack">
+                  {mobileHistoryPanel}
+                </div>
                 <footer className="app-footer mobile-inline-footer">
                   {footerContent}
                 </footer>

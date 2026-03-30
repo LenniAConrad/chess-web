@@ -17,9 +17,14 @@ const SOUND_URLS: Record<BaseSoundType, string> = {
 
 const BASE_VOLUME = 1;
 const SOUND_POOL_SIZE = 4;
+const SOUND_UNLOCK_EVENTS = ['pointerdown', 'touchstart', 'keydown'] as const;
 
 let cachedPools: Partial<Record<BaseSoundType, HTMLAudioElement[]>> = {};
 let preloadLinksInjected = false;
+let soundUnlockListenersAttached = false;
+let soundUnlockInFlight = false;
+let soundUnlocked = false;
+let poolCursorByType: Partial<Record<BaseSoundType, number>> = {};
 
 function injectSoundPreloads(): void {
   if (typeof document === 'undefined' || preloadLinksInjected) {
@@ -64,20 +69,114 @@ function getSoundPool(type: BaseSoundType): HTMLAudioElement[] | null {
   return pool;
 }
 
+function detachSoundUnlockListeners(): void {
+  if (typeof document === 'undefined' || !soundUnlockListenersAttached) {
+    return;
+  }
+
+  for (const eventName of SOUND_UNLOCK_EVENTS) {
+    document.removeEventListener(eventName, handleSoundUnlockGesture, true);
+  }
+
+  soundUnlockListenersAttached = false;
+}
+
+async function unlockMoveSoundsFromGesture(): Promise<void> {
+  if (typeof window === 'undefined' || soundUnlocked || soundUnlockInFlight) {
+    return;
+  }
+
+  soundUnlockInFlight = true;
+
+  try {
+    const audioElements = BASE_SOUND_TYPES.flatMap((type) => getSoundPool(type) ?? []);
+    let unlockedAny = false;
+
+    for (const audio of audioElements) {
+      try {
+        audio.muted = true;
+        const playback = audio.play();
+        if (playback) {
+          await playback;
+        }
+        audio.pause();
+        audio.currentTime = 0;
+        unlockedAny = true;
+      } catch {
+        audio.pause();
+        audio.currentTime = 0;
+      } finally {
+        audio.muted = false;
+      }
+    }
+
+    if (unlockedAny) {
+      soundUnlocked = true;
+      detachSoundUnlockListeners();
+    }
+  } finally {
+    soundUnlockInFlight = false;
+  }
+}
+
+function handleSoundUnlockGesture(): void {
+  void unlockMoveSoundsFromGesture();
+}
+
+function attachSoundUnlockListeners(): void {
+  if (typeof document === 'undefined' || soundUnlockListenersAttached || soundUnlocked) {
+    return;
+  }
+
+  for (const eventName of SOUND_UNLOCK_EVENTS) {
+    document.addEventListener(eventName, handleSoundUnlockGesture, { capture: true, passive: true });
+  }
+
+  soundUnlockListenersAttached = true;
+}
+
+function pickPlayableAudio(type: BaseSoundType, pool: HTMLAudioElement[]): HTMLAudioElement | null {
+  if (pool.length === 0) {
+    return null;
+  }
+
+  const startIndex = poolCursorByType[type] ?? 0;
+
+  for (let offset = 0; offset < pool.length; offset += 1) {
+    const index = (startIndex + offset) % pool.length;
+    const audio = pool[index];
+    if (!audio) {
+      continue;
+    }
+    if (audio.paused || audio.ended) {
+      poolCursorByType[type] = (index + 1) % pool.length;
+      return audio;
+    }
+  }
+
+  const fallbackIndex = startIndex % pool.length;
+  const fallback = pool[fallbackIndex] ?? null;
+  if (!fallback) {
+    return null;
+  }
+  poolCursorByType[type] = (fallbackIndex + 1) % pool.length;
+  return fallback;
+}
+
 function playBaseSound(type: BaseSoundType): void {
   const pool = getSoundPool(type);
   if (!pool || pool.length === 0) {
     return;
   }
 
-  const playable = pool.find((audio) => audio.paused || audio.ended) ?? null;
+  const playable = pickPlayableAudio(type, pool);
   if (!playable) {
     return;
   }
   playable.currentTime = 0;
   playable.volume = BASE_VOLUME;
   void playable.play().catch(() => {
-    // Ignore autoplay/user-gesture errors.
+    attachSoundUnlockListeners();
   });
 }
 
@@ -86,6 +185,7 @@ export function primeMoveSounds(): void {
   for (const type of BASE_SOUND_TYPES) {
     getSoundPool(type);
   }
+  attachSoundUnlockListeners();
 }
 
 export function playMoveSound(type: MoveSoundType): void {

@@ -2548,15 +2548,23 @@ button.btn-primary {
 }
 
 button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):disabled {
-  border-color: var(--color-button-disabled-border);
-  background: var(--color-button-disabled-bg);
-  color: var(--color-button-disabled-text);
-  box-shadow: none;
-  filter: saturate(0.78);
+  color: color-mix(in srgb, var(--color-button-text) 78%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.14) inset;
+  filter: saturate(0.72) contrast(0.94) brightness(0.98);
+}
+
+button.btn-primary:disabled {
+  border-color: color-mix(in srgb, var(--color-button-border) 88%, transparent);
+  background: color-mix(in srgb, var(--color-button-bg) 92%, transparent);
+}
+
+button.btn-secondary:disabled {
+  border-color: color-mix(in srgb, var(--color-button-secondary-border) 88%, transparent);
+  background: color-mix(in srgb, var(--color-button-secondary-bg) 92%, transparent);
 }
 
 button:disabled {
-  opacity: 1;
+  opacity: 0.9;
   cursor: not-allowed;
   transform: none !important;
   box-shadow: none !important;
@@ -2866,9 +2874,35 @@ button:disabled {
       var(--mobile-page-gutter)
       max(calc(var(--page-vertical-space) + 0.55rem), calc(env(safe-area-inset-bottom) + 0.55rem));
     box-sizing: border-box;
-    display: grid;
-    align-content: start;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
     gap: 0.75rem;
+  }
+
+  .mobile-secondary-stack {
+    width: 100%;
+    display: grid;
+    align-content: center;
+    gap: 0.75rem;
+  }
+
+  .mobile-tertiary-page-body {
+    min-height: 100%;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-content: stretch;
+  }
+
+  .mobile-tertiary-stack {
+    width: 100%;
+    min-height: 0;
+    display: grid;
+    align-content: center;
+  }
+
+  .mobile-tertiary-page-body .mobile-inline-footer {
+    margin-top: auto;
   }
 
   .app-shell.is-zen-mode .split-layout {
@@ -3069,6 +3103,10 @@ button:disabled {
     font-size: 0.92rem;
   }
 
+  .mobile-status-panel .correct-line.is-empty {
+    display: none;
+  }
+
   .mobile-status-panel .rail-review.is-empty {
     display: none;
   }
@@ -3085,7 +3123,7 @@ button:disabled {
 
   .mobile-secondary-id {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.84rem;
     line-height: 1.4;
     opacity: 0.92;
   }

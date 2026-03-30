@@ -67,19 +67,26 @@ export function PuzzleActionButtons(props: {
   disabled: boolean;
   isReviewMode: boolean;
   hintsEnabled: boolean;
+  canHint: boolean;
+  canReveal: boolean;
   i18n: FrontendI18n;
   onHint: () => void;
   onReveal: () => void;
   onRestartPuzzle: () => void;
 }) {
-  const { disabled, isReviewMode, hintsEnabled, i18n, onHint, onReveal, onRestartPuzzle } = props;
+  const { disabled, isReviewMode, hintsEnabled, canHint, canReveal, i18n, onHint, onReveal, onRestartPuzzle } = props;
 
   return (
     <>
-      <button type="button" className="btn-secondary" disabled={disabled || isReviewMode || !hintsEnabled} onClick={onHint}>
+      <button
+        type="button"
+        className="btn-secondary"
+        disabled={disabled || isReviewMode || !hintsEnabled || !canHint}
+        onClick={onHint}
+      >
         {i18n.hint}
       </button>
-      <button type="button" className="btn-secondary" disabled={disabled || isReviewMode} onClick={onReveal}>
+      <button type="button" className="btn-secondary" disabled={disabled || isReviewMode || !canReveal} onClick={onReveal}>
         {i18n.showSolution}
       </button>
       <button type="button" className="btn-primary" disabled={disabled || isReviewMode} onClick={onRestartPuzzle}>
