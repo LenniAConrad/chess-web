@@ -241,6 +241,12 @@ export function App() {
   const [historyPreview, setHistoryPreview] = useState<HistoryPreviewState | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const appShellRef = useRef<HTMLDivElement | null>(null);
+  const mobileHeaderRef = useRef<HTMLElement | null>(null);
+  const mobilePrimaryPageBodyRef = useRef<HTMLElement | null>(null);
+  const mobileStatusPanelRef = useRef<HTMLElement | null>(null);
+  const mobileControlsPanelRef = useRef<HTMLElement | null>(null);
+  const mobileFooterRef = useRef<HTMLElement | null>(null);
+  const mobileEvalWrapRef = useRef<HTMLDivElement | null>(null);
   const headerSettingsRef = useRef<HTMLDetailsElement | null>(null);
   const headerLanguageRef = useRef<HTMLDetailsElement | null>(null);
   const capturePieceIdRef = useRef(0);
@@ -268,6 +274,8 @@ export function App() {
   });
   const initialLoadRetryAttemptRef = useRef(0);
   const recentHistoryItems = historyItems;
+  const isZenMode = prefs.zenMode;
+  const isMobileStandardLayout = isMobileViewport && !isZenMode;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -852,6 +860,94 @@ export function App() {
       }
     };
   }, [isMobileViewport]);
+
+  useEffect(() => {
+    const shell = appShellRef.current;
+    const primaryBody = mobilePrimaryPageBodyRef.current;
+
+    if (!shell || !primaryBody || !isMobileStandardLayout) {
+      shell?.style.removeProperty('--mobile-primary-board-max-size');
+      return;
+    }
+
+    let frameId: number | null = null;
+
+    const measureVisibleHeight = (element: HTMLElement | null): number => {
+      if (!element) {
+        return 0;
+      }
+
+      const computedStyle = window.getComputedStyle(element);
+      if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
+        return 0;
+      }
+
+      return element.getBoundingClientRect().height;
+    };
+
+    const updateBoardSize = () => {
+      const computedStyle = window.getComputedStyle(primaryBody);
+      const paddingTop = parseFloat(computedStyle.paddingTop) || 0;
+      const paddingBottom = parseFloat(computedStyle.paddingBottom) || 0;
+      const rowGap = parseFloat(computedStyle.rowGap || computedStyle.gap) || 0;
+      const fixedBlockHeights = [
+        measureVisibleHeight(mobileStatusPanelRef.current),
+        measureVisibleHeight(mobileControlsPanelRef.current),
+        measureVisibleHeight(mobileFooterRef.current)
+      ];
+      const visibleFixedBlockCount = fixedBlockHeights.filter((height) => height > 0.5).length;
+      const availableBoardSize =
+        primaryBody.getBoundingClientRect().height -
+        paddingTop -
+        paddingBottom -
+        fixedBlockHeights.reduce((sum, height) => sum + height, 0) -
+        (rowGap * visibleFixedBlockCount) -
+        measureVisibleHeight(mobileEvalWrapRef.current);
+
+      shell.style.setProperty('--mobile-primary-board-max-size', `${Math.max(0, Math.floor(availableBoardSize))}px`);
+    };
+
+    const scheduleBoardResize = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+
+      frameId = requestAnimationFrame(() => {
+        frameId = null;
+        updateBoardSize();
+      });
+    };
+
+    scheduleBoardResize();
+
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(scheduleBoardResize) : null;
+    for (const element of [
+      primaryBody,
+      mobileHeaderRef.current,
+      mobileStatusPanelRef.current,
+      mobileControlsPanelRef.current,
+      mobileFooterRef.current,
+      mobileEvalWrapRef.current
+    ]) {
+      if (element) {
+        resizeObserver?.observe(element);
+      }
+    }
+
+    window.addEventListener('resize', scheduleBoardResize);
+    window.visualViewport?.addEventListener('resize', scheduleBoardResize);
+
+    return () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', scheduleBoardResize);
+      window.visualViewport?.removeEventListener('resize', scheduleBoardResize);
+      shell.style.removeProperty('--mobile-primary-board-max-size');
+    };
+  }, [isMobileStandardLayout, prefs.showEngineEval]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -2170,14 +2266,12 @@ export function App() {
   const normalizedPuzzleTitle = normalizeTitleText(puzzle.title);
   const isUntitledPuzzle = isUntitledPuzzleTitle(normalizedPuzzleTitle, i18n.untitledPuzzle);
   const interactive = boardCanInteract;
-  const isZenMode = prefs.zenMode;
   const shellClassName = ['app-shell', isZenMode ? 'is-zen-mode' : null, prefs.showEngineEval ? 'has-eval' : 'no-eval']
     .filter(Boolean)
     .join(' ');
   const footerLinks: AppChromeLink[] = [
     { href: REPO_URL, label: i18n.github, external: true }
   ];
-  const isMobileStandardLayout = isMobileViewport && !isZenMode;
   const zenExitHintLabel = isMobileViewport ? (i18n.exitZenModeHintMobile ?? 'Tap here to exit zen mode') : i18n.exitZenModeHint;
   const boardColumnClassName = ['board-column', isMobileStandardLayout ? 'mobile-board-column' : null]
     .filter(Boolean)
@@ -2222,7 +2316,7 @@ export function App() {
   );
   const promotionPieceLabels = getPromotionPieceLabels(i18n);
   const statusPanel = (
-    <section className={statusPanelClassName}>
+    <section ref={mobileStatusPanelRef} className={statusPanelClassName}>
       <div className="rail-status-meta">
         {!isMobileStandardLayout && !isUntitledPuzzle ? <p className="subtitle rail-title">{normalizedPuzzleTitle}</p> : null}
         {!isMobileStandardLayout ? <p className="meta rail-id">{i18n.puzzleId(puzzle.publicId)}</p> : null}
@@ -2251,7 +2345,7 @@ export function App() {
     </section>
   );
   const controlsPanel = (
-    <section className={controlsPanelClassName}>
+    <section ref={mobileControlsPanelRef} className={controlsPanelClassName}>
       <div className="button-row">
         <button
           type="button"
@@ -2502,6 +2596,7 @@ export function App() {
       puzzleCountText={
         puzzleCount === null ? i18n.livePuzzleCountUnavailable : i18n.puzzleCount(countFormatter.format(puzzleCount))
       }
+      headerRef={mobileHeaderRef}
       headerLanguageRef={headerLanguageRef}
       headerSettingsRef={headerSettingsRef}
       closeHeaderMenus={closeHeaderMenus}
@@ -2520,7 +2615,9 @@ export function App() {
       <div className={boardStackClassName}>
         <div className="board-stage">
           {prefs.showEngineEval ? (
-            <EvalBar cp={displayedEngineCp} mate={displayedEngineMate} />
+            <div ref={mobileEvalWrapRef}>
+              <EvalBar cp={displayedEngineCp} mate={displayedEngineMate} />
+            </div>
           ) : null}
           <div className="board-shell">
             <ChessBoard
@@ -2583,11 +2680,11 @@ export function App() {
           <>
             <section className="mobile-snap-screen mobile-primary-screen">
               {headerContent}
-              <main className="mobile-snap-page-body mobile-primary-page-body">
+              <main ref={mobilePrimaryPageBodyRef} className="mobile-snap-page-body mobile-primary-page-body">
                 {statusPanel}
                 {boardPanel}
                 {controlsPanel}
-                <footer className="app-footer mobile-inline-footer">
+                <footer ref={mobileFooterRef} className="app-footer mobile-inline-footer">
                   {footerContent}
                 </footer>
               </main>

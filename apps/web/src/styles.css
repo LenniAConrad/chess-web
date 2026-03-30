@@ -2597,12 +2597,24 @@ button:disabled {
   .app-header-primary {
     width: 100%;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.85rem;
+    row-gap: 0.35rem;
+  }
+
+  .app-brand-lockup {
+    flex: 1 1 10rem;
+    min-width: 0;
   }
 
   .app-header-controls {
     margin-left: auto;
+    min-width: 0;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
     gap: 0.2rem;
+    justify-content: flex-end;
+    row-gap: 0.2rem;
   }
 
   .app-brand {
@@ -2761,6 +2773,8 @@ button:disabled {
 
   .app-footer-inner {
     align-items: flex-start;
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
   }
 
   .app-footer-links {
@@ -2801,11 +2815,12 @@ button:disabled {
   }
 
   .mobile-primary-screen {
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .mobile-snap-page-body {
     min-height: 0;
+    height: 100%;
     padding: var(--page-vertical-space) var(--mobile-page-gutter);
     box-sizing: border-box;
     display: grid;
@@ -2814,10 +2829,12 @@ button:disabled {
   }
 
   .mobile-primary-page-body {
-    grid-auto-rows: max-content;
+    align-content: stretch;
+    grid-template-rows: max-content minmax(0, 1fr) max-content max-content;
   }
 
   .mobile-secondary-page-body {
+    min-height: 100%;
     width: 100%;
   }
 
@@ -2835,6 +2852,9 @@ button:disabled {
 
   .mobile-board-column {
     width: 100%;
+    min-height: 0;
+    display: grid;
+    align-content: center;
   }
 
   .app-shell.is-zen-mode .board-column {
@@ -2849,6 +2869,11 @@ button:disabled {
 
   .board-stack {
     width: 100%;
+  }
+
+  .mobile-primary-page-body .board-stack {
+    width: min(100%, var(--mobile-primary-board-max-size, 100%));
+    margin: 0 auto;
   }
 
   .app-shell.is-zen-mode .board-stack {
@@ -3125,11 +3150,6 @@ button:disabled {
     padding-bottom: 0.55rem;
   }
 
-  .mobile-primary-page-body .board-stack {
-    width: min(100%, max(16rem, calc(100dvh - 31rem)));
-    margin: 0 auto;
-  }
-
   .mobile-status-panel {
     padding: 0.62rem;
   }
@@ -3176,28 +3196,6 @@ button:disabled {
 }
 
 @media (max-width: 520px) and (max-height: 860px) {
-  .mobile-snap-page-body {
-    align-content: start;
-    gap: 0.5rem;
-  }
-
-  .mobile-inline-footer {
-    display: none;
-  }
-
-  .mobile-primary-page-body {
-    min-height: 100%;
-    grid-template-rows: max-content max-content max-content 1fr;
-  }
-
-  .mobile-secondary-page-body {
-    align-content: start;
-  }
-
-  .mobile-primary-page-body .board-stack {
-    width: min(100%, max(15rem, calc(100dvh - 29rem)));
-  }
-
   .mobile-status-panel .turn-indicator {
     font-size: 0.94rem;
     line-height: 1.06;

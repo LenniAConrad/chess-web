@@ -5,6 +5,7 @@ import type { UserPreferences } from '../hooks/useLocalPrefs.js';
 interface AppHeaderProps {
   i18n: FrontendI18n;
   puzzleCountText: string;
+  headerRef?: MutableRefObject<HTMLElement | null>;
   headerLanguageRef: MutableRefObject<HTMLDetailsElement | null>;
   headerSettingsRef: MutableRefObject<HTMLDetailsElement | null>;
   closeHeaderMenus: (keepOpen?: 'settings' | 'language' | null) => void;
@@ -75,6 +76,7 @@ export function AppHeader(props: AppHeaderProps) {
   const {
     i18n,
     puzzleCountText,
+    headerRef,
     headerLanguageRef,
     headerSettingsRef,
     closeHeaderMenus,
@@ -89,7 +91,7 @@ export function AppHeader(props: AppHeaderProps) {
   } = props;
 
   return (
-    <header className="app-header">
+    <header ref={headerRef} className="app-header">
       <div className="app-header-inner">
         <div className="app-header-primary">
           <div className="app-brand-lockup">
