@@ -1519,10 +1519,10 @@ body::before {
   width: 12.5%;
   height: 50%;
   display: flex;
-  gap: min(0.18rem, 0.55vw);
-  padding: min(0.28rem, 0.75vw);
+  gap: min(0.16rem, 0.45vw);
+  padding: min(0.22rem, 0.65vw);
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--color-panel-border) 115%, transparent);
   background: color-mix(in srgb, var(--color-panel-bg) 92%, transparent);
   box-shadow:
@@ -1547,14 +1547,17 @@ body::before {
   flex: 1 1 25%;
   width: 100%;
   min-height: 0;
-  border: 1px solid transparent;
-  border-radius: 9px;
+  border: 1px solid color-mix(in srgb, var(--color-panel-border) 88%, transparent);
+  border-radius: 11px;
   padding: 0;
   margin: 0;
-  background: transparent;
+  background: color-mix(in srgb, var(--color-panel-bg) 78%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 6px 14px rgba(0, 0, 0, 0.08);
   transition:
     border-color 160ms ease,
     background-color 160ms ease,
@@ -1563,14 +1566,16 @@ body::before {
 }
 
 .promotion-option:hover {
-  border-color: color-mix(in srgb, var(--color-toggle-focus) 70%, transparent);
-  background: color-mix(in srgb, var(--color-button-bg) 26%, transparent);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  border-color: color-mix(in srgb, var(--color-button-border) 82%, transparent);
+  background: color-mix(in srgb, var(--color-button-bg) 22%, var(--color-panel-bg));
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 10px 18px rgba(0, 0, 0, 0.12);
   transform: translateY(-1px);
 }
 
 .promotion-option:active {
-  background: color-mix(in srgb, var(--color-button-bg) 34%, transparent);
+  background: color-mix(in srgb, var(--color-button-bg) 28%, var(--color-panel-bg));
   transform: translateY(0);
 }
 
@@ -1580,8 +1585,8 @@ body::before {
 }
 
 .promotion-piece-swatch {
-  width: 80%;
-  height: 80%;
+  width: 76%;
+  height: 76%;
   display: block;
   position: relative;
   pointer-events: none;
