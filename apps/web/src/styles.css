@@ -319,6 +319,13 @@ body::before {
   --zen-controls-height: 0px;
   --side-panel-width: calc(var(--board-size) * 0.5);
   --frame-height: calc(100dvh - var(--chrome-offset) - (var(--page-vertical-space) * 2));
+  --board-coordinate-size-source: var(--board-size);
+  --board-coordinate-font-size-min: 0.54rem;
+  --board-coordinate-font-size-max: 0.72rem;
+  --board-coordinate-file-pad-inline-max: 0.26rem;
+  --board-coordinate-file-pad-block-max: 0.18rem;
+  --board-coordinate-rank-pad-inline-max: 0.24rem;
+  --board-coordinate-rank-pad-block-max: 0.16rem;
   --board-size: max(
     0px,
     min(
@@ -1484,7 +1491,11 @@ body::before {
   width: 12.5%;
   height: 12.5%;
   display: flex;
-  font-size: 0.68rem;
+  font-size: clamp(
+    var(--board-coordinate-font-size-min),
+    calc(var(--board-coordinate-size-source) / 34),
+    var(--board-coordinate-font-size-max)
+  );
   font-weight: 700;
   line-height: 1;
   user-select: none;
@@ -1493,14 +1504,22 @@ body::before {
 .board-coordinate-file {
   align-items: flex-end;
   justify-content: flex-end;
-  padding: 0 0.26rem 0.18rem 0;
+  padding:
+    0
+    clamp(0.14rem, calc(var(--board-coordinate-size-source) / 150), var(--board-coordinate-file-pad-inline-max))
+    clamp(0.1rem, calc(var(--board-coordinate-size-source) / 190), var(--board-coordinate-file-pad-block-max))
+    0;
   box-sizing: border-box;
 }
 
 .board-coordinate-rank {
   align-items: flex-start;
   justify-content: flex-start;
-  padding: 0.16rem 0 0 0.24rem;
+  padding:
+    clamp(0.1rem, calc(var(--board-coordinate-size-source) / 200), var(--board-coordinate-rank-pad-block-max))
+    0
+    0
+    clamp(0.14rem, calc(var(--board-coordinate-size-source) / 160), var(--board-coordinate-rank-pad-inline-max));
   box-sizing: border-box;
 }
 
@@ -3000,6 +3019,12 @@ button:disabled {
     --layout-eval-width: 12px;
     --layout-eval-gap: 0.55rem;
     --side-panel-width: clamp(13.4rem, 30vw, 15.6rem);
+    --board-coordinate-font-size-min: 0.44rem;
+    --board-coordinate-font-size-max: 0.6rem;
+    --board-coordinate-file-pad-inline-max: 0.2rem;
+    --board-coordinate-file-pad-block-max: 0.14rem;
+    --board-coordinate-rank-pad-inline-max: 0.18rem;
+    --board-coordinate-rank-pad-block-max: 0.12rem;
     --frame-height: calc(100dvh - var(--chrome-offset) - (var(--page-vertical-space) * 2));
     --board-size: max(
       0px,
@@ -3703,6 +3728,7 @@ button:disabled {
     --frame-height: auto;
     --layout-eval-gap: 1rem;
     --page-vertical-space: 0.75rem;
+    --board-coordinate-size-source: var(--mobile-primary-board-max-size, calc(100vw - (var(--mobile-page-gutter) * 2)));
     height: 100dvh;
     min-height: 100dvh;
     overflow-x: hidden;
