@@ -3715,6 +3715,17 @@ button:disabled {
   .app-shell.mobile-landscape-layout .app-footer-license {
     font-size: 0.76rem;
   }
+
+  @supports (height: 100svh) {
+    .app-shell,
+    .app-shell.compact-desktop-layout,
+    .app-shell.mobile-landscape-layout {
+      /* Keep the board stable when mobile browser chrome expands or collapses. */
+      --frame-height: calc(100svh - var(--chrome-offset) - (var(--page-vertical-space) * 2));
+      height: 100svh;
+      min-height: 100svh;
+    }
+  }
 }
 
 @media (max-width: 900px) and (max-aspect-ratio: 1/1) {
