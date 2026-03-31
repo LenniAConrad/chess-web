@@ -3157,12 +3157,12 @@ export function App() {
       {controlsPanelContent}
     </section>
   );
-  const toggleExpandedPanel = useCallback((panelKey: CollapsiblePanelKey) => {
+  const toggleExpandedPanel = (panelKey: CollapsiblePanelKey) => {
     setExpandedPanels((current) => ({
       ...current,
       [panelKey]: !current[panelKey]
     }));
-  }, []);
+  };
   const historyPanelContent = (
     <>
       <div className="history-list">
