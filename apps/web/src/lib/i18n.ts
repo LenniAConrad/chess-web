@@ -28,6 +28,19 @@ export type LanguageCode =
   | 'mn'
   | 'la'
   | 'hy'
+  | 'da'
+  | 'fi'
+  | 'is'
+  | 'no'
+  | 'sv'
+  | 'uk'
+  | 'el'
+  | 'bg'
+  | 'ro'
+  | 'sr'
+  | 'lt'
+  | 'lv'
+  | 'et'
   | 'en-gb-x-pirate';
 export type PromotionPieceCode = 'q' | 'r' | 'b' | 'n';
 
@@ -179,6 +192,19 @@ const LANGUAGE_NAME_PARTS: Record<LanguageCode, { english: string; native: strin
   mn: { english: 'Mongolian', native: 'Монгол' },
   la: { english: 'Latin', native: 'Latina' },
   hy: { english: 'Armenian', native: 'Հայերեն' },
+  da: { english: 'Danish', native: 'Dansk' },
+  fi: { english: 'Finnish', native: 'Suomi' },
+  is: { english: 'Icelandic', native: 'Íslenska' },
+  no: { english: 'Norwegian', native: 'Norsk' },
+  sv: { english: 'Swedish', native: 'Svenska' },
+  uk: { english: 'Ukrainian', native: 'Українська' },
+  el: { english: 'Greek', native: 'Ελληνικά' },
+  bg: { english: 'Bulgarian', native: 'Български' },
+  ro: { english: 'Romanian', native: 'Română' },
+  sr: { english: 'Serbian', native: 'Српски' },
+  lt: { english: 'Lithuanian', native: 'Lietuvių' },
+  lv: { english: 'Latvian', native: 'Latviešu' },
+  et: { english: 'Estonian', native: 'Eesti' },
   'en-gb-x-pirate': { english: 'Pirate English', native: 'Arrr' }
 };
 
@@ -1930,6 +1956,19 @@ export const LANGUAGE_OPTIONS: Array<{
   'mn',
   'la',
   'hy',
+  'da',
+  'fi',
+  'is',
+  'no',
+  'sv',
+  'uk',
+  'el',
+  'bg',
+  'ro',
+  'sr',
+  'lt',
+  'lv',
+  'et',
   'en-gb-x-pirate'
 ] as const satisfies readonly LanguageCode[]).map((code) => ({
   code,

@@ -2688,7 +2688,7 @@ export function App() {
           disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled || !canRequestContinuation}
           onClick={() => void handleHint()}
         >
-          {i18n.hint}
+          <span className="button-label-clamp">{i18n.hint}</span>
         </button>
         <button
           type="button"
@@ -2696,7 +2696,7 @@ export function App() {
           disabled={panelControlsDisabled || isReviewMode || !canRequestContinuation}
           onClick={() => void handleReveal()}
         >
-          {i18n.showSolution}
+          <span className="button-label-clamp">{i18n.showSolution}</span>
         </button>
         <button
           type="button"
@@ -2704,7 +2704,7 @@ export function App() {
           disabled={panelControlsDisabled || isReviewMode}
           onClick={() => void handleRestartPuzzle()}
         >
-          {i18n.restartPuzzle}
+          <span className="button-label-clamp">{i18n.restartPuzzle}</span>
         </button>
       </div>
       <div className="button-row arrow-strip-row">
