@@ -3462,22 +3462,23 @@ export function App() {
       <div className={desktopStatusSectionClassName}>
         {statusPanelContent}
       </div>
-      <CollapsiblePanelSection
-        className="desktop-side-panel-section"
-        title={controlsPanelTitle}
-        meta={keyboardShortcutsLabel}
-        ariaLabel={controlsPanelTitle}
-        open={expandedPanels.controls}
-        onToggle={() => toggleExpandedPanel('controls')}
-        bodyClassName="desktop-controls-panel-body"
-      >
-        <div className="rail-actions">
-          {controlsPanelContent}
+      <div className="desktop-side-panel-section">
+        <div className="desktop-controls-panel-body">
+          <p className="desktop-section-title">{controlsPanelTitle}</p>
+          <div className="rail-actions">
+            {controlsPanelContent}
+          </div>
+          <CollapsiblePanelSection
+            className="keyboard-shortcuts-panel"
+            title={keyboardShortcutsLabel}
+            ariaLabel={keyboardShortcutsLabel}
+            open={expandedPanels.controls}
+            onToggle={() => toggleExpandedPanel('controls')}
+          >
+            {keyboardShortcutsPanelContent}
+          </CollapsiblePanelSection>
         </div>
-        <div className="keyboard-shortcuts-panel">
-          {keyboardShortcutsPanelContent}
-        </div>
-      </CollapsiblePanelSection>
+      </div>
       <CollapsiblePanelSection
         id="history"
         className="desktop-side-panel-section"

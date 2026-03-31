@@ -2511,10 +2511,27 @@ button.collapsible-panel-toggle:focus-visible {
   gap: 0.72rem;
 }
 
+.desktop-section-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
 .keyboard-shortcuts-panel {
   display: grid;
   gap: 0.6rem;
   container-type: inline-size;
+}
+
+.keyboard-shortcuts-panel > .collapsible-panel-body {
+  margin-top: 0;
+}
+
+.keyboard-shortcuts-panel .collapsible-panel-toggle-title {
+  font-size: 0.72rem;
+  color: var(--color-meta);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .keyboard-shortcuts-head {
