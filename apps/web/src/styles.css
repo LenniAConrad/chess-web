@@ -2736,8 +2736,13 @@ button.pgn-sequence-move:focus-visible {
 
 .pgn-empty-state {
   margin: 0;
-  justify-content: flex-start;
-  color: var(--color-button-text) !important;
+  padding: 0.58rem 0.72rem;
+  border: 1px solid color-mix(in srgb, var(--color-panel-border) 78%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-input-bg) 96%, var(--color-bg-grad-top) 4%);
+  color: var(--color-meta);
+  line-height: 1.35;
+  text-align: left;
 }
 
 button.pgn-move {
@@ -3309,22 +3314,10 @@ button:disabled {
     gap: 0.28rem;
   }
 
-  .app-shell.mobile-landscape-layout .mobile-secondary-panel button.pgn-empty-state {
+  .app-shell.mobile-landscape-layout .mobile-secondary-panel .pgn-empty-state {
     width: 100%;
-    justify-content: flex-start;
-    align-items: flex-start;
-    min-height: 0;
     padding: 0.52rem 0.62rem;
-    border: 1px solid color-mix(in srgb, var(--color-panel-border) 78%, transparent);
-    border-radius: 10px;
-    background: color-mix(in srgb, var(--color-input-bg) 96%, var(--color-bg-grad-top) 4%);
-    box-shadow: none !important;
-    color: var(--color-meta) !important;
-    text-align: left;
     line-height: 1.32;
-    white-space: normal;
-    filter: none;
-    opacity: 1;
   }
 
   .app-shell.mobile-landscape-layout .pgn-header-row {

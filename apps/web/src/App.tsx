@@ -357,7 +357,7 @@ export function App() {
   const mobileHistoryPendingSessionRef = useRef<string | null>(null);
   const mobileHistoryPreviewSessionRef = useRef<string | null>(null);
   const suppressHistoryDotClickRef = useRef<string | null>(null);
-  const mobileButtonScrollTopRef = useRef<number | null>(null);
+  const mobileButtonScrollSnapshotsRef = useRef<Array<{ element: HTMLElement; top: number }>>([]);
   const mobileSnapTouchStartYRef = useRef<number | null>(null);
   const mobileSnapTouchStartScrollTopRef = useRef<number | null>(null);
   const mobileSnapLockedRef = useRef(false);
@@ -915,6 +915,46 @@ export function App() {
       return;
     }
 
+    const captureScrollableAncestors = (target: Element) => {
+      const shell = appShellRef.current;
+      const snapshots: Array<{ element: HTMLElement; top: number }> = [];
+      const seen = new Set<HTMLElement>();
+
+      const maybeCapture = (element: HTMLElement | null) => {
+        if (!element || seen.has(element)) {
+          return;
+        }
+
+        seen.add(element);
+
+        const computedStyle = window.getComputedStyle(element);
+        const overflowY = computedStyle.overflowY;
+        const canScrollY = overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay';
+        if (!canScrollY || element.scrollHeight <= element.clientHeight + 1) {
+          return;
+        }
+
+        snapshots.push({
+          element,
+          top: element.scrollTop
+        });
+      };
+
+      let current: Element | null = target;
+      while (current) {
+        if (current instanceof HTMLElement) {
+          maybeCapture(current);
+          if (current === shell) {
+            break;
+          }
+        }
+        current = current.parentElement;
+      }
+
+      maybeCapture(shell);
+      mobileButtonScrollSnapshotsRef.current = snapshots;
+    };
+
     const handlePointerDown = (event: PointerEvent) => {
       if (event.pointerType === 'mouse') {
         return;
@@ -929,7 +969,7 @@ export function App() {
       if (!(button instanceof HTMLButtonElement) || button.disabled) {
         return;
       }
-      mobileButtonScrollTopRef.current = appShellRef.current?.scrollTop ?? 0;
+      captureScrollableAncestors(button);
     };
 
     const handleClick = (event: MouseEvent) => {
@@ -944,12 +984,13 @@ export function App() {
       }
 
       window.requestAnimationFrame(() => {
-        const shell = appShellRef.current;
-        if (shell && mobileButtonScrollTopRef.current !== null) {
-          shell.scrollTop = mobileButtonScrollTopRef.current;
-        }
-        button.blur();
-        mobileButtonScrollTopRef.current = null;
+        window.requestAnimationFrame(() => {
+          for (const snapshot of mobileButtonScrollSnapshotsRef.current) {
+            snapshot.element.scrollTop = snapshot.top;
+          }
+          button.blur();
+          mobileButtonScrollSnapshotsRef.current = [];
+        });
       });
     };
 
@@ -958,6 +999,7 @@ export function App() {
     return () => {
       document.removeEventListener('pointerdown', handlePointerDown, true);
       document.removeEventListener('click', handleClick, true);
+      mobileButtonScrollSnapshotsRef.current = [];
     };
   }, [isMobileSnapLayout]);
 
@@ -1192,6 +1234,19 @@ export function App() {
       shell.style.removeProperty('--mobile-primary-board-max-size');
     };
   }, [isMobileLandscapeLayout, isMobileSnapLayout, prefs.showEngineEval]);
+
+  useEffect(() => {
+    if (!isMobileLandscapeLayout) {
+      return;
+    }
+
+    const side = mobileLandscapePrimarySideRef.current;
+    if (!side) {
+      return;
+    }
+
+    side.scrollTop = 0;
+  }, [isMobileLandscapeLayout, sessionId]);
 
   useEffect(() => {
     const shell = appShellRef.current;
@@ -3073,9 +3128,9 @@ export function App() {
 
       <div className="pgn-move-list">
         {pgnNextMoves.length === 0 ? (
-          <button type="button" className="pgn-move pgn-empty-state" disabled>
+          <p className="pgn-empty-state" role="status">
             {i18n.noLegalContinuation}
-          </button>
+          </p>
         ) : (
           pgnNextMoves.map((node) => (
             <button
