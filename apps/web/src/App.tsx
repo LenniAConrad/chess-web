@@ -2949,6 +2949,32 @@ export function App() {
       <p className="turn-indicator">{objectiveText}</p>
     </section>
   ) : null;
+  const mobileLandscapeSummaryPanel = isMobileLandscapeLayout ? (
+    <section className="rail-block mobile-landscape-summary-panel">
+      <div className="mobile-landscape-summary-head">
+        <p className="turn-kicker">{turnKickerText}</p>
+        <p className="meta mobile-landscape-progress">{completedBranchesText}</p>
+      </div>
+      <p className="turn-indicator">{objectiveText}</p>
+      {prefs.showEngineEval ? (
+        <p className="meta rail-engine">
+          <span>{engineEvalText}</span>
+          <span className="rail-engine-separator" aria-hidden="true">
+            •
+          </span>
+          <span>{engineDepthText}</span>
+          <span className="rail-engine-separator" aria-hidden="true">
+            •
+          </span>
+          <span>{engineEvalSideText}</span>
+        </p>
+      ) : null}
+      <div className="mobile-landscape-summary-foot">
+        {hasDisplayStatusText ? <p className="status status-line">{displayStatusText}</p> : null}
+        {hasCorrectText ? <p className="correct correct-line">{correctText}</p> : null}
+      </div>
+    </section>
+  ) : null;
   const controlsPanelContent = (
     <>
       <div className="button-row action-button-row">
@@ -3026,6 +3052,11 @@ export function App() {
       {controlsPanelContent}
     </section>
   );
+  const mobileLandscapeControlsPanel = isMobileLandscapeLayout ? (
+    <section ref={mobileControlsPanelRef} className="rail-block mobile-landscape-controls-panel">
+      {controlsPanelContent}
+    </section>
+  ) : null;
   const historyPanelContent = (
     <>
       <div className="history-head">
@@ -3289,8 +3320,8 @@ export function App() {
     <div ref={mobilePrimaryStackRef} className={mobilePrimaryStackClassName}>
       {boardPanel}
       <div ref={mobileLandscapePrimarySideRef} className="mobile-landscape-primary-side">
-        {statusPanel}
-        {controlsPanel}
+        {mobileLandscapeSummaryPanel}
+        {mobileLandscapeControlsPanel}
       </div>
     </div>
   ) : (
