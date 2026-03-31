@@ -314,10 +314,10 @@ body::before {
 .app-shell {
   --layout-side-width: 720px;
   --layout-gap: 2rem;
-  --layout-eval-width: 80px;
+  --layout-eval-width: 20px;
   --layout-eval-gap: var(--layout-gap);
   --zen-controls-height: 0px;
-  --side-panel-width: calc(var(--board-size) * 0.75);
+  --side-panel-width: clamp(18rem, calc(var(--board-size) * 0.75), 26rem);
   --frame-height: calc(100dvh - var(--chrome-offset) - (var(--page-vertical-space) * 2));
   --board-size: max(
     0px,
@@ -709,19 +709,21 @@ body::before {
 
 .desktop-side-panel {
   height: 100%;
-  min-height: 100%;
+  min-height: 0;
   max-height: 100%;
   box-sizing: border-box;
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 0.88rem;
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
 
 .desktop-side-panel-section {
   min-width: 0;
+  flex: 0 0 auto;
 }
 
 .desktop-side-panel-section + .desktop-side-panel-section {
@@ -1699,13 +1701,13 @@ body::before {
   align-items: center;
   justify-content: center;
   height: var(--board-size);
-  width: 80px;
-  flex: 0 0 80px;
+  width: var(--layout-eval-width);
+  flex: 0 0 var(--layout-eval-width);
   position: relative;
 }
 
 .eval-bar {
-  width: 20px;
+  width: var(--layout-eval-width);
   height: 100%;
   border: 1px solid var(--color-eval-bar-border);
   border-radius: 4px;
