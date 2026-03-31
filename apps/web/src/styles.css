@@ -2974,6 +2974,79 @@ button:disabled {
   box-shadow: none !important;
 }
 
+@media (max-width: 900px) and (orientation: landscape) {
+  .app-shell {
+    --layout-gap: 1rem;
+    --layout-eval-gap: 0.75rem;
+    --page-vertical-space: 0.65rem;
+    --chrome-offset: 4.7rem;
+    --side-panel-width: clamp(220px, 34vw, 280px);
+    --board-size: max(
+      0px,
+      min(
+        var(--frame-height),
+        calc(
+          100vw - 2rem - var(--layout-gap) - var(--layout-eval-width) - var(--layout-eval-gap) -
+            var(--side-panel-width)
+        )
+      )
+    );
+  }
+
+  .app-header {
+    padding-inline: 0.85rem;
+    max-height: 4rem;
+  }
+
+  .app-header-inner {
+    gap: 1rem;
+    padding: 0.55rem 0;
+  }
+
+  .app-brand {
+    font-size: clamp(1.15rem, 1rem + 0.7vw, 1.55rem);
+  }
+
+  .app-brand-meta {
+    font-size: 0.68rem;
+  }
+
+  .app-header-controls {
+    gap: 0.2rem;
+  }
+
+  .layout {
+    padding: var(--page-vertical-space) 0.85rem;
+  }
+
+  .split-layout {
+    align-items: stretch;
+  }
+
+  .desktop-side-panel {
+    gap: 0.7rem;
+  }
+
+  .desktop-side-panel-section + .desktop-side-panel-section {
+    padding-top: 0.7rem;
+  }
+
+  .app-footer {
+    padding-inline: 0.85rem;
+    max-height: 3rem;
+  }
+
+  .app-footer-inner {
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+  }
+
+  .app-footer-link,
+  .app-footer-license {
+    font-size: 0.76rem;
+  }
+}
+
 @media (max-width: 900px) and (max-aspect-ratio: 1/1) {
   :root {
     --mobile-page-gutter: 1rem;
