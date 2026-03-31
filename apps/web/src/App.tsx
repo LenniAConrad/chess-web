@@ -3027,7 +3027,7 @@ export function App() {
   const forwardOneMoveLabel = 'Forward one move';
   const exitZenModeLabel = 'Exit zen mode';
   const historyPanelMetaText = i18n.historyCount(recentHistoryItems.length);
-  const explorerPanelMetaText = i18n.puzzleId(puzzle.publicId);
+  const explorerPanelMetaText = puzzle ? i18n.puzzleId(puzzle.publicId) : null;
   const keyboardShortcutItems = [
     { key: KEYBOARD_SHORTCUT_KEYS.hint, label: i18n.hint },
     { key: KEYBOARD_SHORTCUT_KEYS.showSolution, label: i18n.showSolution },
