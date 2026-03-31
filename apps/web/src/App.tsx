@@ -1563,6 +1563,7 @@ export function App() {
   const puzzleIsComplete = state ? isPuzzleSolved(state) : false;
   const oneTryLocked = prefs.oneTryMode && oneTryFailed;
   const panelControlsDisabled = loading || historyLoading || prefs.autoPlay;
+  const restartControlDisabled = loading || historyLoading || !sessionId;
   const boardCanInteract = !prefs.autoPlay && !historyLoading && !isReviewMode && !puzzleIsComplete && !oneTryLocked;
 
   const handleMove = useCallback(
@@ -2085,7 +2086,7 @@ export function App() {
   ]);
 
   const handleRestartPuzzle = useCallback(async () => {
-    if (!sessionId || loading || historyLoading || isReviewMode) {
+    if (!sessionId || loading || historyLoading) {
       return;
     }
 
@@ -2109,7 +2110,6 @@ export function App() {
     applyStartedSession,
     historyLoading,
     invalidateHintSync,
-    isReviewMode,
     loading,
     prefs.autoNext,
     prefs.variationMode,
@@ -2795,7 +2795,7 @@ export function App() {
         <button
           type="button"
           className="btn-primary"
-          disabled={panelControlsDisabled || isReviewMode}
+          disabled={restartControlDisabled}
           onClick={() => void handleRestartPuzzle()}
         >
           <span className="button-label-clamp">{i18n.restartPuzzle}</span>
