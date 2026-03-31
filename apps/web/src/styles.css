@@ -2427,14 +2427,94 @@ button.toggle-chip.autoplay-chip.is-on .toggle-chip-track {
   flex: 0 0 auto;
 }
 
+.collapsible-panel-section {
+  min-width: 0;
+}
+
+button.collapsible-panel-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  appearance: none;
+}
+
+button.collapsible-panel-toggle:hover:not(:disabled),
+button.collapsible-panel-toggle:active:not(:disabled) {
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
+button.collapsible-panel-toggle:focus-visible {
+  outline: 2px solid var(--color-toggle-focus);
+  outline-offset: 3px;
+}
+
+.collapsible-panel-toggle-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.collapsible-panel-toggle-title {
+  min-width: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.collapsible-panel-toggle-meta {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  color: var(--color-meta);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.collapsible-panel-toggle-icon {
+  flex: 0 0 auto;
+  font-size: 0.96rem;
+  line-height: 1;
+  color: var(--color-meta);
+  opacity: 0.88;
+}
+
+.collapsible-panel-section.is-open .collapsible-panel-toggle-icon::before {
+  content: '\25be';
+}
+
+.collapsible-panel-section.is-collapsed .collapsible-panel-toggle-icon::before {
+  content: '\25b8';
+}
+
+.collapsible-panel-body {
+  min-width: 0;
+  margin-top: 0.72rem;
+}
+
+.desktop-controls-panel-body {
+  display: grid;
+  gap: 0.72rem;
+}
+
 .keyboard-shortcuts-panel {
   display: grid;
   gap: 0.6rem;
-}
-
-.mobile-keyboard-shortcuts-panel {
-  padding-top: 0.95rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-panel-border) 78%, transparent);
+  container-type: inline-size;
 }
 
 .keyboard-shortcuts-head {
@@ -2465,6 +2545,18 @@ button.toggle-chip.autoplay-chip.is-on .toggle-chip-track {
 .keyboard-shortcuts-list {
   display: grid;
   gap: 0.38rem;
+}
+
+@container (min-width: 23rem) {
+  .keyboard-shortcuts-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 0.45rem;
+    row-gap: 0.42rem;
+  }
+
+  .keyboard-shortcut-row {
+    min-height: 100%;
+  }
 }
 
 .keyboard-shortcut-row {
@@ -3006,7 +3098,7 @@ button.pgn-move:focus-visible {
   color: var(--color-error);
 }
 
-button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint) {
+button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):not(.collapsible-panel-toggle) {
   border: 1px solid var(--color-button-border);
   background: var(--color-button-bg);
   color: var(--color-button-text);
@@ -3023,7 +3115,7 @@ button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-
   will-change: transform, box-shadow;
 }
 
-button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):hover:not(:disabled) {
+button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):not(.collapsible-panel-toggle):hover:not(:disabled) {
   background: var(--color-button-bg-hover);
   transform: translateY(-2px) scale(1.01);
   box-shadow:
@@ -3031,7 +3123,7 @@ button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-
     0 12px 24px var(--color-control-shadow-hover);
 }
 
-button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):active:not(:disabled) {
+button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):not(.collapsible-panel-toggle):active:not(:disabled) {
   transform: translateY(1px) scale(0.97);
   box-shadow:
     0 1px 0 var(--color-control-highlight-soft) inset,
@@ -3039,7 +3131,7 @@ button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-
   filter: saturate(0.98);
 }
 
-button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):focus-visible {
+button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):not(.collapsible-panel-toggle):focus-visible {
   outline: 2px solid var(--color-toggle-focus);
   outline-offset: 2px;
 }
@@ -3062,7 +3154,7 @@ button.btn-primary {
   background: var(--color-button-bg);
 }
 
-button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):disabled {
+button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):not(.collapsible-panel-toggle):disabled {
   color: var(--color-button-disabled-text);
   box-shadow: 0 1px 0 var(--color-control-highlight-soft) inset;
   filter: saturate(0.72) contrast(0.94) brightness(0.98);
@@ -3192,7 +3284,7 @@ button:disabled {
     gap: 0.38rem;
   }
 
-  .app-shell.compact-desktop-layout button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint) {
+  .app-shell.compact-desktop-layout button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):not(.collapsible-panel-toggle) {
     padding: 0.42rem 0.58rem;
     font-size: 0.78rem;
   }
@@ -3210,12 +3302,20 @@ button:disabled {
     gap: 0.48rem;
   }
 
-  .app-shell.compact-desktop-layout .keyboard-shortcuts-title {
+  .app-shell.compact-desktop-layout .collapsible-panel-toggle-title {
     font-size: 0.82rem;
   }
 
-  .app-shell.compact-desktop-layout .keyboard-shortcuts-meta {
+  .app-shell.compact-desktop-layout .collapsible-panel-toggle-meta {
     font-size: 0.62rem;
+  }
+
+  .app-shell.compact-desktop-layout .collapsible-panel-body {
+    margin-top: 0.58rem;
+  }
+
+  .app-shell.compact-desktop-layout .desktop-controls-panel-body {
+    gap: 0.58rem;
   }
 
   .app-shell.compact-desktop-layout .keyboard-shortcut-row {
@@ -3669,22 +3769,24 @@ button:disabled {
       max(calc(var(--page-vertical-space) + 0.3rem), calc(env(safe-area-inset-bottom) + 0.3rem));
     box-sizing: border-box;
     display: grid;
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-rows: auto;
     gap: 0.55rem;
-    overflow: hidden;
+    align-content: start;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .app-shell.mobile-landscape-layout .mobile-secondary-stack {
     width: 100%;
-    height: 100%;
-    max-height: 100%;
-    min-height: 0;
+    height: auto;
+    max-height: none;
+    min-height: auto;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    align-content: stretch;
+    grid-template-rows: auto auto;
+    align-content: start;
     gap: 0.55rem;
     margin-block: 0;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .app-shell.mobile-landscape-layout .mobile-landscape-secondary-stack {
@@ -3694,24 +3796,23 @@ button:disabled {
   .app-shell.mobile-landscape-layout .mobile-secondary-panel {
     display: grid;
     gap: 0.8rem;
-    min-height: 0;
-    max-height: 100%;
-    overflow-y: auto;
-    overscroll-behavior-y: auto;
-    scrollbar-gutter: stable;
+    min-height: auto;
+    max-height: none;
+    overflow: visible;
     background: color-mix(in srgb, var(--color-bg-grad-top) 88%, var(--color-input-bg) 12%);
   }
 
+  .app-shell.mobile-landscape-layout .mobile-secondary-panel > .collapsible-panel-section + .collapsible-panel-section {
+    padding-top: 0.9rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-panel-border) 78%, transparent);
+  }
+
   .app-shell.mobile-landscape-layout .mobile-secondary-panel .pgn-panel {
-    padding-top: 0.75rem;
     gap: 0.42rem;
   }
 
   .app-shell.mobile-landscape-layout .mobile-secondary-panel .puzzle-share-panel {
     gap: 0.5rem;
-    padding-top: 0.9rem;
-    margin-top: 0.08rem;
-    border-top: 1px solid color-mix(in srgb, var(--color-panel-border) 78%, transparent);
   }
 
   .app-shell.mobile-landscape-layout .mobile-secondary-panel .pgn-move-list {
@@ -4167,22 +4268,24 @@ button:disabled {
       max(calc(var(--page-vertical-space) + 0.55rem), calc(env(safe-area-inset-bottom) + 0.55rem));
     box-sizing: border-box;
     display: grid;
-    grid-template-rows: minmax(0, 1fr);
+    grid-template-rows: auto;
     gap: 0.75rem;
-    overflow: hidden;
+    align-content: start;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .mobile-secondary-stack {
     width: 100%;
-    height: 100%;
-    max-height: 100%;
-    min-height: 0;
+    height: auto;
+    max-height: none;
+    min-height: auto;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    align-content: stretch;
+    grid-template-rows: auto auto;
+    align-content: start;
     gap: 0.75rem;
     margin-block: 0;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .mobile-tertiary-page-body {
@@ -4465,15 +4568,13 @@ button:disabled {
   .mobile-secondary-panel {
     display: grid;
     gap: 0.95rem;
-    min-height: 0;
-    max-height: 100%;
-    overflow-y: auto;
-    overscroll-behavior-y: auto;
-    scrollbar-gutter: stable;
+    min-height: auto;
+    max-height: none;
+    overflow: visible;
     align-content: start;
   }
 
-  .mobile-secondary-panel .puzzle-share-panel {
+  .mobile-secondary-panel > .collapsible-panel-section + .collapsible-panel-section {
     padding-top: 0.95rem;
     border-top: 1px solid color-mix(in srgb, var(--color-panel-border) 78%, transparent);
   }
@@ -4499,14 +4600,6 @@ button:disabled {
   .mobile-secondary-panel .history-strip,
   .mobile-secondary-panel .pgn-panel {
     min-width: 0;
-  }
-
-  .mobile-secondary-panel .pgn-panel {
-    padding-top: 0.95rem;
-  }
-
-  .mobile-secondary-panel .mobile-keyboard-shortcuts-panel {
-    padding-top: 0.95rem;
   }
 
   .side-column > .rail-actions {

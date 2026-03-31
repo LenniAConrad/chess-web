@@ -1,4 +1,4 @@
-import { type AnimationEvent as ReactAnimationEvent, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { type AnimationEvent as ReactAnimationEvent, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { ChessBoard } from './components/ChessBoard.js';
 import { AppHeader } from './components/AppHeader.js';
@@ -43,6 +43,8 @@ interface ReviewCursorState {
   path: number[];
   index: number;
 }
+
+type CollapsiblePanelKey = 'controls' | 'history' | 'explorer' | 'share';
 
 function buildNodePath(nodeMap: Map<number, SessionTreeNode>, nodeId: number): number[] {
   const path: number[] = [];
@@ -316,6 +318,48 @@ function getInitialSession(
   return initialSessionRequest;
 }
 
+interface CollapsiblePanelSectionProps {
+  id?: string;
+  className?: string;
+  title: ReactNode;
+  meta?: ReactNode;
+  bodyClassName?: string;
+  ariaLabel?: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}
+
+function CollapsiblePanelSection(props: CollapsiblePanelSectionProps) {
+  const { id, className, title, meta, bodyClassName, ariaLabel, open, onToggle, children } = props;
+  const bodyId = useId();
+  const rootClassName = ['collapsible-panel-section', className, open ? 'is-open' : 'is-collapsed']
+    .filter(Boolean)
+    .join(' ');
+  const bodyWrapperClassName = ['collapsible-panel-body', bodyClassName].filter(Boolean).join(' ');
+
+  return (
+    <section id={id} className={rootClassName} aria-label={ariaLabel}>
+      <button
+        type="button"
+        className="collapsible-panel-toggle"
+        aria-expanded={open}
+        aria-controls={bodyId}
+        onClick={onToggle}
+      >
+        <span className="collapsible-panel-toggle-copy">
+          <span className="collapsible-panel-toggle-title">{title}</span>
+          {meta ? <span className="collapsible-panel-toggle-meta">{meta}</span> : null}
+        </span>
+        <span className="collapsible-panel-toggle-icon" aria-hidden="true" />
+      </button>
+      <div id={bodyId} className={bodyWrapperClassName} hidden={!open}>
+        {children}
+      </div>
+    </section>
+  );
+}
+
 export function App() {
   const { prefs, setPrefs } = useLocalPrefs();
   const i18n = useMemo(() => getI18n(prefs.language), [prefs.language]);
@@ -356,6 +400,12 @@ export function App() {
   const [historyPreview, setHistoryPreview] = useState<HistoryPreviewState | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobileLandscapeViewport, setIsMobileLandscapeViewport] = useState(false);
+  const [expandedPanels, setExpandedPanels] = useState<Record<CollapsiblePanelKey, boolean>>(() => ({
+    controls: true,
+    history: true,
+    explorer: true,
+    share: true
+  }));
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const mobileSecondaryScreenRef = useRef<HTMLElement | null>(null);
   const mobileHeaderRef = useRef<HTMLElement | null>(null);
@@ -2976,6 +3026,8 @@ export function App() {
   const previousPuzzleLabel = 'Previous puzzle';
   const forwardOneMoveLabel = 'Forward one move';
   const exitZenModeLabel = 'Exit zen mode';
+  const historyPanelMetaText = i18n.historyCount(recentHistoryItems.length);
+  const explorerPanelMetaText = i18n.puzzleId(puzzle.publicId);
   const keyboardShortcutItems = [
     { key: KEYBOARD_SHORTCUT_KEYS.hint, label: i18n.hint },
     { key: KEYBOARD_SHORTCUT_KEYS.showSolution, label: i18n.showSolution },
@@ -3105,12 +3157,14 @@ export function App() {
       {controlsPanelContent}
     </section>
   );
+  const toggleExpandedPanel = useCallback((panelKey: CollapsiblePanelKey) => {
+    setExpandedPanels((current) => ({
+      ...current,
+      [panelKey]: !current[panelKey]
+    }));
+  }, []);
   const historyPanelContent = (
     <>
-      <div className="history-head">
-        <p className="history-title">{i18n.recentGames}</p>
-        <p className="history-meta">{i18n.historyCount(recentHistoryItems.length)}</p>
-      </div>
       <div className="history-list">
         {recentHistoryItems.map((item) => {
           const tone = getHistoryDotTone(item);
@@ -3156,15 +3210,11 @@ export function App() {
   );
   const pgnPanelContent = (
     <>
-      <div className="pgn-header-row">
-        <div className="pgn-header-copy">
-          <p className="pgn-title">{i18n.pgnExplorer}</p>
-          <div className="pgn-puzzle-meta">
-            {!isUntitledPuzzle ? <p className="subtitle rail-title pgn-puzzle-title">{normalizedPuzzleTitle}</p> : null}
-            <p className="meta rail-id pgn-puzzle-id">{i18n.puzzleId(puzzle.publicId)}</p>
-          </div>
+      {!isUntitledPuzzle ? (
+        <div className="pgn-puzzle-meta">
+          <p className="subtitle rail-title pgn-puzzle-title">{normalizedPuzzleTitle}</p>
         </div>
-      </div>
+      ) : null}
 
       {treeError ? <p className="error">{treeError}</p> : null}
 
@@ -3229,10 +3279,7 @@ export function App() {
     </>
   );
   const sharePanelContent = (
-    <div className="puzzle-share-panel">
-      <div className="puzzle-share-copy">
-        <p className="puzzle-share-title">{sharePanelTitle}</p>
-      </div>
+    <>
       <div className="puzzle-share-row">
         <input
           type="text"
@@ -3259,40 +3306,55 @@ export function App() {
           {shareFeedback.message}
         </p>
       ) : null}
-    </div>
+    </>
   );
   const keyboardShortcutsPanelContent = (
-    <>
-      <div className="keyboard-shortcuts-head">
-        <p className="keyboard-shortcuts-title">{controlsPanelTitle}</p>
-        <p className="keyboard-shortcuts-meta">{keyboardShortcutsLabel}</p>
-      </div>
-      <div className="keyboard-shortcuts-list">
-        {keyboardShortcutItems.map((item) => (
-          <div key={`${item.key}-${item.label}`} className="keyboard-shortcut-row">
-            <kbd className="keyboard-shortcut-key">{item.key}</kbd>
-            <span className="keyboard-shortcut-text">{item.label}</span>
-          </div>
-        ))}
-      </div>
-    </>
+    <div className="keyboard-shortcuts-list">
+      {keyboardShortcutItems.map((item) => (
+        <div key={`${item.key}-${item.label}`} className="keyboard-shortcut-row">
+          <kbd className="keyboard-shortcut-key">{item.key}</kbd>
+          <span className="keyboard-shortcut-text">{item.label}</span>
+        </div>
+      ))}
+    </div>
   );
   const mobileSecondaryPanel = (
     <section className="rail-block mobile-secondary-panel">
-      <div className="pgn-panel" id="explorer">
+      <CollapsiblePanelSection
+        id="explorer"
+        title={i18n.pgnExplorer}
+        meta={explorerPanelMetaText}
+        ariaLabel={i18n.pgnExplorer}
+        open={expandedPanels.explorer}
+        onToggle={() => toggleExpandedPanel('explorer')}
+        bodyClassName="pgn-panel"
+      >
         {pgnPanelContent}
-      </div>
-      {sharePanelContent}
+      </CollapsiblePanelSection>
+      <CollapsiblePanelSection
+        title={sharePanelTitle}
+        ariaLabel={sharePanelTitle}
+        open={expandedPanels.share}
+        onToggle={() => toggleExpandedPanel('share')}
+        bodyClassName="puzzle-share-panel"
+      >
+        {sharePanelContent}
+      </CollapsiblePanelSection>
     </section>
   );
   const mobileHistoryPanel = (
     <section className="rail-block mobile-secondary-panel mobile-history-panel">
-      <div className={historyStripClassName} id="history" aria-label={i18n.recentGameHistory}>
+      <CollapsiblePanelSection
+        id="history"
+        title={i18n.recentGames}
+        meta={historyPanelMetaText}
+        ariaLabel={i18n.recentGameHistory}
+        open={expandedPanels.history}
+        onToggle={() => toggleExpandedPanel('history')}
+        bodyClassName={historyStripClassName}
+      >
         {historyPanelContent}
-      </div>
-      <div className="keyboard-shortcuts-panel mobile-keyboard-shortcuts-panel" aria-label={controlsPanelTitle}>
-        {keyboardShortcutsPanelContent}
-      </div>
+      </CollapsiblePanelSection>
     </section>
   );
   const footerContent = (
@@ -3400,21 +3462,56 @@ export function App() {
       <div className={desktopStatusSectionClassName}>
         {statusPanelContent}
       </div>
-      <div className="desktop-side-panel-section rail-actions">
-        {controlsPanelContent}
-      </div>
-      <div className="desktop-side-panel-section keyboard-shortcuts-panel" aria-label={controlsPanelTitle}>
-        {keyboardShortcutsPanelContent}
-      </div>
-      <div className={`desktop-side-panel-section ${historyStripClassName}`} id="history" aria-label={i18n.recentGameHistory}>
+      <CollapsiblePanelSection
+        className="desktop-side-panel-section"
+        title={controlsPanelTitle}
+        meta={keyboardShortcutsLabel}
+        ariaLabel={controlsPanelTitle}
+        open={expandedPanels.controls}
+        onToggle={() => toggleExpandedPanel('controls')}
+        bodyClassName="desktop-controls-panel-body"
+      >
+        <div className="rail-actions">
+          {controlsPanelContent}
+        </div>
+        <div className="keyboard-shortcuts-panel">
+          {keyboardShortcutsPanelContent}
+        </div>
+      </CollapsiblePanelSection>
+      <CollapsiblePanelSection
+        id="history"
+        className="desktop-side-panel-section"
+        title={i18n.recentGames}
+        meta={historyPanelMetaText}
+        ariaLabel={i18n.recentGameHistory}
+        open={expandedPanels.history}
+        onToggle={() => toggleExpandedPanel('history')}
+        bodyClassName={historyStripClassName}
+      >
         {historyPanelContent}
-      </div>
-      <div className="desktop-side-panel-section pgn-panel" id="explorer">
+      </CollapsiblePanelSection>
+      <CollapsiblePanelSection
+        id="explorer"
+        className="desktop-side-panel-section"
+        title={i18n.pgnExplorer}
+        meta={explorerPanelMetaText}
+        ariaLabel={i18n.pgnExplorer}
+        open={expandedPanels.explorer}
+        onToggle={() => toggleExpandedPanel('explorer')}
+        bodyClassName="pgn-panel"
+      >
         {pgnPanelContent}
-      </div>
-      <div className="desktop-side-panel-section">
+      </CollapsiblePanelSection>
+      <CollapsiblePanelSection
+        className="desktop-side-panel-section"
+        title={sharePanelTitle}
+        ariaLabel={sharePanelTitle}
+        open={expandedPanels.share}
+        onToggle={() => toggleExpandedPanel('share')}
+        bodyClassName="puzzle-share-panel"
+      >
         {sharePanelContent}
-      </div>
+      </CollapsiblePanelSection>
     </section>
   );
 
