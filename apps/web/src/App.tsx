@@ -2977,7 +2977,6 @@ export function App() {
     <div className="puzzle-share-panel">
       <div className="puzzle-share-copy">
         <p className="puzzle-share-title">{sharePanelTitle}</p>
-        <p className="puzzle-share-id">{i18n.puzzleId(puzzle.publicId)}</p>
       </div>
       <div className="puzzle-share-row">
         <input
