@@ -23,6 +23,15 @@ const MOBILE_PORTRAIT_LAYOUT_MEDIA_QUERY = '(max-width: 900px) and (max-aspect-r
 const MOBILE_LANDSCAPE_LAYOUT_MEDIA_QUERY = '(max-width: 900px) and (orientation: landscape)';
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const KEYBOARD_SHORTCUT_KEYS = {
+  hint: 'H',
+  showSolution: 'N',
+  restartPuzzle: 'R',
+  previousPuzzle: '↑',
+  backOneMove: '←',
+  forwardOneMove: '→',
+  nextPuzzle: '↓'
+} as const;
 
 let initialSessionRequest: Promise<StartSessionResponse> | null = null;
 
@@ -48,6 +57,17 @@ function buildNodePath(nodeMap: Map<number, SessionTreeNode>, nodeId: number): n
 
   path.reverse();
   return path;
+}
+
+function isEditableKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return (
+    target.isContentEditable ||
+    target.closest('input, textarea, select, [contenteditable="true"], [contenteditable="plaintext-only"]') !== null
+  );
 }
 
 function pathsMatch(left: number[], right: number[]): boolean {
@@ -1407,24 +1427,6 @@ export function App() {
       clearSnapUnlockTimeout();
     };
   }, [isMobileSnapLayout]);
-
-  useEffect(() => {
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key !== 'Escape' || !prefs.zenMode) {
-        return;
-      }
-
-      setPrefs((previous) => ({
-        ...previous,
-        zenMode: false
-      }));
-    }
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [prefs.zenMode, setPrefs]);
 
   useEffect(() => {
     if (!prefs.captureRain || !prefs.animations) {
@@ -2810,6 +2812,110 @@ export function App() {
     }
   }, [handleCopyShareLink, shareTitle, shareUrl]);
 
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape' && prefs.zenMode) {
+        setPrefs((previous) => ({
+          ...previous,
+          zenMode: false
+        }));
+        return;
+      }
+
+      if (
+        event.defaultPrevented ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        isEditableKeyboardTarget(event.target)
+      ) {
+        return;
+      }
+
+      switch (event.key) {
+        case 'h':
+        case 'H':
+          if (event.repeat || panelControlsDisabled || isReviewMode || !prefs.hintsEnabled || !canRequestContinuation) {
+            return;
+          }
+          event.preventDefault();
+          void handleHint();
+          return;
+        case 'n':
+        case 'N':
+          if (event.repeat || panelControlsDisabled || isReviewMode || !canRequestContinuation) {
+            return;
+          }
+          event.preventDefault();
+          void handleReveal();
+          return;
+        case 'r':
+        case 'R':
+          if (event.repeat || restartControlDisabled) {
+            return;
+          }
+          event.preventDefault();
+          void handleRestartPuzzle();
+          return;
+        case 'ArrowUp':
+          if (event.repeat || panelControlsDisabled || !previousPuzzleSessionId) {
+            return;
+          }
+          event.preventDefault();
+          handlePreviousPuzzle();
+          return;
+        case 'ArrowDown':
+          if (event.repeat || panelControlsDisabled || (!nextHistoryPuzzleSessionId && !sessionId)) {
+            return;
+          }
+          event.preventDefault();
+          handleTransportNextPuzzle();
+          return;
+        case 'ArrowLeft':
+          if (panelControlsDisabled || !canReviewBackward) {
+            return;
+          }
+          event.preventDefault();
+          handleReviewBackOne();
+          return;
+        case 'ArrowRight':
+          if (panelControlsDisabled || !canReviewForward) {
+            return;
+          }
+          event.preventDefault();
+          handleReviewForwardOne();
+          return;
+        default:
+          return;
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    canRequestContinuation,
+    canReviewBackward,
+    canReviewForward,
+    handleHint,
+    handlePreviousPuzzle,
+    handleRestartPuzzle,
+    handleReviewBackOne,
+    handleReviewForwardOne,
+    handleReveal,
+    handleTransportNextPuzzle,
+    isReviewMode,
+    nextHistoryPuzzleSessionId,
+    panelControlsDisabled,
+    prefs.hintsEnabled,
+    prefs.zenMode,
+    previousPuzzleSessionId,
+    restartControlDisabled,
+    sessionId,
+    setPrefs
+  ]);
+
   const toggleVariationMode = (checked: boolean) => {
     setPrefs((previous) => ({
       ...previous,
@@ -2865,6 +2971,21 @@ export function App() {
     .join(' ');
   const pathMovesLabel = i18n.pathMoves('').trimEnd();
   const promotionPieceLabels = getPromotionPieceLabels(i18n);
+  const controlsPanelTitle = 'Controls';
+  const keyboardShortcutsLabel = 'Keyboard shortcuts';
+  const previousPuzzleLabel = 'Previous puzzle';
+  const forwardOneMoveLabel = 'Forward one move';
+  const exitZenModeLabel = 'Exit zen mode';
+  const keyboardShortcutItems = [
+    { key: KEYBOARD_SHORTCUT_KEYS.hint, label: i18n.hint },
+    { key: KEYBOARD_SHORTCUT_KEYS.showSolution, label: i18n.showSolution },
+    { key: KEYBOARD_SHORTCUT_KEYS.restartPuzzle, label: i18n.restartPuzzle },
+    { key: KEYBOARD_SHORTCUT_KEYS.previousPuzzle, label: previousPuzzleLabel },
+    { key: KEYBOARD_SHORTCUT_KEYS.backOneMove, label: i18n.backOneMove },
+    { key: KEYBOARD_SHORTCUT_KEYS.forwardOneMove, label: forwardOneMoveLabel },
+    { key: KEYBOARD_SHORTCUT_KEYS.nextPuzzle, label: i18n.nextPuzzle },
+    { key: 'Esc', label: exitZenModeLabel }
+  ];
   const statusPanelContent = (
     <>
       <div className="rail-status-main">
@@ -2908,6 +3029,7 @@ export function App() {
           className="btn-secondary"
           disabled={panelControlsDisabled || isReviewMode || !prefs.hintsEnabled || !canRequestContinuation}
           onClick={() => void handleHint()}
+          aria-keyshortcuts="H"
         >
           <span className="button-label-clamp">{i18n.hint}</span>
         </button>
@@ -2916,6 +3038,7 @@ export function App() {
           className="btn-secondary"
           disabled={panelControlsDisabled || isReviewMode || !canRequestContinuation}
           onClick={() => void handleReveal()}
+          aria-keyshortcuts="N"
         >
           <span className="button-label-clamp">{i18n.showSolution}</span>
         </button>
@@ -2924,6 +3047,7 @@ export function App() {
           className="btn-primary"
           disabled={restartControlDisabled}
           onClick={() => void handleRestartPuzzle()}
+          aria-keyshortcuts="R"
         >
           <span className="button-label-clamp">{i18n.restartPuzzle}</span>
         </button>
@@ -2934,8 +3058,9 @@ export function App() {
           className="btn-secondary transport-control-button"
           disabled={panelControlsDisabled || !previousPuzzleSessionId}
           onClick={handlePreviousPuzzle}
-          aria-label="Previous puzzle"
-          title="Previous puzzle"
+          aria-label={previousPuzzleLabel}
+          aria-keyshortcuts="ArrowUp"
+          title={previousPuzzleLabel}
         >
           <TransportControlIcon variant="skip-back" />
         </button>
@@ -2945,6 +3070,7 @@ export function App() {
           disabled={panelControlsDisabled || !canReviewBackward}
           onClick={handleReviewBackOne}
           aria-label={i18n.backOneMove}
+          aria-keyshortcuts="ArrowLeft"
           title={i18n.backOneMove}
         >
           <TransportControlIcon variant="back" />
@@ -2954,8 +3080,9 @@ export function App() {
           className="btn-secondary transport-control-button"
           disabled={panelControlsDisabled || !canReviewForward}
           onClick={handleReviewForwardOne}
-          aria-label="Forward one move"
-          title="Forward one move"
+          aria-label={forwardOneMoveLabel}
+          aria-keyshortcuts="ArrowRight"
+          title={forwardOneMoveLabel}
         >
           <TransportControlIcon variant="forward" />
         </button>
@@ -2964,8 +3091,9 @@ export function App() {
           className="btn-secondary transport-control-button"
           disabled={panelControlsDisabled || (!nextHistoryPuzzleSessionId && !sessionId)}
           onClick={handleTransportNextPuzzle}
-          aria-label="Next puzzle"
-          title="Next puzzle"
+          aria-label={i18n.nextPuzzle}
+          aria-keyshortcuts="ArrowDown"
+          title={i18n.nextPuzzle}
         >
           <TransportControlIcon variant="skip-forward" />
         </button>
@@ -3133,6 +3261,22 @@ export function App() {
       ) : null}
     </div>
   );
+  const keyboardShortcutsPanelContent = (
+    <>
+      <div className="keyboard-shortcuts-head">
+        <p className="keyboard-shortcuts-title">{controlsPanelTitle}</p>
+        <p className="keyboard-shortcuts-meta">{keyboardShortcutsLabel}</p>
+      </div>
+      <div className="keyboard-shortcuts-list">
+        {keyboardShortcutItems.map((item) => (
+          <div key={`${item.key}-${item.label}`} className="keyboard-shortcut-row">
+            <kbd className="keyboard-shortcut-key">{item.key}</kbd>
+            <span className="keyboard-shortcut-text">{item.label}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  );
   const mobileSecondaryPanel = (
     <section className="rail-block mobile-secondary-panel">
       <div className="pgn-panel" id="explorer">
@@ -3145,6 +3289,9 @@ export function App() {
     <section className="rail-block mobile-secondary-panel mobile-history-panel">
       <div className={historyStripClassName} id="history" aria-label={i18n.recentGameHistory}>
         {historyPanelContent}
+      </div>
+      <div className="keyboard-shortcuts-panel mobile-keyboard-shortcuts-panel" aria-label={controlsPanelTitle}>
+        {keyboardShortcutsPanelContent}
       </div>
     </section>
   );
@@ -3255,6 +3402,9 @@ export function App() {
       </div>
       <div className="desktop-side-panel-section rail-actions">
         {controlsPanelContent}
+      </div>
+      <div className="desktop-side-panel-section keyboard-shortcuts-panel" aria-label={controlsPanelTitle}>
+        {keyboardShortcutsPanelContent}
       </div>
       <div className={`desktop-side-panel-section ${historyStripClassName}`} id="history" aria-label={i18n.recentGameHistory}>
         {historyPanelContent}

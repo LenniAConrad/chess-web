@@ -2427,6 +2427,85 @@ button.toggle-chip.autoplay-chip.is-on .toggle-chip-track {
   flex: 0 0 auto;
 }
 
+.keyboard-shortcuts-panel {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.mobile-keyboard-shortcuts-panel {
+  padding-top: 0.95rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-panel-border) 78%, transparent);
+}
+
+.keyboard-shortcuts-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.keyboard-shortcuts-title,
+.keyboard-shortcuts-meta {
+  margin: 0;
+}
+
+.keyboard-shortcuts-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.keyboard-shortcuts-meta {
+  font-size: 0.72rem;
+  color: var(--color-meta);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.keyboard-shortcuts-list {
+  display: grid;
+  gap: 0.38rem;
+}
+
+.keyboard-shortcut-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  padding: 0.36rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--color-panel-border) 86%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--color-control-highlight-soft) 65%, transparent);
+}
+
+.keyboard-shortcut-key {
+  min-width: 1.5rem;
+  height: 1.3rem;
+  padding: 0 0.34rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--color-text) 16%, transparent);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--color-bg) 76%, white 24%);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--color-control-highlight) 75%, transparent) inset;
+  color: var(--color-text);
+  font-family: 'IBM Plex Sans', 'Noto Sans', 'Segoe UI', system-ui, sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-style: normal;
+}
+
+.keyboard-shortcut-text {
+  min-width: 0;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
 .pgn-panel {
   display: grid;
   gap: 0.5rem;
@@ -3125,6 +3204,34 @@ button:disabled {
   .app-shell.compact-desktop-layout .transport-control-icon {
     width: 0.96rem;
     height: 0.96rem;
+  }
+
+  .app-shell.compact-desktop-layout .keyboard-shortcuts-panel {
+    gap: 0.48rem;
+  }
+
+  .app-shell.compact-desktop-layout .keyboard-shortcuts-title {
+    font-size: 0.82rem;
+  }
+
+  .app-shell.compact-desktop-layout .keyboard-shortcuts-meta {
+    font-size: 0.62rem;
+  }
+
+  .app-shell.compact-desktop-layout .keyboard-shortcut-row {
+    gap: 0.42rem;
+    padding: 0.3rem 0.38rem;
+  }
+
+  .app-shell.compact-desktop-layout .keyboard-shortcut-key {
+    min-width: 1.2rem;
+    height: 1.02rem;
+    padding: 0 0.22rem;
+    font-size: 0.56rem;
+  }
+
+  .app-shell.compact-desktop-layout .keyboard-shortcut-text {
+    font-size: 0.68rem;
   }
 
   .app-shell.compact-desktop-layout .history-strip {
@@ -4395,6 +4502,10 @@ button:disabled {
   }
 
   .mobile-secondary-panel .pgn-panel {
+    padding-top: 0.95rem;
+  }
+
+  .mobile-secondary-panel .mobile-keyboard-shortcuts-panel {
     padding-top: 0.95rem;
   }
 
