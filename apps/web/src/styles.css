@@ -3125,26 +3125,30 @@ button:disabled {
   .app-shell.mobile-landscape-layout .mobile-board-column {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
   }
 
   .app-shell.mobile-landscape-layout .mobile-landscape-board-stack {
-    width: auto;
+    width: calc(var(--mobile-primary-board-max-size, 0px) + var(--layout-eval-width) + var(--layout-eval-gap));
     max-width: none;
     margin: 0;
     gap: 0;
   }
 
+  .app-shell.mobile-landscape-layout .mobile-landscape-board-stack.no-eval {
+    width: var(--mobile-primary-board-max-size, 0px);
+  }
+
   .app-shell.mobile-landscape-layout .mobile-landscape-board-stack .board-stage {
     display: flex;
     gap: var(--layout-eval-gap);
-    width: auto;
+    width: 100%;
     max-width: none;
     margin: 0;
     min-width: 0;
     height: auto;
     align-items: stretch;
-    justify-content: flex-end;
+    justify-content: center;
   }
 
   .app-shell.mobile-landscape-layout .board-shell {
@@ -3271,6 +3275,7 @@ button:disabled {
     overflow-y: auto;
     overscroll-behavior-y: auto;
     scrollbar-gutter: stable;
+    background: color-mix(in srgb, var(--color-bg-grad-top) 88%, var(--color-input-bg) 12%);
   }
 
   .app-shell.mobile-landscape-layout .mobile-secondary-panel .pgn-panel {
@@ -3280,6 +3285,52 @@ button:disabled {
   .app-shell.mobile-landscape-layout .mobile-secondary-panel .puzzle-share-panel {
     padding-top: 0.75rem;
     border-top: 1px solid color-mix(in srgb, var(--color-panel-border) 78%, transparent);
+  }
+
+  .app-shell.mobile-landscape-layout .pgn-header-row {
+    gap: 0.3rem;
+  }
+
+  .app-shell.mobile-landscape-layout .pgn-title {
+    font-size: 0.86rem;
+  }
+
+  .app-shell.mobile-landscape-layout .pgn-puzzle-id {
+    font-size: 0.7rem;
+  }
+
+  .app-shell.mobile-landscape-layout .pgn-sequence {
+    gap: 0.25rem 0.35rem;
+    line-height: 1.4;
+  }
+
+  .app-shell.mobile-landscape-layout .pgn-sequence-label {
+    font-size: 0.72rem;
+  }
+
+  .app-shell.mobile-landscape-layout button.pgn-sequence-move,
+  .app-shell.mobile-landscape-layout .pgn-sequence-empty,
+  .app-shell.mobile-landscape-layout button.pgn-move {
+    font-size: 0.76rem;
+  }
+
+  .app-shell.mobile-landscape-layout .puzzle-share-title {
+    font-size: 0.84rem;
+  }
+
+  .app-shell.mobile-landscape-layout .puzzle-share-input {
+    padding: 0.48rem 0.58rem;
+    font-size: 0.78rem;
+  }
+
+  .app-shell.mobile-landscape-layout .puzzle-share-actions {
+    gap: 0.4rem;
+  }
+
+  .app-shell.mobile-landscape-layout .puzzle-share-actions button {
+    font-size: 0.8rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
   }
 
   .app-shell.mobile-landscape-layout .mobile-tertiary-page-body {
