@@ -3322,7 +3322,7 @@ button:disabled {
     align-content: start;
     margin-block: auto;
     overflow-y: auto;
-    overscroll-behavior: contain;
+    overscroll-behavior-y: auto;
     scrollbar-gutter: stable;
   }
 
@@ -3589,7 +3589,7 @@ button:disabled {
     min-height: 0;
     max-height: 100%;
     overflow-y: auto;
-    overscroll-behavior: contain;
+    overscroll-behavior-y: auto;
     scrollbar-gutter: stable;
   }
 
