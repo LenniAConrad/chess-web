@@ -19,7 +19,8 @@ const ACTIVE_SESSION_COOKIE = 'active_sid';
 const ACTIVE_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 const SHARED_PUZZLE_QUERY_PARAM = 'puzzle';
 const INITIAL_LOAD_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000] as const;
-const MOBILE_LAYOUT_MEDIA_QUERY = '(max-width: 900px) and (max-aspect-ratio: 1/1)';
+const MOBILE_PORTRAIT_LAYOUT_MEDIA_QUERY = '(max-width: 900px) and (max-aspect-ratio: 1/1)';
+const MOBILE_LANDSCAPE_LAYOUT_MEDIA_QUERY = '(max-width: 900px) and (orientation: landscape)';
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -334,11 +335,13 @@ export function App() {
   const [oneTryFailed, setOneTryFailed] = useState(false);
   const [historyPreview, setHistoryPreview] = useState<HistoryPreviewState | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isMobileLandscapeViewport, setIsMobileLandscapeViewport] = useState(false);
   const appShellRef = useRef<HTMLDivElement | null>(null);
   const mobileSecondaryScreenRef = useRef<HTMLElement | null>(null);
   const mobileHeaderRef = useRef<HTMLElement | null>(null);
   const mobilePrimaryPageBodyRef = useRef<HTMLElement | null>(null);
   const mobilePrimaryStackRef = useRef<HTMLDivElement | null>(null);
+  const mobileLandscapePrimarySideRef = useRef<HTMLDivElement | null>(null);
   const mobileControlsPanelRef = useRef<HTMLElement | null>(null);
   const mobilePrimaryStatusPanelRef = useRef<HTMLElement | null>(null);
   const mobileBoardStackRef = useRef<HTMLDivElement | null>(null);
@@ -376,16 +379,21 @@ export function App() {
   const initialLoadRetryAttemptRef = useRef(0);
   const recentHistoryItems = historyItems;
   const isZenMode = prefs.zenMode;
+  const isMobileSnapViewport = isMobileViewport || isMobileLandscapeViewport;
   const isMobileStandardLayout = isMobileViewport && !isZenMode;
+  const isMobileLandscapeLayout = isMobileLandscapeViewport && !isZenMode;
+  const isMobileSnapLayout = isMobileSnapViewport && !isZenMode;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
 
-    const mobileLayoutMedia = window.matchMedia(MOBILE_LAYOUT_MEDIA_QUERY);
+    const portraitLayoutMedia = window.matchMedia(MOBILE_PORTRAIT_LAYOUT_MEDIA_QUERY);
+    const landscapeLayoutMedia = window.matchMedia(MOBILE_LANDSCAPE_LAYOUT_MEDIA_QUERY);
     const syncViewport = () => {
-      setIsMobileViewport(mobileLayoutMedia.matches);
+      setIsMobileViewport(portraitLayoutMedia.matches);
+      setIsMobileLandscapeViewport(landscapeLayoutMedia.matches);
     };
 
     syncViewport();
@@ -393,10 +401,12 @@ export function App() {
     window.addEventListener('orientationchange', syncViewport);
     window.addEventListener('pageshow', syncViewport);
     document.addEventListener('visibilitychange', syncViewport);
-    if (typeof mobileLayoutMedia.addEventListener === 'function') {
-      mobileLayoutMedia.addEventListener('change', syncViewport);
-    } else if (typeof mobileLayoutMedia.addListener === 'function') {
-      mobileLayoutMedia.addListener(syncViewport);
+    if (typeof portraitLayoutMedia.addEventListener === 'function') {
+      portraitLayoutMedia.addEventListener('change', syncViewport);
+      landscapeLayoutMedia.addEventListener('change', syncViewport);
+    } else if (typeof portraitLayoutMedia.addListener === 'function') {
+      portraitLayoutMedia.addListener(syncViewport);
+      landscapeLayoutMedia.addListener(syncViewport);
     }
 
     return () => {
@@ -404,10 +414,12 @@ export function App() {
       window.removeEventListener('orientationchange', syncViewport);
       window.removeEventListener('pageshow', syncViewport);
       document.removeEventListener('visibilitychange', syncViewport);
-      if (typeof mobileLayoutMedia.removeEventListener === 'function') {
-        mobileLayoutMedia.removeEventListener('change', syncViewport);
-      } else if (typeof mobileLayoutMedia.removeListener === 'function') {
-        mobileLayoutMedia.removeListener(syncViewport);
+      if (typeof portraitLayoutMedia.removeEventListener === 'function') {
+        portraitLayoutMedia.removeEventListener('change', syncViewport);
+        landscapeLayoutMedia.removeEventListener('change', syncViewport);
+      } else if (typeof portraitLayoutMedia.removeListener === 'function') {
+        portraitLayoutMedia.removeListener(syncViewport);
+        landscapeLayoutMedia.removeListener(syncViewport);
       }
     };
   }, []);
@@ -899,7 +911,7 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (!isMobileViewport) {
+    if (!isMobileSnapLayout) {
       return;
     }
 
@@ -947,7 +959,7 @@ export function App() {
       document.removeEventListener('pointerdown', handlePointerDown, true);
       document.removeEventListener('click', handleClick, true);
     };
-  }, [isMobileViewport]);
+  }, [isMobileSnapLayout]);
 
   useEffect(() => {
     const menus = [headerSettingsRef.current, headerLanguageRef.current].filter(
@@ -1037,7 +1049,7 @@ export function App() {
     const primaryBody = mobilePrimaryPageBodyRef.current;
     const primaryStack = mobilePrimaryStackRef.current;
 
-    if (!shell || !primaryBody || !primaryStack || !isMobileStandardLayout) {
+    if (!shell || !primaryBody || !primaryStack || !isMobileSnapLayout) {
       shell?.style.removeProperty('--mobile-primary-board-max-size');
       return;
     }
@@ -1057,6 +1069,19 @@ export function App() {
       return element.getBoundingClientRect().height;
     };
 
+    const measureVisibleWidth = (element: HTMLElement | null): number => {
+      if (!element) {
+        return 0;
+      }
+
+      const computedStyle = window.getComputedStyle(element);
+      if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
+        return 0;
+      }
+
+      return element.getBoundingClientRect().width;
+    };
+
     const updateBoardSize = () => {
       const computedStyle = window.getComputedStyle(primaryBody);
       const shellStyle = window.getComputedStyle(shell);
@@ -1069,21 +1094,43 @@ export function App() {
       const stackGap = parseFloat(stackStyle.rowGap || stackStyle.gap) || 0;
       const boardStackStyle = mobileBoardStackRef.current ? window.getComputedStyle(mobileBoardStackRef.current) : null;
       const boardStackGap = boardStackStyle ? parseFloat(boardStackStyle.rowGap || boardStackStyle.gap) || 0 : 0;
+      const landscapeAsideWidth = measureVisibleWidth(mobileLandscapePrimarySideRef.current);
       const evalGap = parseFloat(shellStyle.getPropertyValue('--layout-eval-gap')) || 0;
+      const evalWidth = prefs.showEngineEval ? parseFloat(shellStyle.getPropertyValue('--layout-eval-width')) || 0 : 0;
       const mobilePrimaryStatusHeight = measureVisibleHeight(mobilePrimaryStatusPanelRef.current);
       const fixedBlockHeights = [
         measureVisibleHeight(mobileControlsPanelRef.current)
       ];
       const visibleFixedBlockCount = fixedBlockHeights.filter((height) => height > 0.5).length;
       const evalHeight = measureVisibleHeight(mobileEvalWrapRef.current);
-      const availableInlineSize =
-        primaryBody.getBoundingClientRect().width -
-        paddingLeft -
-        paddingRight;
+      const primaryBodyRect = primaryBody.getBoundingClientRect();
+      const availableInlineSize = primaryBodyRect.width - paddingLeft - paddingRight;
+      const availableBlockSize = primaryBodyRect.height - paddingTop - paddingBottom;
+
+      if (isMobileLandscapeLayout) {
+        const availableLandscapeInlineSize =
+          availableInlineSize -
+          landscapeAsideWidth -
+          (landscapeAsideWidth > 0.5 ? stackGap : 0) -
+          evalWidth -
+          (evalWidth > 0.5 ? evalGap : 0);
+        const normalizedLandscapeInlineSize = Math.max(0, Math.floor(availableLandscapeInlineSize));
+        const normalizedLandscapeBlockSize = Math.max(0, Math.floor(availableBlockSize));
+
+        if (normalizedLandscapeInlineSize <= 0 || normalizedLandscapeBlockSize <= 0) {
+          shell.style.removeProperty('--mobile-primary-board-max-size');
+          return;
+        }
+
+        shell.style.setProperty(
+          '--mobile-primary-board-max-size',
+          `${Math.min(normalizedLandscapeInlineSize, normalizedLandscapeBlockSize)}px`
+        );
+        return;
+      }
+
       const availableBoardSize =
-        primaryBody.getBoundingClientRect().height -
-        paddingTop -
-        paddingBottom -
+        availableBlockSize -
         fixedBlockHeights.reduce((sum, height) => sum + height, 0) -
         (rowGap * visibleFixedBlockCount) -
         (fixedBlockHeights.some((height) => height > 0.5) ? stackGap : 0) -
@@ -1120,6 +1167,7 @@ export function App() {
       primaryBody,
       primaryStack,
       mobileHeaderRef.current,
+      mobileLandscapePrimarySideRef.current,
       mobileControlsPanelRef.current,
       mobilePrimaryStatusPanelRef.current,
       mobileBoardStackRef.current,
@@ -1143,13 +1191,13 @@ export function App() {
       window.visualViewport?.removeEventListener('resize', scheduleBoardResize);
       shell.style.removeProperty('--mobile-primary-board-max-size');
     };
-  }, [isMobileStandardLayout, prefs.showEngineEval]);
+  }, [isMobileLandscapeLayout, isMobileSnapLayout, prefs.showEngineEval]);
 
   useEffect(() => {
     const shell = appShellRef.current;
     const secondaryScreen = mobileSecondaryScreenRef.current;
 
-    if (!shell || !secondaryScreen || !isMobileStandardLayout) {
+    if (!shell || !secondaryScreen || !isMobileSnapLayout) {
       mobileSnapTouchStartYRef.current = null;
       mobileSnapTouchStartScrollTopRef.current = null;
       mobileSnapLockedRef.current = false;
@@ -1354,7 +1402,7 @@ export function App() {
       mobileSnapLockedRef.current = false;
       clearSnapUnlockTimeout();
     };
-  }, [isMobileStandardLayout]);
+  }, [isMobileSnapLayout]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -2774,6 +2822,8 @@ export function App() {
   const shellClassName = [
     'app-shell',
     IS_APP_BUILD ? 'is-app-build' : null,
+    isMobileStandardLayout ? 'mobile-portrait-layout' : null,
+    isMobileLandscapeLayout ? 'mobile-landscape-layout' : null,
     isZenMode ? 'is-zen-mode' : null,
     prefs.showEngineEval ? 'has-eval' : 'no-eval',
     prefs.animations ? null : 'animations-disabled'
@@ -2783,27 +2833,28 @@ export function App() {
   const footerLinks: AppChromeLink[] = [
     { href: REPO_URL, label: i18n.github, external: true }
   ];
-  const zenExitHintLabel = isMobileViewport ? (i18n.exitZenModeHintMobile ?? 'Tap here to exit zen mode') : i18n.exitZenModeHint;
-  const boardColumnClassName = ['board-column', isMobileStandardLayout ? 'mobile-board-column' : null]
+  const zenExitHintLabel = isMobileSnapViewport ? (i18n.exitZenModeHintMobile ?? 'Tap here to exit zen mode') : i18n.exitZenModeHint;
+  const boardColumnClassName = ['board-column', isMobileSnapLayout ? 'mobile-board-column' : null]
     .filter(Boolean)
     .join(' ');
   const boardStackClassName = [
     'board-stack',
     prefs.showEngineEval ? null : 'no-eval',
-    isMobileStandardLayout ? 'mobile-primary-board-stack' : null
+    isMobileSnapLayout ? 'mobile-primary-board-stack' : null,
+    isMobileLandscapeLayout ? 'mobile-landscape-board-stack' : null
   ]
     .filter(Boolean)
     .join(' ');
-  const statusPanelClassName = ['rail-block', 'header', 'rail-status', isMobileStandardLayout ? 'mobile-status-panel' : null]
+  const statusPanelClassName = ['rail-block', 'header', 'rail-status', isMobileSnapLayout ? 'mobile-status-panel' : null]
     .filter(Boolean)
     .join(' ');
   const desktopStatusSectionClassName = ['desktop-side-panel-section', 'header', 'rail-status']
     .filter(Boolean)
     .join(' ');
-  const controlsPanelClassName = ['rail-block', 'rail-actions', isMobileStandardLayout ? 'mobile-controls-panel' : null]
+  const controlsPanelClassName = ['rail-block', 'rail-actions', isMobileSnapLayout ? 'mobile-controls-panel' : null]
     .filter(Boolean)
     .join(' ');
-  const historyStripClassName = ['history-strip', prefs.autoPlay ? 'is-muted' : null, isMobileViewport ? 'is-mobile' : null]
+  const historyStripClassName = ['history-strip', prefs.autoPlay ? 'is-muted' : null, isMobileSnapLayout ? 'is-mobile' : null]
     .filter(Boolean)
     .join(' ');
   const pathMovesLabel = i18n.pathMoves('').trimEnd();
@@ -3172,12 +3223,40 @@ export function App() {
       </div>
     </section>
   );
-  const mobilePrimaryStack = (
-    <div ref={mobilePrimaryStackRef} className="mobile-primary-stack">
+  const mobilePrimaryStackClassName = [
+    'mobile-primary-stack',
+    isMobileStandardLayout ? 'mobile-portrait-primary-stack' : null,
+    isMobileLandscapeLayout ? 'mobile-landscape-primary-stack' : null
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const mobilePrimaryStack = isMobileLandscapeLayout ? (
+    <div ref={mobilePrimaryStackRef} className={mobilePrimaryStackClassName}>
+      {boardPanel}
+      <div ref={mobileLandscapePrimarySideRef} className="mobile-landscape-primary-side">
+        {statusPanel}
+        {controlsPanel}
+      </div>
+    </div>
+  ) : (
+    <div ref={mobilePrimaryStackRef} className={mobilePrimaryStackClassName}>
       {boardPanel}
       {controlsPanel}
     </div>
   );
+  const mobilePrimaryPageBodyClassName = [
+    'mobile-snap-page-body',
+    'mobile-primary-page-body',
+    isMobileLandscapeLayout ? 'mobile-landscape-primary-page-body' : null
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const mobileSecondaryStackClassName = [
+    'mobile-secondary-stack',
+    isMobileLandscapeLayout ? 'mobile-landscape-secondary-stack' : null
+  ]
+    .filter(Boolean)
+    .join(' ');
   const desktopSidePanel = (
     <section className="rail-block desktop-side-panel">
       <div className={desktopStatusSectionClassName}>
@@ -3215,18 +3294,18 @@ export function App() {
           pieces={fallingCapturePieces}
           onPieceAnimationEnd={handleCaptureRainPieceAnimationEnd}
         />
-        {isMobileStandardLayout ? (
+        {isMobileSnapLayout ? (
           <>
             <section className="mobile-snap-screen mobile-primary-screen">
               {headerContent}
-              <main ref={mobilePrimaryPageBodyRef} className="mobile-snap-page-body mobile-primary-page-body">
+              <main ref={mobilePrimaryPageBodyRef} className={mobilePrimaryPageBodyClassName}>
                 {mobilePrimaryStack}
               </main>
             </section>
             <section ref={mobileSecondaryScreenRef} className="mobile-snap-screen mobile-secondary-screen">
               <div className="mobile-snap-page-body mobile-secondary-page-body">
-                <div className="mobile-secondary-stack">
-                  {statusPanel}
+                <div className={mobileSecondaryStackClassName}>
+                  {isMobileLandscapeLayout ? null : statusPanel}
                   {mobileSecondaryPanel}
                 </div>
               </div>
@@ -3287,7 +3366,7 @@ export function App() {
             </div>
           </aside>
         ) : null}
-        {!isMobileStandardLayout ? <footer className="app-footer">{footerContent}</footer> : null}
+        {!isMobileSnapLayout ? <footer className="app-footer">{footerContent}</footer> : null}
       </div>
       {errorText ? (
         <p className="global-error-toast" role="alert" aria-live="assertive">

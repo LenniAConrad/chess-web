@@ -2975,74 +2975,363 @@ button:disabled {
 }
 
 @media (max-width: 900px) and (orientation: landscape) {
-  .app-shell {
-    --layout-gap: 1rem;
-    --layout-eval-gap: 0.75rem;
-    --page-vertical-space: 0.65rem;
-    --chrome-offset: 4.7rem;
-    --side-panel-width: clamp(220px, 34vw, 280px);
-    --board-size: max(
-      0px,
-      min(
-        var(--frame-height),
-        calc(
-          100vw - 2rem - var(--layout-gap) - var(--layout-eval-width) - var(--layout-eval-gap) -
-            var(--side-panel-width)
-        )
-      )
-    );
+  :root {
+    --mobile-page-gutter: 0.8rem;
+    --mobile-menu-inline-pad: 1rem;
   }
 
-  .app-header {
-    padding-inline: 0.85rem;
-    max-height: 4rem;
+  .app-shell.mobile-landscape-layout {
+    --board-size: 100%;
+    --frame-height: auto;
+    --layout-eval-width: 12px;
+    --layout-eval-gap: 0.55rem;
+    --page-vertical-space: 0.5rem;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    scroll-snap-type: y mandatory;
   }
 
-  .app-header-inner {
-    gap: 1rem;
-    padding: 0.55rem 0;
+  .app-shell.mobile-landscape-layout.is-app-build {
+    scroll-snap-type: y proximity;
   }
 
-  .app-brand {
-    font-size: clamp(1.15rem, 1rem + 0.7vw, 1.55rem);
+  body {
+    overflow: hidden;
   }
 
-  .app-brand-meta {
-    font-size: 0.68rem;
+  .app-shell.mobile-landscape-layout .app-header {
+    padding-inline: var(--mobile-page-gutter);
+    max-height: none;
   }
 
-  .app-header-controls {
-    gap: 0.2rem;
+  .app-shell.mobile-landscape-layout .app-header-inner {
+    gap: 0.85rem;
+    padding: 0.5rem 0;
   }
 
-  .layout {
-    padding: var(--page-vertical-space) 0.85rem;
+  .app-shell.mobile-landscape-layout .app-header-primary {
+    width: 100%;
+    align-items: flex-start;
+    flex-wrap: nowrap;
+    gap: 0.65rem;
   }
 
-  .split-layout {
+  .app-shell.mobile-landscape-layout .app-brand-lockup {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .app-shell.mobile-landscape-layout .app-brand {
+    font-size: 1.22rem;
+  }
+
+  .app-shell.mobile-landscape-layout .app-brand-meta {
+    font-size: 0.66rem;
+  }
+
+  .app-shell.mobile-landscape-layout .app-header-controls {
+    margin-left: auto;
+    min-width: 0;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 0.16rem;
+    justify-content: flex-end;
+    align-items: flex-start;
+  }
+
+  .app-shell.mobile-landscape-layout .app-header-settings {
+    width: auto;
+    min-width: 0;
+    margin-left: auto;
+    flex: 0 0 auto;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-snap-screen {
+    min-height: 100dvh;
+    display: grid;
+    align-content: stretch;
+    box-sizing: border-box;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-primary-screen {
+    height: 100dvh;
+    min-height: 100dvh;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-secondary-screen,
+  .app-shell.mobile-landscape-layout .mobile-tertiary-screen {
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-snap-page-body {
+    min-height: 0;
+    height: 100%;
+    padding: var(--page-vertical-space) var(--mobile-page-gutter);
+    box-sizing: border-box;
+    display: grid;
+    align-content: stretch;
+    gap: 0.55rem;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-primary-page-body {
+    justify-content: stretch;
     align-items: stretch;
   }
 
-  .desktop-side-panel {
-    gap: 0.7rem;
+  .app-shell.mobile-landscape-layout .mobile-landscape-primary-page-body {
+    padding-bottom: max(var(--page-vertical-space), env(safe-area-inset-bottom));
   }
 
-  .desktop-side-panel-section + .desktop-side-panel-section {
-    padding-top: 0.7rem;
+  .app-shell.mobile-landscape-layout .mobile-primary-stack {
+    width: 100%;
+    min-height: 0;
   }
 
-  .app-footer {
-    padding-inline: 0.85rem;
-    max-height: 3rem;
+  .app-shell.mobile-landscape-layout .mobile-landscape-primary-stack {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(14.5rem, 35vw);
+    align-items: stretch;
+    gap: 0.65rem;
+    margin: 0;
   }
 
-  .app-footer-inner {
+  .app-shell.mobile-landscape-layout .mobile-landscape-primary-side {
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: stretch;
+    gap: 0.65rem;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .app-shell.mobile-landscape-layout .board-column {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-board-column {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-landscape-board-stack {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    gap: 0;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-landscape-board-stack .board-stage {
+    display: flex;
+    gap: var(--layout-eval-gap);
+    width: auto;
+    max-width: none;
+    margin: 0;
+    min-width: 0;
+    height: auto;
+    align-items: stretch;
+    justify-content: flex-end;
+  }
+
+  .app-shell.mobile-landscape-layout .board-shell {
+    width: min(100%, var(--mobile-primary-board-max-size, 100%));
+    max-width: min(100%, var(--mobile-primary-board-max-size, 100%));
+    height: auto;
+    aspect-ratio: 1 / 1;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .app-shell.mobile-landscape-layout .board-wrap {
+    width: 100%;
+    height: 100%;
+  }
+
+  .app-shell.mobile-landscape-layout .board {
+    width: 100%;
+    height: 100%;
+    box-shadow: none;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-landscape-board-stack .eval-wrap {
+    height: var(--mobile-primary-board-max-size, auto);
+    width: var(--layout-eval-width);
+    flex: 0 0 var(--layout-eval-width);
+    position: relative;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-landscape-board-stack .eval-bar {
+    width: var(--layout-eval-width);
+    height: 100%;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-status-panel {
+    --rail-status-scale: 0.82;
+    padding: 0.65rem;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-status-panel .rail-status-main {
+    gap: 0.28rem;
+    margin-top: 0;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-status-panel .turn-indicator {
+    font-size: 1rem;
+    max-width: none;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-status-panel .rail-engine,
+  .app-shell.mobile-landscape-layout .mobile-status-panel .rail-branch {
+    font-size: 0.8rem;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-status-panel .status-line {
+    margin-top: 0;
+    font-size: 0.9rem;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-status-panel .correct-line {
+    min-height: 0.95rem;
+    font-size: 0.84rem;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-controls-panel,
+  .app-shell.mobile-landscape-layout .mobile-secondary-panel {
+    padding: 0.65rem;
+    background: var(--color-panel-bg);
+    backdrop-filter: blur(18px) saturate(118%) brightness(1.06);
+    -webkit-backdrop-filter: blur(18px) saturate(118%) brightness(1.06);
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-controls-panel {
+    display: grid;
+    gap: 0.5rem;
+    align-content: start;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-controls-panel .action-button-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-controls-panel button {
+    padding: 0.44rem 0.58rem;
+    font-size: 0.84rem;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-secondary-page-body {
+    min-height: 100%;
+    width: 100%;
+    padding:
+      calc(var(--page-vertical-space) + 0.3rem)
+      var(--mobile-page-gutter)
+      max(calc(var(--page-vertical-space) + 0.3rem), calc(env(safe-area-inset-bottom) + 0.3rem));
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0.55rem;
+    overflow: hidden;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-secondary-stack {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    min-height: 0;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    align-content: stretch;
+    gap: 0.55rem;
+    margin-block: 0;
+    overflow: hidden;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-landscape-secondary-stack {
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-secondary-panel {
+    display: grid;
     gap: 0.75rem;
-    padding: 0.6rem 0;
+    min-height: 0;
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    scrollbar-gutter: stable;
   }
 
-  .app-footer-link,
-  .app-footer-license {
+  .app-shell.mobile-landscape-layout .mobile-secondary-panel .pgn-panel {
+    padding-top: 0.75rem;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-secondary-panel .puzzle-share-panel {
+    padding-top: 0.75rem;
+    border-top: 1px solid color-mix(in srgb, var(--color-panel-border) 78%, transparent);
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-tertiary-page-body {
+    min-height: 100%;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    align-content: stretch;
+    overflow: hidden;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-tertiary-stack {
+    width: 100%;
+    max-height: 100%;
+    min-height: 0;
+    display: grid;
+    align-content: start;
+    margin-block: auto;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .app-shell.mobile-landscape-layout .app-footer {
+    padding-inline: var(--mobile-page-gutter);
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-inline-footer {
+    width: 100%;
+    padding-inline: 0;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-inline-footer::before {
+    width: 100%;
+  }
+
+  .app-shell.mobile-landscape-layout .app-footer-inner {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+    padding: 0.72rem 0;
+  }
+
+  .app-shell.mobile-landscape-layout .app-footer-links {
+    justify-content: flex-start;
+  }
+
+  .app-shell.mobile-landscape-layout .app-footer-license {
+    margin-left: auto;
+  }
+
+  .app-shell.mobile-landscape-layout .app-footer-link,
+  .app-shell.mobile-landscape-layout .app-footer-license {
     font-size: 0.76rem;
   }
 }
