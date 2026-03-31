@@ -3207,11 +3207,11 @@ button:disabled {
     content: '';
     position: absolute;
     inset: calc(var(--mobile-primary-shared-panel-pad) * -1);
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    border: 1px solid var(--color-panel-border);
+    border-radius: 10px;
+    background: var(--color-panel-bg);
+    backdrop-filter: blur(18px) saturate(118%) brightness(1.06);
+    -webkit-backdrop-filter: blur(18px) saturate(118%) brightness(1.06);
     pointer-events: none;
     z-index: -1;
   }
@@ -3447,7 +3447,6 @@ button:disabled {
   }
 
   .mobile-status-panel,
-  .mobile-primary-status-panel,
   .mobile-controls-panel,
   .mobile-secondary-panel {
     background: var(--color-panel-bg);

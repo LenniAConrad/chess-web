@@ -2768,7 +2768,7 @@ export function App() {
     </section>
   );
   const mobilePrimaryStatusPanel = isMobileStandardLayout ? (
-    <section ref={mobilePrimaryStatusPanelRef} className="rail-block mobile-primary-status-panel">
+    <section ref={mobilePrimaryStatusPanelRef} className="mobile-primary-status-panel">
       <p className="turn-kicker">{turnKickerText}</p>
       <p className="turn-indicator">{objectiveText}</p>
     </section>
