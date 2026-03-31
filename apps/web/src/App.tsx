@@ -16,6 +16,7 @@ import type { HintPreview, SessionHistoryItem, SessionStatePayload, SessionTreeN
 
 const ACTIVE_SESSION_COOKIE = 'active_sid';
 const ACTIVE_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const SHARED_PUZZLE_QUERY_PARAM = 'puzzle';
 const INITIAL_LOAD_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000] as const;
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -233,12 +234,48 @@ function clearActiveSessionIdCookie(): void {
   document.cookie = `${ACTIVE_SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
 }
 
-function getInitialSession(mode: StartSessionResponse['state']['variationMode'], autoNext: boolean): Promise<StartSessionResponse> {
+function readSharedPuzzleIdFromUrl(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const sharedPuzzleId = new URL(window.location.href).searchParams.get(SHARED_PUZZLE_QUERY_PARAM)?.trim() ?? '';
+    return sharedPuzzleId.length > 0 ? sharedPuzzleId : null;
+  } catch {
+    return null;
+  }
+}
+
+function buildSharedPuzzleUrl(puzzleId: string): string {
+  if (typeof window === 'undefined') {
+    return '';
+  }
+
+  const normalizedPuzzleId = puzzleId.trim();
+  if (!normalizedPuzzleId) {
+    return '';
+  }
+
+  const url = new URL(window.location.pathname, window.location.origin);
+  url.searchParams.set(SHARED_PUZZLE_QUERY_PARAM, normalizedPuzzleId);
+  return url.toString();
+}
+
+function getInitialSession(
+  mode: StartSessionResponse['state']['variationMode'],
+  autoNext: boolean,
+  sharedPuzzleId?: string | null
+): Promise<StartSessionResponse> {
   if (initialSessionRequest) {
     return initialSessionRequest;
   }
 
   initialSessionRequest = (async () => {
+    if (sharedPuzzleId) {
+      return startSession(mode, autoNext, sharedPuzzleId);
+    }
+
     const activeSessionId = readActiveSessionIdCookie();
     if (activeSessionId) {
       try {
@@ -286,6 +323,7 @@ export function App() {
   const [treeErrorMessage, setTreeErrorMessage] = useState<UiMessage | null>(null);
   const [preparedHint, setPreparedHint] = useState<PreparedHintState | null>(null);
   const [reviewCursor, setReviewCursor] = useState<ReviewCursorState | null>(null);
+  const [shareFeedback, setShareFeedback] = useState<{ tone: 'success' | 'error'; message: string } | null>(null);
   const [wrongMoveSquare, setWrongMoveSquare] = useState<Square | null>(null);
   const [wrongMoveFlashToken, setWrongMoveFlashToken] = useState(0);
   const [lineCompleteSquare, setLineCompleteSquare] = useState<Square | null>(null);
@@ -332,6 +370,7 @@ export function App() {
     autoNext: prefs.autoNext,
     variationMode: prefs.variationMode
   });
+  const initialSharedPuzzleIdRef = useRef<string | null>(readSharedPuzzleIdFromUrl());
   const initialLoadRetryAttemptRef = useRef(0);
   const recentHistoryItems = historyItems;
   const isZenMode = prefs.zenMode;
@@ -425,6 +464,10 @@ export function App() {
       current ? { ...current, label: i18n.historyDotLabels[current.tone] ?? i18n.historyDotLabels.unknown } : current
     );
   }, [i18n]);
+
+  useEffect(() => {
+    setShareFeedback(null);
+  }, [puzzle?.publicId]);
 
   const statusText = useMemo(
     () => resolveUiMessage(statusMessage, i18n) ?? '\u00A0',
@@ -578,6 +621,22 @@ export function App() {
 
     return null;
   }, [currentHistoryIndex, recentHistoryItems]);
+  const normalizedPuzzleTitle = normalizeTitleText(puzzle?.title ?? '');
+  const isUntitledPuzzle = !puzzle || isUntitledPuzzleTitle(normalizedPuzzleTitle, i18n.untitledPuzzle);
+  const sharePuzzleId = puzzle?.publicId ?? '';
+  const sharePanelTitle = i18n.shareThisPuzzle ?? 'Share this puzzle';
+  const shareButtonLabel = i18n.sharePuzzle ?? 'Share';
+  const copyLinkButtonLabel = i18n.copyLink ?? 'Copy link';
+  const copyLinkSuccessText = i18n.shareLinkCopied ?? 'Link copied';
+  const shareFailureText = i18n.sharePuzzleFailed ?? 'Failed to share puzzle link';
+  const shareInputLabel = i18n.shareLinkLabel ?? 'Puzzle share link';
+  const shareUrl = sharePuzzleId ? buildSharedPuzzleUrl(sharePuzzleId) : '';
+  const shareTitle = sharePuzzleId ? (isUntitledPuzzle ? `chess-web ${sharePuzzleId}` : normalizedPuzzleTitle) : 'chess-web';
+  const canNativeShare =
+    typeof navigator !== 'undefined' &&
+    typeof navigator.share === 'function' &&
+    shareUrl.length > 0 &&
+    (typeof navigator.canShare !== 'function' || navigator.canShare({ url: shareUrl }));
 
   const engineEval = useStockfishEval(boardFen, prefs.showEngineEval);
   const terminalEvalDisplay = useMemo(() => getTerminalEvalDisplay(boardFen, i18n), [boardFen, i18n]);
@@ -1453,7 +1512,8 @@ export function App() {
       try {
         const response = await getInitialSession(
           initialPrefsRef.current.variationMode,
-          initialPrefsRef.current.autoNext
+          initialPrefsRef.current.autoNext,
+          initialSharedPuzzleIdRef.current
         );
 
         if (!cancelled) {
@@ -2593,6 +2653,42 @@ export function App() {
     });
   }, [livePath, reviewCursor]);
 
+  const handleCopyShareLink = useCallback(async () => {
+    if (!shareUrl || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) {
+      setShareFeedback({ tone: 'error', message: shareFailureText });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareFeedback({ tone: 'success', message: copyLinkSuccessText });
+    } catch {
+      setShareFeedback({ tone: 'error', message: shareFailureText });
+    }
+  }, [copyLinkSuccessText, shareFailureText, shareUrl]);
+
+  const handleSharePuzzle = useCallback(async () => {
+    if (!shareUrl || typeof navigator === 'undefined' || typeof navigator.share !== 'function') {
+      await handleCopyShareLink();
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: shareTitle,
+        text: shareTitle,
+        url: shareUrl
+      });
+      setShareFeedback(null);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+
+      await handleCopyShareLink();
+    }
+  }, [handleCopyShareLink, shareTitle, shareUrl]);
+
   const toggleVariationMode = (checked: boolean) => {
     setPrefs((previous) => ({
       ...previous,
@@ -2605,8 +2701,6 @@ export function App() {
   }
 
   const completedBranchesText = i18n.completedBranches(state.completedBranches, state.totalLines);
-  const normalizedPuzzleTitle = normalizeTitleText(puzzle.title);
-  const isUntitledPuzzle = isUntitledPuzzleTitle(normalizedPuzzleTitle, i18n.untitledPuzzle);
   const interactive = boardCanInteract;
   const shellClassName = [
     'app-shell',
@@ -2879,11 +2973,46 @@ export function App() {
       </div>
     </>
   );
+  const sharePanelContent = (
+    <div className="puzzle-share-panel">
+      <div className="puzzle-share-copy">
+        <p className="puzzle-share-title">{sharePanelTitle}</p>
+        <p className="puzzle-share-id">{i18n.puzzleId(puzzle.publicId)}</p>
+      </div>
+      <div className="puzzle-share-row">
+        <input
+          type="text"
+          className="puzzle-share-input"
+          value={shareUrl}
+          readOnly
+          aria-label={shareInputLabel}
+          onFocus={(event) => event.currentTarget.select()}
+          onClick={(event) => event.currentTarget.select()}
+        />
+      </div>
+      <div className="puzzle-share-actions">
+        {canNativeShare ? (
+          <button type="button" className="btn-secondary" onClick={() => void handleSharePuzzle()}>
+            {shareButtonLabel}
+          </button>
+        ) : null}
+        <button type="button" className="btn-primary" onClick={() => void handleCopyShareLink()}>
+          {copyLinkButtonLabel}
+        </button>
+      </div>
+      {shareFeedback ? (
+        <p className={`puzzle-share-feedback ${shareFeedback.tone === 'error' ? 'is-error' : 'is-success'}`}>
+          {shareFeedback.message}
+        </p>
+      ) : null}
+    </div>
+  );
   const mobileSecondaryPanel = (
     <section className="rail-block mobile-secondary-panel">
       <div className="pgn-panel" id="explorer">
         {pgnPanelContent}
       </div>
+      {sharePanelContent}
     </section>
   );
   const mobileHistoryPanel = (
@@ -2993,6 +3122,9 @@ export function App() {
       </div>
       <div className="desktop-side-panel-section pgn-panel" id="explorer">
         {pgnPanelContent}
+      </div>
+      <div className="desktop-side-panel-section">
+        {sharePanelContent}
       </div>
     </section>
   );

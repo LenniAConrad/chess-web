@@ -135,6 +135,12 @@ export interface FrontendI18n {
   recentGameHistory: string;
   recentGames: string;
   pgnExplorer: string;
+  shareThisPuzzle?: string;
+  sharePuzzle?: string;
+  copyLink?: string;
+  shareLinkLabel?: string;
+  shareLinkCopied?: string;
+  sharePuzzleFailed?: string;
   pathLivePosition: string;
   noLegalContinuation: string;
   mainLine: string;
