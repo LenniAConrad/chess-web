@@ -2506,6 +2506,10 @@ button.collapsible-panel-toggle:focus-visible {
   margin-top: 0.72rem;
 }
 
+.collapsible-panel-body[hidden] {
+  display: none !important;
+}
+
 .desktop-controls-panel-body {
   display: grid;
   gap: 0.72rem;
