@@ -298,7 +298,10 @@ export function App() {
   const mobileSecondaryScreenRef = useRef<HTMLElement | null>(null);
   const mobileHeaderRef = useRef<HTMLElement | null>(null);
   const mobilePrimaryPageBodyRef = useRef<HTMLElement | null>(null);
+  const mobilePrimaryStackRef = useRef<HTMLDivElement | null>(null);
   const mobileControlsPanelRef = useRef<HTMLElement | null>(null);
+  const mobilePrimaryStatusPanelRef = useRef<HTMLElement | null>(null);
+  const mobileBoardStackRef = useRef<HTMLDivElement | null>(null);
   const mobileEvalWrapRef = useRef<HTMLDivElement | null>(null);
   const headerSettingsRef = useRef<HTMLDetailsElement | null>(null);
   const headerLanguageRef = useRef<HTMLDetailsElement | null>(null);
@@ -648,6 +651,10 @@ export function App() {
     setPremoveResetCounter((current) => current + 1);
   }, []);
 
+  const invalidateHintSync = useCallback(() => {
+    hintSyncRequestRef.current += 1;
+  }, []);
+
   const setPreparedHintForNode = useCallback(
     (nodeId: number, hintPreview: HintPreview | null | undefined) => {
       if (!hintPreview) {
@@ -966,8 +973,9 @@ export function App() {
   useEffect(() => {
     const shell = appShellRef.current;
     const primaryBody = mobilePrimaryPageBodyRef.current;
+    const primaryStack = mobilePrimaryStackRef.current;
 
-    if (!shell || !primaryBody || !isMobileStandardLayout) {
+    if (!shell || !primaryBody || !primaryStack || !isMobileStandardLayout) {
       shell?.style.removeProperty('--mobile-primary-board-max-size');
       return;
     }
@@ -995,7 +1003,12 @@ export function App() {
       const paddingTop = parseFloat(computedStyle.paddingTop) || 0;
       const paddingBottom = parseFloat(computedStyle.paddingBottom) || 0;
       const rowGap = parseFloat(computedStyle.rowGap || computedStyle.gap) || 0;
+      const stackStyle = window.getComputedStyle(primaryStack);
+      const stackGap = parseFloat(stackStyle.rowGap || stackStyle.gap) || 0;
+      const boardStackStyle = mobileBoardStackRef.current ? window.getComputedStyle(mobileBoardStackRef.current) : null;
+      const boardStackGap = boardStackStyle ? parseFloat(boardStackStyle.rowGap || boardStackStyle.gap) || 0 : 0;
       const evalGap = parseFloat(shellStyle.getPropertyValue('--layout-eval-gap')) || 0;
+      const mobilePrimaryStatusHeight = measureVisibleHeight(mobilePrimaryStatusPanelRef.current);
       const fixedBlockHeights = [
         measureVisibleHeight(mobileControlsPanelRef.current)
       ];
@@ -1011,6 +1024,9 @@ export function App() {
         paddingBottom -
         fixedBlockHeights.reduce((sum, height) => sum + height, 0) -
         (rowGap * visibleFixedBlockCount) -
+        (fixedBlockHeights.some((height) => height > 0.5) ? stackGap : 0) -
+        mobilePrimaryStatusHeight -
+        (mobilePrimaryStatusHeight > 0.5 ? boardStackGap : 0) -
         evalHeight -
         (evalHeight > 0.5 ? evalGap : 0);
       const normalizedInlineSize = Math.max(0, Math.floor(availableInlineSize));
@@ -1040,8 +1056,11 @@ export function App() {
     const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(scheduleBoardResize) : null;
     for (const element of [
       primaryBody,
+      primaryStack,
       mobileHeaderRef.current,
       mobileControlsPanelRef.current,
+      mobilePrimaryStatusPanelRef.current,
+      mobileBoardStackRef.current,
       mobileEvalWrapRef.current
     ]) {
       if (element) {
@@ -1228,10 +1247,10 @@ export function App() {
   }, [prefs.zenMode, setPrefs]);
 
   useEffect(() => {
-    if (!prefs.captureRain) {
+    if (!prefs.captureRain || !prefs.animations) {
       setFallingCapturePieces([]);
     }
-  }, [prefs.captureRain]);
+  }, [prefs.animations, prefs.captureRain]);
 
   useEffect(() => {
     if (!sessionId) {
@@ -1279,6 +1298,7 @@ export function App() {
 
   const applyStartedSession = useCallback(
     (response: StartSessionResponse, status: UiMessage) => {
+      invalidateHintSync();
       cacheLoadedSession(response);
       prefetchedNextRequestRef.current += 1;
       prefetchedNextRef.current = null;
@@ -1300,7 +1320,7 @@ export function App() {
       resetPremoves();
       setStatusMessage(status);
     },
-    [resetHints, resetPremoves, setPreparedHintForNode]
+    [invalidateHintSync, resetHints, resetPremoves, setPreparedHintForNode]
   );
 
   const removeCaptureRainPiece = useCallback((id: number) => {
@@ -1309,7 +1329,7 @@ export function App() {
 
   const spawnCaptureRainPiece = useCallback(
     (fen: string, uciMove: string) => {
-      if (!prefs.captureRain) {
+      if (!prefs.captureRain || !prefs.animations) {
         return;
       }
 
@@ -1336,7 +1356,7 @@ export function App() {
 
       setFallingCapturePieces((previous) => [...previous.slice(-(CAPTURE_RAIN_MAX_PIECES - 1)), piece]);
     },
-    [prefs.captureRain]
+    [prefs.animations, prefs.captureRain]
   );
 
   const handleCaptureRainPieceAnimationEnd = useCallback(
@@ -1499,6 +1519,7 @@ export function App() {
         return;
       }
 
+      invalidateHintSync();
       setWrongMoveSquare(null);
       setLineCompleteSquare(null);
       const baseFen = displayFen ?? state.fen;
@@ -1682,6 +1703,7 @@ export function App() {
       sessionId,
       spawnCaptureRainPiece,
       state,
+      invalidateHintSync,
       activatePrefetchedSession,
       takePrefetchedNextSession,
       i18n,
@@ -1796,6 +1818,7 @@ export function App() {
       }
 
       const baseFen = displayFen ?? state.fen;
+      invalidateHintSync();
       setLoading(true);
       setErrorMessage(null);
       resetHints();
@@ -1944,6 +1967,7 @@ export function App() {
       sessionId,
       spawnCaptureRainPiece,
       state,
+      invalidateHintSync,
       activatePrefetchedSession,
       applyStartedSession,
       takePrefetchedNextSession,
@@ -1959,6 +1983,7 @@ export function App() {
 
     setLoading(true);
     setErrorMessage(null);
+    invalidateHintSync();
 
     try {
       const prefetchedNext = takePrefetchedNextSession(sessionId, prefs.variationMode, prefs.autoNext);
@@ -1990,6 +2015,7 @@ export function App() {
     applyStartedSession,
     loading,
     historyLoading,
+    invalidateHintSync,
     prefs.autoNext,
     prefs.variationMode,
     sessionId,
@@ -2005,6 +2031,7 @@ export function App() {
 
     setLoading(true);
     setErrorMessage(null);
+    invalidateHintSync();
 
     try {
       const response = await restartSession(sessionId, prefs.variationMode, prefs.autoNext);
@@ -2021,6 +2048,7 @@ export function App() {
   }, [
     applyStartedSession,
     historyLoading,
+    invalidateHintSync,
     isReviewMode,
     loading,
     prefs.autoNext,
@@ -2414,6 +2442,7 @@ export function App() {
 
     setLoading(true);
     setErrorMessage(null);
+    invalidateHintSync();
     resetHints();
     setPreparedHint(null);
     setLastBestMove(null);
@@ -2441,6 +2470,7 @@ export function App() {
     prefs.autoNext,
     prefs.variationMode,
     puzzleIdInput,
+    invalidateHintSync,
     resetHints,
     i18n
   ]);
@@ -2453,6 +2483,7 @@ export function App() {
 
       setHistoryLoading(true);
       setErrorMessage(null);
+      invalidateHintSync();
       resetHints();
       setPreparedHint(null);
       setLastBestMove(null);
@@ -2473,7 +2504,7 @@ export function App() {
         setHistoryLoading(false);
       }
     },
-    [applyStartedSession, loading, historyLoading, resetHints, i18n]
+    [applyStartedSession, loading, historyLoading, invalidateHintSync, resetHints, i18n]
   );
 
   const handlePreviousPuzzle = useCallback(() => {
@@ -2577,7 +2608,12 @@ export function App() {
   const normalizedPuzzleTitle = normalizeTitleText(puzzle.title);
   const isUntitledPuzzle = isUntitledPuzzleTitle(normalizedPuzzleTitle, i18n.untitledPuzzle);
   const interactive = boardCanInteract;
-  const shellClassName = ['app-shell', isZenMode ? 'is-zen-mode' : null, prefs.showEngineEval ? 'has-eval' : 'no-eval']
+  const shellClassName = [
+    'app-shell',
+    isZenMode ? 'is-zen-mode' : null,
+    prefs.showEngineEval ? 'has-eval' : 'no-eval',
+    prefs.animations ? null : 'animations-disabled'
+  ]
     .filter(Boolean)
     .join(' ');
   const footerLinks: AppChromeLink[] = [
@@ -2589,7 +2625,8 @@ export function App() {
     .join(' ');
   const boardStackClassName = [
     'board-stack',
-    prefs.showEngineEval ? null : 'no-eval'
+    prefs.showEngineEval ? null : 'no-eval',
+    isMobileStandardLayout ? 'mobile-primary-board-stack' : null
   ]
     .filter(Boolean)
     .join(' ');
@@ -2636,9 +2673,15 @@ export function App() {
       {statusPanelContent}
     </section>
   );
+  const mobilePrimaryStatusPanel = isMobileStandardLayout ? (
+    <section ref={mobilePrimaryStatusPanelRef} className="rail-block mobile-primary-status-panel">
+      <p className="turn-kicker">{turnKickerText}</p>
+      <p className="turn-indicator">{objectiveText}</p>
+    </section>
+  ) : null;
   const controlsPanelContent = (
     <>
-      <div className="button-row next-live-row">
+      <div className="button-row action-button-row">
         <button
           type="button"
           className="btn-secondary"
@@ -2647,8 +2690,6 @@ export function App() {
         >
           {i18n.hint}
         </button>
-      </div>
-      <div className="button-row">
         <button
           type="button"
           className="btn-secondary"
@@ -2891,7 +2932,8 @@ export function App() {
   );
   const boardPanel = (
     <section className={boardColumnClassName} id="board">
-      <div className={boardStackClassName}>
+      <div ref={mobileBoardStackRef} className={boardStackClassName}>
+        {mobilePrimaryStatusPanel}
         <div className="board-stage">
           {prefs.showEngineEval ? (
             <div ref={mobileEvalWrapRef}>
@@ -2933,7 +2975,7 @@ export function App() {
     </section>
   );
   const mobilePrimaryStack = (
-    <div className="mobile-primary-stack">
+    <div ref={mobilePrimaryStackRef} className="mobile-primary-stack">
       {boardPanel}
       {controlsPanel}
     </div>

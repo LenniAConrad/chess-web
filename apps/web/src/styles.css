@@ -365,6 +365,28 @@ body::before {
   transform: translateX(calc((var(--layout-eval-width) + var(--layout-eval-gap)) / -2));
 }
 
+.app-shell.animations-disabled *,
+.app-shell.animations-disabled *::before,
+.app-shell.animations-disabled *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+.app-shell.animations-disabled .capture-rain-layer {
+  display: none;
+}
+
+.app-shell.animations-disabled button:hover:not(:disabled),
+.app-shell.animations-disabled button:active:not(:disabled),
+.app-shell.animations-disabled .history-dot:hover:not(:disabled),
+.app-shell.animations-disabled .history-dot:active:not(:disabled),
+.app-shell.animations-disabled .app-footer-link:hover {
+  transform: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
 .capture-rain-layer {
   position: absolute;
   inset: 0;
@@ -2260,6 +2282,10 @@ button.toggle-chip.autoplay-chip.is-on .toggle-chip-track {
   gap: 0.5rem;
 }
 
+.action-button-row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .review-button-row {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -3162,6 +3188,10 @@ button:disabled {
     width: 100%;
   }
 
+  .mobile-primary-board-stack {
+    gap: var(--layout-eval-gap);
+  }
+
   .mobile-primary-page-body .board-stack {
     width: 100%;
     max-width: none;
@@ -3279,7 +3309,25 @@ button:disabled {
     padding: 0.72rem;
   }
 
+  .mobile-primary-status-panel {
+    display: grid;
+    justify-items: center;
+    gap: 0.35rem;
+    padding: 0.72rem;
+    text-align: center;
+  }
+
+  .mobile-primary-status-panel .turn-kicker {
+    font-size: 0.78rem;
+  }
+
+  .mobile-primary-status-panel .turn-indicator {
+    font-size: 1.08rem;
+    line-height: 1.1;
+  }
+
   .mobile-status-panel,
+  .mobile-primary-status-panel,
   .mobile-controls-panel,
   .mobile-secondary-panel {
     background: var(--color-panel-bg);
@@ -3334,6 +3382,10 @@ button:disabled {
   .mobile-controls-panel,
   .mobile-secondary-panel {
     padding: 0.8rem;
+  }
+
+  .mobile-controls-panel .action-button-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .mobile-secondary-panel {
