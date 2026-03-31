@@ -10,9 +10,12 @@
     "test": "pnpm -r test",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
-    "audit": "pnpm audit --prod"
+    "audit": "pnpm audit --prod",
+    "android:sync": "npx cap sync android",
+    "android:build:debug": "npx cap sync android && cd android && ./gradlew assembleDebug"
   },
   "devDependencies": {
+    "@capacitor/cli": "^6.2.1",
     "@eslint/js": "^9.22.0",
     "@types/node": "^22.13.10",
     "@typescript-eslint/eslint-plugin": "^8.26.1",
@@ -24,5 +27,9 @@
     "prettier": "^3.5.3",
     "typescript": "^5.8.2",
     "vitest": "^3.0.8"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/core": "^6.2.1"
   }
 }
