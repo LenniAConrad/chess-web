@@ -2414,6 +2414,7 @@ button.toggle-chip.autoplay-chip.is-on .toggle-chip-track {
   grid-template-rows: auto auto auto auto;
   min-height: 0;
   flex: 0 0 auto;
+  align-content: start;
 }
 
 .settings-panel {
@@ -2732,6 +2733,7 @@ button.pgn-sequence-move:focus-visible {
   max-height: none;
   min-height: 0;
   overflow: visible;
+  align-content: start;
 }
 
 .pgn-empty-state {
@@ -2746,6 +2748,7 @@ button.pgn-sequence-move:focus-visible {
   text-align: left;
   position: relative;
   z-index: 1;
+  align-self: start;
 }
 
 button.pgn-move {
@@ -4128,6 +4131,7 @@ button:disabled {
     overflow-y: auto;
     overscroll-behavior-y: auto;
     scrollbar-gutter: stable;
+    align-content: start;
   }
 
   .mobile-secondary-panel .puzzle-share-panel {
