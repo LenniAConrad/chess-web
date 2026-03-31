@@ -1151,6 +1151,7 @@ export function App() {
 
     const snapThresholdPx = 24;
     const snapTopTolerancePx = 48;
+    let normalizeFrame: number | null = null;
 
     const clearSnapUnlockTimeout = () => {
       if (mobileSnapUnlockTimeoutRef.current === null) {
@@ -1183,6 +1184,30 @@ export function App() {
     };
 
     const getSecondaryTop = () => secondaryScreen.offsetTop;
+
+    const normalizePartialTopSnap = () => {
+      const secondaryTop = getSecondaryTop();
+      if (secondaryTop <= 0) {
+        return;
+      }
+
+      if (shell.scrollTop > 0 && shell.scrollTop < secondaryTop - snapTopTolerancePx) {
+        shell.scrollTop = 0;
+      }
+    };
+
+    const scheduleNormalizePartialTopSnap = () => {
+      if (normalizeFrame !== null) {
+        cancelAnimationFrame(normalizeFrame);
+      }
+
+      normalizeFrame = requestAnimationFrame(() => {
+        normalizeFrame = requestAnimationFrame(() => {
+          normalizeFrame = null;
+          normalizePartialTopSnap();
+        });
+      });
+    };
 
     const handleWheel = (event: WheelEvent) => {
       if (Math.abs(event.deltaY) < 10 || headerSettingsRef.current?.open || headerLanguageRef.current?.open) {
@@ -1260,18 +1285,28 @@ export function App() {
       mobileSnapTouchStartScrollTopRef.current = null;
     };
 
+    scheduleNormalizePartialTopSnap();
+
     shell.addEventListener('wheel', handleWheel, { passive: false });
     shell.addEventListener('touchstart', handleTouchStart, { passive: true });
     shell.addEventListener('touchmove', handleTouchMove, { passive: false });
     shell.addEventListener('touchend', handleTouchEnd);
     shell.addEventListener('touchcancel', handleTouchEnd);
+    window.addEventListener('resize', scheduleNormalizePartialTopSnap);
+    window.visualViewport?.addEventListener('resize', scheduleNormalizePartialTopSnap);
 
     return () => {
+      if (normalizeFrame !== null) {
+        cancelAnimationFrame(normalizeFrame);
+      }
+
       shell.removeEventListener('wheel', handleWheel);
       shell.removeEventListener('touchstart', handleTouchStart);
       shell.removeEventListener('touchmove', handleTouchMove);
       shell.removeEventListener('touchend', handleTouchEnd);
       shell.removeEventListener('touchcancel', handleTouchEnd);
+      window.removeEventListener('resize', scheduleNormalizePartialTopSnap);
+      window.visualViewport?.removeEventListener('resize', scheduleNormalizePartialTopSnap);
       mobileSnapTouchStartYRef.current = null;
       mobileSnapTouchStartScrollTopRef.current = null;
       mobileSnapLockedRef.current = false;

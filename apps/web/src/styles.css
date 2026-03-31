@@ -336,6 +336,21 @@ body::before {
   flex-direction: column;
   overflow: hidden;
   position: relative;
+  overflow-anchor: none;
+}
+
+.app-shell,
+.app-shell * {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.app-shell input,
+.app-shell textarea,
+.app-shell [contenteditable='true'],
+.app-shell [contenteditable='plaintext-only'] {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .app-shell.is-zen-mode {
