@@ -3021,11 +3021,10 @@ export function App() {
     .join(' ');
   const pathMovesLabel = i18n.pathMoves('').trimEnd();
   const promotionPieceLabels = getPromotionPieceLabels(i18n);
-  const controlsPanelTitle = 'Controls';
-  const keyboardShortcutsLabel = 'Keyboard shortcuts';
-  const previousPuzzleLabel = 'Previous puzzle';
-  const forwardOneMoveLabel = 'Forward one move';
-  const exitZenModeLabel = 'Exit zen mode';
+  const keyboardShortcutsLabel = i18n.keyboardShortcuts ?? 'Keyboard shortcuts';
+  const previousPuzzleLabel = i18n.previousPuzzle ?? 'Previous puzzle';
+  const forwardOneMoveLabel = i18n.forwardOneMove ?? 'Forward one move';
+  const exitZenModeLabel = i18n.exitZenMode ?? 'Exit zen mode';
   const historyPanelMetaText = i18n.historyCount(recentHistoryItems.length);
   const explorerPanelMetaText = puzzle ? i18n.puzzleId(puzzle.publicId) : null;
   const keyboardShortcutItems = [
@@ -3218,7 +3217,7 @@ export function App() {
 
       {treeError ? <p className="error">{treeError}</p> : null}
 
-      <div className="pgn-sequence" aria-label="PGN line">
+      <div className="pgn-sequence" aria-label={i18n.pgnLine ?? 'PGN line'}>
         {pgnLineNodes.length === 0 ? (
           <span className="pgn-sequence-empty">{i18n.pathLivePosition}</span>
         ) : (
@@ -3462,9 +3461,8 @@ export function App() {
       <div className={desktopStatusSectionClassName}>
         {statusPanelContent}
       </div>
-      <div className="desktop-side-panel-section">
+      <div className="desktop-side-panel-section desktop-controls-section">
         <div className="desktop-controls-panel-body">
-          <p className="desktop-section-title">{controlsPanelTitle}</p>
           <div className="rail-actions">
             {controlsPanelContent}
           </div>

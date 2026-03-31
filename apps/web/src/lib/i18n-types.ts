@@ -97,6 +97,7 @@ export interface FrontendI18n {
   skipVariationFailed: string;
   failedToLoadNextPuzzle: string;
   enterPuzzleId: string;
+  exitZenMode?: string;
   exitZenModeHint: string;
   exitZenModeHintMobile?: string;
   livePuzzleCountUnavailable: string;
@@ -116,7 +117,10 @@ export interface FrontendI18n {
   boardGlass: string;
   engineEval: string;
   pgnPieceSvgs?: string;
+  boardHue?: string;
+  backgroundHue?: string;
   animations: string;
+  animationSpeed?: string;
   sound: string;
   captureRain: string;
   autoplayPuzzles: string;
@@ -128,10 +132,13 @@ export interface FrontendI18n {
   restartPuzzle: string;
   skipVariation: string;
   nextPuzzle: string;
+  previousPuzzle?: string;
   backOneMove: string;
+  forwardOneMove?: string;
   backToLivePuzzle: string;
   untitledPuzzle: string;
   reviewModeActive: string;
+  keyboardShortcuts?: string;
   recentGameHistory: string;
   recentGames: string;
   pgnExplorer: string;
@@ -142,6 +149,7 @@ export interface FrontendI18n {
   shareLinkCopied?: string;
   sharePuzzleFailed?: string;
   pathLivePosition: string;
+  pgnLine?: string;
   noLegalContinuation: string;
   mainLine: string;
   variationLine: string;

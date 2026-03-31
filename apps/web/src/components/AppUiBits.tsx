@@ -100,10 +100,12 @@ export function PuzzleTransportButtons(props: {
   disabled: boolean;
   canGoPrevious: boolean;
   canGoNext: boolean;
+  i18n: FrontendI18n;
   onPrevious: () => void;
   onNext: () => void;
 }) {
-  const { disabled, canGoPrevious, canGoNext, onPrevious, onNext } = props;
+  const { disabled, canGoPrevious, canGoNext, i18n, onPrevious, onNext } = props;
+  const previousPuzzleLabel = i18n.previousPuzzle ?? 'Previous puzzle';
 
   return (
     <>
@@ -112,8 +114,8 @@ export function PuzzleTransportButtons(props: {
         className="btn-secondary transport-control-button"
         disabled={disabled || !canGoPrevious}
         onClick={onPrevious}
-        aria-label="Previous puzzle"
-        title="Previous puzzle"
+        aria-label={previousPuzzleLabel}
+        title={previousPuzzleLabel}
       >
         <TransportControlIcon variant="skip-back" />
       </button>
@@ -122,8 +124,8 @@ export function PuzzleTransportButtons(props: {
         className="btn-secondary transport-control-button"
         disabled={disabled || !canGoNext}
         onClick={onNext}
-        aria-label="Next puzzle"
-        title="Next puzzle"
+        aria-label={i18n.nextPuzzle}
+        title={i18n.nextPuzzle}
       >
         <TransportControlIcon variant="skip-forward" />
       </button>
@@ -142,6 +144,7 @@ export function ReviewNavigationButtons(props: {
 }) {
   const { disabled, canGoBackward, canGoForward, secondary = false, i18n, onBackOne, onForwardOne } = props;
   const iconButtonClassName = secondary ? 'btn-secondary transport-control-button' : 'transport-control-button';
+  const forwardOneMoveLabel = i18n.forwardOneMove ?? 'Forward one move';
 
   return (
     <>
@@ -160,8 +163,8 @@ export function ReviewNavigationButtons(props: {
         className={iconButtonClassName}
         disabled={disabled || !canGoForward}
         onClick={onForwardOne}
-        aria-label="Forward one move"
-        title="Forward one move"
+        aria-label={forwardOneMoveLabel}
+        title={forwardOneMoveLabel}
       >
         <TransportControlIcon variant="forward" />
       </button>

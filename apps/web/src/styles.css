@@ -788,6 +788,11 @@ body::before {
   border-top: 1px solid color-mix(in srgb, var(--color-panel-border) 82%, transparent);
 }
 
+.desktop-side-panel-section + .desktop-side-panel-section.desktop-controls-section {
+  padding-top: 0.46rem;
+  border-top: 0;
+}
+
 .desktop-side-panel .rail-id {
   font-size: 0.56rem;
   line-height: 1.25;
@@ -2515,12 +2520,6 @@ button.collapsible-panel-toggle:focus-visible {
   gap: 0.72rem;
 }
 
-.desktop-section-title {
-  margin: 0;
-  font-size: 0.92rem;
-  font-weight: 700;
-}
-
 .keyboard-shortcuts-panel {
   display: grid;
   gap: 0.6rem;
@@ -2573,10 +2572,6 @@ button.collapsible-panel-toggle:focus-visible {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 0.45rem;
     row-gap: 0.42rem;
-  }
-
-  .keyboard-shortcut-row {
-    min-height: 100%;
   }
 }
 
@@ -3285,13 +3280,17 @@ button:disabled {
     gap: 0.62rem;
   }
 
-  .app-shell.compact-desktop-layout .desktop-side-panel-section + .desktop-side-panel-section {
-    padding-top: 0.62rem;
-  }
+.app-shell.compact-desktop-layout .desktop-side-panel-section + .desktop-side-panel-section {
+  padding-top: 0.62rem;
+}
 
-  .app-shell.compact-desktop-layout .rail-status {
-    --rail-status-scale: 0.8;
-  }
+.app-shell.compact-desktop-layout .desktop-side-panel-section + .desktop-side-panel-section.desktop-controls-section {
+  padding-top: 0.34rem;
+}
+
+.app-shell.compact-desktop-layout .rail-status {
+  --rail-status-scale: 0.8;
+}
 
   .app-shell.compact-desktop-layout .rail-status .turn-indicator {
     max-width: none;
@@ -3792,7 +3791,7 @@ button:disabled {
     display: grid;
     grid-template-rows: auto;
     gap: 0.55rem;
-    align-content: start;
+    align-content: center;
     overflow-x: hidden;
     overflow-y: auto;
   }
@@ -4291,7 +4290,7 @@ button:disabled {
     display: grid;
     grid-template-rows: auto;
     gap: 0.75rem;
-    align-content: start;
+    align-content: center;
     overflow-x: hidden;
     overflow-y: auto;
   }

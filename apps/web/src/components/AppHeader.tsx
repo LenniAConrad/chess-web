@@ -268,7 +268,7 @@ export function AppHeader(props: AppHeaderProps) {
                     </div>
                     <div className="settings-range-grid">
                       <RangeSetting
-                        label="Board hue"
+                        label={i18n.boardHue ?? 'Board hue'}
                         value={prefs.boardHue}
                         valueLabel={`${prefs.boardHue}deg`}
                         min={-180}
@@ -281,7 +281,7 @@ export function AppHeader(props: AppHeaderProps) {
                         }
                       />
                       <RangeSetting
-                        label="Background hue"
+                        label={i18n.backgroundHue ?? 'Background hue'}
                         value={prefs.backgroundHue}
                         valueLabel={`${prefs.backgroundHue}deg`}
                         min={-180}
@@ -336,7 +336,7 @@ export function AppHeader(props: AppHeaderProps) {
                     </div>
                     <div className="settings-range-grid">
                       <RangeSetting
-                        label="Animation speed"
+                        label={i18n.animationSpeed ?? 'Animation speed'}
                         value={prefs.animationSpeed}
                         valueLabel={`${prefs.animationSpeed}%`}
                         min={50}
