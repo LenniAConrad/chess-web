@@ -545,7 +545,6 @@ export function App() {
   const reviewFen = isReviewMode ? (reviewNode?.fen_after ?? null) : null;
   const liveFen = displayFen ?? state?.fen ?? null;
   const boardFen = reviewFen ?? liveFen;
-  const objectiveFen = reviewFen ?? state?.fen ?? null;
   const reviewLastMoveSquares = useMemo(() => {
     if (!isReviewMode || activeReviewPath.length < 2) {
       return null;
@@ -652,13 +651,6 @@ export function App() {
 
     return chess.turn() === 'w' ? 'white' : 'black';
   })();
-  const objectiveColor = (() => {
-    if (!objectiveFen) {
-      return null;
-    }
-
-    return new Chess(objectiveFen).turn() === 'w' ? 'white' : 'black';
-  })();
   const playerOrientation = useMemo<'white' | 'black'>(() => {
     if (!puzzle) {
       return 'white';
@@ -674,9 +666,9 @@ export function App() {
   const turnKickerText = puzzleComplete ? '\u00A0' : i18n.yourTurn;
   const objectiveText = puzzleComplete
     ? i18n.puzzleComplete
-    : objectiveColor === 'white'
+    : playerOrientation === 'white'
       ? i18n.findBestMoveForWhite
-      : objectiveColor === 'black'
+      : playerOrientation === 'black'
         ? i18n.findBestMoveForBlack
         : '\u00A0';
   const reviewModeInlineText = isReviewMode ? 'Reviewing line' : null;
