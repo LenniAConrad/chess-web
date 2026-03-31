@@ -1152,6 +1152,7 @@ export function App() {
     const snapThresholdPx = 24;
     const snapTopTolerancePx = 48;
     let normalizeFrame: number | null = null;
+    let normalizeTimeout: number | null = null;
 
     const clearSnapUnlockTimeout = () => {
       if (mobileSnapUnlockTimeoutRef.current === null) {
@@ -1200,6 +1201,9 @@ export function App() {
       if (normalizeFrame !== null) {
         cancelAnimationFrame(normalizeFrame);
       }
+      if (normalizeTimeout !== null) {
+        window.clearTimeout(normalizeTimeout);
+      }
 
       normalizeFrame = requestAnimationFrame(() => {
         normalizeFrame = requestAnimationFrame(() => {
@@ -1207,6 +1211,17 @@ export function App() {
           normalizePartialTopSnap();
         });
       });
+
+      normalizeTimeout = window.setTimeout(() => {
+        normalizeTimeout = null;
+        normalizePartialTopSnap();
+      }, 180);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        scheduleNormalizePartialTopSnap();
+      }
     };
 
     const handleWheel = (event: WheelEvent) => {
@@ -1293,11 +1308,17 @@ export function App() {
     shell.addEventListener('touchend', handleTouchEnd);
     shell.addEventListener('touchcancel', handleTouchEnd);
     window.addEventListener('resize', scheduleNormalizePartialTopSnap);
+    window.addEventListener('load', scheduleNormalizePartialTopSnap);
+    window.addEventListener('pageshow', scheduleNormalizePartialTopSnap);
     window.visualViewport?.addEventListener('resize', scheduleNormalizePartialTopSnap);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       if (normalizeFrame !== null) {
         cancelAnimationFrame(normalizeFrame);
+      }
+      if (normalizeTimeout !== null) {
+        window.clearTimeout(normalizeTimeout);
       }
 
       shell.removeEventListener('wheel', handleWheel);
@@ -1306,7 +1327,10 @@ export function App() {
       shell.removeEventListener('touchend', handleTouchEnd);
       shell.removeEventListener('touchcancel', handleTouchEnd);
       window.removeEventListener('resize', scheduleNormalizePartialTopSnap);
+      window.removeEventListener('load', scheduleNormalizePartialTopSnap);
+      window.removeEventListener('pageshow', scheduleNormalizePartialTopSnap);
       window.visualViewport?.removeEventListener('resize', scheduleNormalizePartialTopSnap);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       mobileSnapTouchStartYRef.current = null;
       mobileSnapTouchStartScrollTopRef.current = null;
       mobileSnapLockedRef.current = false;
