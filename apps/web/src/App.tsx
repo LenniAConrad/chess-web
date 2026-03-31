@@ -341,7 +341,6 @@ export function App() {
   const mobileHeaderRef = useRef<HTMLElement | null>(null);
   const mobilePrimaryPageBodyRef = useRef<HTMLElement | null>(null);
   const mobilePrimaryStackRef = useRef<HTMLDivElement | null>(null);
-  const mobileLandscapePrimarySideRef = useRef<HTMLDivElement | null>(null);
   const mobileControlsPanelRef = useRef<HTMLElement | null>(null);
   const mobilePrimaryStatusPanelRef = useRef<HTMLElement | null>(null);
   const mobileBoardStackRef = useRef<HTMLDivElement | null>(null);
@@ -379,10 +378,10 @@ export function App() {
   const initialLoadRetryAttemptRef = useRef(0);
   const recentHistoryItems = historyItems;
   const isZenMode = prefs.zenMode;
-  const isMobileSnapViewport = isMobileViewport || isMobileLandscapeViewport;
+  const isCompactDesktopLayout = isMobileLandscapeViewport && !isZenMode;
+  const isMobileSnapViewport = isMobileViewport;
   const isMobileStandardLayout = isMobileViewport && !isZenMode;
-  const isMobileLandscapeLayout = isMobileLandscapeViewport && !isZenMode;
-  const isMobileSnapLayout = isMobileSnapViewport && !isZenMode;
+  const isMobileSnapLayout = isMobileStandardLayout;
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -1111,19 +1110,6 @@ export function App() {
       return element.getBoundingClientRect().height;
     };
 
-    const measureVisibleWidth = (element: HTMLElement | null): number => {
-      if (!element) {
-        return 0;
-      }
-
-      const computedStyle = window.getComputedStyle(element);
-      if (computedStyle.display === 'none' || computedStyle.visibility === 'hidden') {
-        return 0;
-      }
-
-      return element.getBoundingClientRect().width;
-    };
-
     const updateBoardSize = () => {
       const computedStyle = window.getComputedStyle(primaryBody);
       const shellStyle = window.getComputedStyle(shell);
@@ -1136,7 +1122,6 @@ export function App() {
       const stackGap = parseFloat(stackStyle.rowGap || stackStyle.gap) || 0;
       const boardStackStyle = mobileBoardStackRef.current ? window.getComputedStyle(mobileBoardStackRef.current) : null;
       const boardStackGap = boardStackStyle ? parseFloat(boardStackStyle.rowGap || boardStackStyle.gap) || 0 : 0;
-      const landscapeAsideWidth = measureVisibleWidth(mobileLandscapePrimarySideRef.current);
       const evalGap = parseFloat(shellStyle.getPropertyValue('--layout-eval-gap')) || 0;
       const evalWidth = prefs.showEngineEval ? parseFloat(shellStyle.getPropertyValue('--layout-eval-width')) || 0 : 0;
       const mobilePrimaryStatusHeight = measureVisibleHeight(mobilePrimaryStatusPanelRef.current);
@@ -1148,28 +1133,6 @@ export function App() {
       const primaryBodyRect = primaryBody.getBoundingClientRect();
       const availableInlineSize = primaryBodyRect.width - paddingLeft - paddingRight;
       const availableBlockSize = primaryBodyRect.height - paddingTop - paddingBottom;
-
-      if (isMobileLandscapeLayout) {
-        const availableLandscapeInlineSize =
-          availableInlineSize -
-          landscapeAsideWidth -
-          (landscapeAsideWidth > 0.5 ? stackGap : 0) -
-          evalWidth -
-          (evalWidth > 0.5 ? evalGap : 0);
-        const normalizedLandscapeInlineSize = Math.max(0, Math.floor(availableLandscapeInlineSize));
-        const normalizedLandscapeBlockSize = Math.max(0, Math.floor(availableBlockSize));
-
-        if (normalizedLandscapeInlineSize <= 0 || normalizedLandscapeBlockSize <= 0) {
-          shell.style.removeProperty('--mobile-primary-board-max-size');
-          return;
-        }
-
-        shell.style.setProperty(
-          '--mobile-primary-board-max-size',
-          `${Math.min(normalizedLandscapeInlineSize, normalizedLandscapeBlockSize)}px`
-        );
-        return;
-      }
 
       const availableBoardSize =
         availableBlockSize -
@@ -1209,7 +1172,6 @@ export function App() {
       primaryBody,
       primaryStack,
       mobileHeaderRef.current,
-      mobileLandscapePrimarySideRef.current,
       mobileControlsPanelRef.current,
       mobilePrimaryStatusPanelRef.current,
       mobileBoardStackRef.current,
@@ -1233,20 +1195,7 @@ export function App() {
       window.visualViewport?.removeEventListener('resize', scheduleBoardResize);
       shell.style.removeProperty('--mobile-primary-board-max-size');
     };
-  }, [isMobileLandscapeLayout, isMobileSnapLayout, prefs.showEngineEval]);
-
-  useEffect(() => {
-    if (!isMobileLandscapeLayout) {
-      return;
-    }
-
-    const side = mobileLandscapePrimarySideRef.current;
-    if (!side) {
-      return;
-    }
-
-    side.scrollTop = 0;
-  }, [isMobileLandscapeLayout, sessionId]);
+  }, [isMobileSnapLayout, prefs.showEngineEval]);
 
   useEffect(() => {
     const shell = appShellRef.current;
@@ -2878,7 +2827,7 @@ export function App() {
     'app-shell',
     IS_APP_BUILD ? 'is-app-build' : null,
     isMobileStandardLayout ? 'mobile-portrait-layout' : null,
-    isMobileLandscapeLayout ? 'mobile-landscape-layout' : null,
+    isCompactDesktopLayout ? 'compact-desktop-layout' : null,
     isZenMode ? 'is-zen-mode' : null,
     prefs.showEngineEval ? 'has-eval' : 'no-eval',
     prefs.animations ? null : 'animations-disabled'
@@ -2888,15 +2837,17 @@ export function App() {
   const footerLinks: AppChromeLink[] = [
     { href: REPO_URL, label: i18n.github, external: true }
   ];
-  const zenExitHintLabel = isMobileSnapViewport ? (i18n.exitZenModeHintMobile ?? 'Tap here to exit zen mode') : i18n.exitZenModeHint;
+  const zenExitHintLabel =
+    isMobileSnapViewport || isCompactDesktopLayout
+      ? (i18n.exitZenModeHintMobile ?? 'Tap here to exit zen mode')
+      : i18n.exitZenModeHint;
   const boardColumnClassName = ['board-column', isMobileSnapLayout ? 'mobile-board-column' : null]
     .filter(Boolean)
     .join(' ');
   const boardStackClassName = [
     'board-stack',
     prefs.showEngineEval ? null : 'no-eval',
-    isMobileSnapLayout ? 'mobile-primary-board-stack' : null,
-    isMobileLandscapeLayout ? 'mobile-landscape-board-stack' : null
+    isMobileSnapLayout ? 'mobile-primary-board-stack' : null
   ]
     .filter(Boolean)
     .join(' ');
@@ -2947,32 +2898,6 @@ export function App() {
     <section ref={mobilePrimaryStatusPanelRef} className="mobile-primary-status-panel">
       <p className="turn-kicker">{turnKickerText}</p>
       <p className="turn-indicator">{objectiveText}</p>
-    </section>
-  ) : null;
-  const mobileLandscapeSummaryPanel = isMobileLandscapeLayout ? (
-    <section className="rail-block mobile-landscape-summary-panel">
-      <div className="mobile-landscape-summary-head">
-        <p className="turn-kicker">{turnKickerText}</p>
-        <p className="meta mobile-landscape-progress">{completedBranchesText}</p>
-      </div>
-      <p className="turn-indicator">{objectiveText}</p>
-      {prefs.showEngineEval ? (
-        <p className="meta rail-engine">
-          <span>{engineEvalText}</span>
-          <span className="rail-engine-separator" aria-hidden="true">
-            •
-          </span>
-          <span>{engineDepthText}</span>
-          <span className="rail-engine-separator" aria-hidden="true">
-            •
-          </span>
-          <span>{engineEvalSideText}</span>
-        </p>
-      ) : null}
-      <div className="mobile-landscape-summary-foot">
-        {hasDisplayStatusText ? <p className="status status-line">{displayStatusText}</p> : null}
-        {hasCorrectText ? <p className="correct correct-line">{correctText}</p> : null}
-      </div>
     </section>
   ) : null;
   const controlsPanelContent = (
@@ -3052,11 +2977,6 @@ export function App() {
       {controlsPanelContent}
     </section>
   );
-  const mobileLandscapeControlsPanel = isMobileLandscapeLayout ? (
-    <section ref={mobileControlsPanelRef} className="rail-block mobile-landscape-controls-panel">
-      {controlsPanelContent}
-    </section>
-  ) : null;
   const historyPanelContent = (
     <>
       <div className="history-head">
@@ -3311,20 +3231,11 @@ export function App() {
   );
   const mobilePrimaryStackClassName = [
     'mobile-primary-stack',
-    isMobileStandardLayout ? 'mobile-portrait-primary-stack' : null,
-    isMobileLandscapeLayout ? 'mobile-landscape-primary-stack' : null
+    isMobileStandardLayout ? 'mobile-portrait-primary-stack' : null
   ]
     .filter(Boolean)
     .join(' ');
-  const mobilePrimaryStack = isMobileLandscapeLayout ? (
-    <div ref={mobilePrimaryStackRef} className={mobilePrimaryStackClassName}>
-      {boardPanel}
-      <div ref={mobileLandscapePrimarySideRef} className="mobile-landscape-primary-side">
-        {mobileLandscapeSummaryPanel}
-        {mobileLandscapeControlsPanel}
-      </div>
-    </div>
-  ) : (
+  const mobilePrimaryStack = (
     <div ref={mobilePrimaryStackRef} className={mobilePrimaryStackClassName}>
       {boardPanel}
       {controlsPanel}
@@ -3332,17 +3243,11 @@ export function App() {
   );
   const mobilePrimaryPageBodyClassName = [
     'mobile-snap-page-body',
-    'mobile-primary-page-body',
-    isMobileLandscapeLayout ? 'mobile-landscape-primary-page-body' : null
+    'mobile-primary-page-body'
   ]
     .filter(Boolean)
     .join(' ');
-  const mobileSecondaryStackClassName = [
-    'mobile-secondary-stack',
-    isMobileLandscapeLayout ? 'mobile-landscape-secondary-stack' : null
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const mobileSecondaryStackClassName = 'mobile-secondary-stack';
   const desktopSidePanel = (
     <section className="rail-block desktop-side-panel">
       <div className={desktopStatusSectionClassName}>
@@ -3391,7 +3296,7 @@ export function App() {
             <section ref={mobileSecondaryScreenRef} className="mobile-snap-screen mobile-secondary-screen">
               <div className="mobile-snap-page-body mobile-secondary-page-body">
                 <div className={mobileSecondaryStackClassName}>
-                  {isMobileLandscapeLayout ? null : statusPanel}
+                  {statusPanel}
                   {mobileSecondaryPanel}
                 </div>
               </div>

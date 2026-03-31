@@ -2993,6 +2993,201 @@ button:disabled {
     --mobile-menu-inline-pad: 1rem;
   }
 
+  .app-shell.compact-desktop-layout {
+    --chrome-offset: 4.35rem;
+    --page-vertical-space: 0.55rem;
+    --layout-gap: 0.9rem;
+    --layout-eval-width: 12px;
+    --layout-eval-gap: 0.55rem;
+    --side-panel-width: clamp(13.4rem, 30vw, 15.6rem);
+    --frame-height: calc(100dvh - var(--chrome-offset) - (var(--page-vertical-space) * 2));
+    --board-size: max(
+      0px,
+      min(
+        var(--frame-height),
+        calc(100vw - 2rem - var(--layout-gap) - var(--layout-eval-width) - var(--layout-eval-gap) - var(--side-panel-width))
+      )
+    );
+  }
+
+  .app-shell.compact-desktop-layout .app-header {
+    padding-inline: 0.85rem;
+  }
+
+  .app-shell.compact-desktop-layout .app-header-inner {
+    gap: 0.78rem;
+    padding: 0.48rem 0;
+  }
+
+  .app-shell.compact-desktop-layout .app-header-primary {
+    gap: 0.8rem;
+    align-items: flex-start;
+  }
+
+  .app-shell.compact-desktop-layout .app-brand {
+    font-size: 1.18rem;
+  }
+
+  .app-shell.compact-desktop-layout .app-brand-meta {
+    font-size: 0.62rem;
+  }
+
+  .app-shell.compact-desktop-layout .app-header-controls {
+    gap: 0.16rem;
+    align-items: flex-start;
+  }
+
+  .app-shell.compact-desktop-layout .app-header-settings .settings-summary {
+    font-size: 0.82rem;
+    gap: 0.28rem;
+  }
+
+  .app-shell.compact-desktop-layout .app-header-settings[open] .settings-content {
+    width: min(360px, calc(100vw - 1.7rem));
+    top: calc(100% + 0.45rem);
+  }
+
+  .app-shell.compact-desktop-layout .layout {
+    padding: var(--page-vertical-space) 0.85rem;
+  }
+
+  .app-shell.compact-desktop-layout .split-layout {
+    gap: var(--layout-gap);
+    align-items: center;
+  }
+
+  .app-shell.compact-desktop-layout .board-stack {
+    gap: 0.58rem;
+  }
+
+  .app-shell.compact-desktop-layout .rail-block {
+    padding: 0.58rem 0.64rem;
+  }
+
+  .app-shell.compact-desktop-layout .desktop-side-panel {
+    gap: 0.62rem;
+  }
+
+  .app-shell.compact-desktop-layout .desktop-side-panel-section + .desktop-side-panel-section {
+    padding-top: 0.62rem;
+  }
+
+  .app-shell.compact-desktop-layout .rail-status {
+    --rail-status-scale: 0.8;
+  }
+
+  .app-shell.compact-desktop-layout .rail-status .turn-indicator {
+    max-width: none;
+  }
+
+  .app-shell.compact-desktop-layout .rail-status .rail-status-main {
+    margin-top: 0.9rem;
+  }
+
+  .app-shell.compact-desktop-layout .button-row {
+    gap: 0.38rem;
+  }
+
+  .app-shell.compact-desktop-layout button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint) {
+    padding: 0.42rem 0.58rem;
+    font-size: 0.78rem;
+  }
+
+  .app-shell.compact-desktop-layout .button-label-clamp {
+    line-height: 1.08;
+  }
+
+  .app-shell.compact-desktop-layout .transport-control-icon {
+    width: 0.96rem;
+    height: 0.96rem;
+  }
+
+  .app-shell.compact-desktop-layout .history-strip {
+    gap: 0.5rem;
+  }
+
+  .app-shell.compact-desktop-layout .history-title {
+    font-size: 0.82rem;
+  }
+
+  .app-shell.compact-desktop-layout .history-meta {
+    font-size: 0.68rem;
+  }
+
+  .app-shell.compact-desktop-layout .history-list {
+    gap: 0.36rem;
+  }
+
+  .app-shell.compact-desktop-layout .history-dot {
+    flex-basis: 1.72rem;
+    width: 1.72rem;
+    height: 1.72rem;
+    border-radius: 8px;
+    font-size: 0.72rem;
+  }
+
+  .app-shell.compact-desktop-layout .pgn-panel {
+    gap: 0.4rem;
+  }
+
+  .app-shell.compact-desktop-layout .pgn-title {
+    font-size: 0.82rem;
+  }
+
+  .app-shell.compact-desktop-layout .pgn-puzzle-id {
+    font-size: 0.66rem;
+  }
+
+  .app-shell.compact-desktop-layout .pgn-sequence {
+    gap: 0.22rem 0.32rem;
+    line-height: 1.35;
+  }
+
+  .app-shell.compact-desktop-layout .pgn-sequence-label {
+    font-size: 0.68rem;
+  }
+
+  .app-shell.compact-desktop-layout button.pgn-sequence-move,
+  .app-shell.compact-desktop-layout .pgn-sequence-empty,
+  .app-shell.compact-desktop-layout button.pgn-move,
+  .app-shell.compact-desktop-layout .pgn-empty-state {
+    font-size: 0.74rem;
+  }
+
+  .app-shell.compact-desktop-layout .puzzle-share-panel {
+    gap: 0.48rem;
+  }
+
+  .app-shell.compact-desktop-layout .puzzle-share-title {
+    font-size: 0.8rem;
+  }
+
+  .app-shell.compact-desktop-layout .puzzle-share-input {
+    padding: 0.44rem 0.56rem;
+    font-size: 0.74rem;
+  }
+
+  .app-shell.compact-desktop-layout .puzzle-share-actions {
+    gap: 0.34rem;
+  }
+
+  .app-shell.compact-desktop-layout .puzzle-share-actions button {
+    font-size: 0.74rem;
+  }
+
+  .app-shell.compact-desktop-layout .app-footer {
+    padding-inline: 0.85rem;
+  }
+
+  .app-shell.compact-desktop-layout .app-footer-inner {
+    padding: 0.68rem 0;
+  }
+
+  .app-shell.compact-desktop-layout .app-footer-link,
+  .app-shell.compact-desktop-layout .app-footer-license {
+    font-size: 0.7rem;
+  }
+
   .app-shell.mobile-landscape-layout {
     --board-size: 100%;
     --frame-height: auto;
