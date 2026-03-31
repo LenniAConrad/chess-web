@@ -716,6 +716,19 @@ body::before {
   max-height: 100%;
 }
 
+.app-shell.is-app-build,
+.app-shell.is-app-build * {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-shell.is-app-build .board-shell,
+.app-shell.is-app-build .board-wrap,
+.app-shell.is-app-build .board,
+.app-shell.is-app-build .board cg-board {
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
 .board-wrap.glass-enabled {
   background: transparent;
   backdrop-filter: blur(18px);
@@ -2961,7 +2974,7 @@ button:disabled {
   box-shadow: none !important;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 900px) and (max-aspect-ratio: 1/1) {
   :root {
     --mobile-page-gutter: 1rem;
     --mobile-menu-inline-pad: 1.2rem;
@@ -2980,6 +2993,10 @@ button:disabled {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
     scroll-snap-type: y mandatory;
+  }
+
+  .app-shell.is-app-build {
+    scroll-snap-type: y proximity;
   }
 
   .app-shell.is-zen-mode {
@@ -3712,7 +3729,7 @@ button:disabled {
   }
 }
 
-@media (max-width: 520px) and (max-height: 980px) {
+@media (max-width: 520px) and (max-height: 980px) and (max-aspect-ratio: 1/1) {
   .app-header-inner {
     gap: 0.75rem;
     padding: 0.72rem 0;

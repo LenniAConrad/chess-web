@@ -11,8 +11,8 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "audit": "pnpm audit --prod",
-    "android:sync": "npx cap sync android",
-    "android:build:debug": "npx cap sync android && cd android && ./gradlew assembleDebug"
+    "android:sync": "npx --yes pnpm --filter @chess-web/web build:android && npx cap sync android",
+    "android:build:debug": "npx --yes pnpm android:sync && cd android && ./gradlew assembleDebug"
   },
   "devDependencies": {
     "@capacitor/cli": "^6.2.1",

@@ -12,6 +12,7 @@ import { getI18n } from './lib/i18n.js';
 import { appendSimilarVariationStatus, applyUciMove, AUTO_PLAY_DELAY_MS, type AutoPlayAnimationPayload, type AppChromeLink, CAPTURE_RAIN_MAX_PIECES, CORRECT_BREAK_MS, type FallingCapturePiece, formatEngineEval, formatEngineSide, formatUciMoveAsSan, getCapturedPieceSkin, getFeedbackDelay, getFenAfterUciMove, getMoveSoundDecision, getMoveSquares, getMoveSquaresBetweenFens, getTerminalEvalDisplay, HISTORY_PREVIEW_DELAY_MS, type HistoryPreviewData, type HistoryPreviewState, isPuzzleSolved, literalUiMessage, MOBILE_HISTORY_PREVIEW_HOLD_MS, maybeWait, type PrefetchedNextState, type PuzzleHeader, randomBetween, REPO_URL, resolveUiMessage, REWIND_BREAK_MS, REWIND_STEP_DELAY_MS, scaleAnimationDuration, SESSION_HISTORY_FETCH_LIMIT, SHORT_STATUS_DELAY_MS, shouldAutoAdvanceSolvedSession, translatedUiMessage, type UiMessage, wait, withBasePath, WRONG_MOVE_FEEDBACK_MS, playMoveSoundDecision } from './lib/appShared.js';
 import { cacheLoadedSession, getPuzzleCount, getHint, loadSession, refreshSession, getSessionHistory, getSessionTree, nextPuzzle, prefetchNextPuzzle, playMove, restartSession, retainLoadedSessions, revealSolution, startSession } from './lib/api.js';
 import { primeMoveSounds } from './lib/moveSounds.js';
+import { IS_APP_BUILD } from './lib/runtime.js';
 import type { HintPreview, SessionHistoryItem, SessionStatePayload, SessionTreeNode, SessionTreeResponse, StartSessionResponse } from './types/api.js';
 
 const ACTIVE_SESSION_COOKIE = 'active_sid';
@@ -1149,7 +1150,7 @@ export function App() {
       return;
     }
 
-    const snapThresholdPx = 24;
+    const snapThresholdPx = IS_APP_BUILD ? 40 : 24;
     const snapTopTolerancePx = 48;
     let normalizeFrame: number | null = null;
     let normalizeTimeout: number | null = null;
@@ -1249,6 +1250,13 @@ export function App() {
 
     const handleTouchStart = (event: TouchEvent) => {
       if (event.touches.length !== 1 || headerSettingsRef.current?.open || headerLanguageRef.current?.open) {
+        mobileSnapTouchStartYRef.current = null;
+        mobileSnapTouchStartScrollTopRef.current = null;
+        return;
+      }
+
+      const target = event.target;
+      if (IS_APP_BUILD && target instanceof Element && target.closest('.board-wrap')) {
         mobileSnapTouchStartYRef.current = null;
         mobileSnapTouchStartScrollTopRef.current = null;
         return;
@@ -2755,6 +2763,7 @@ export function App() {
   const interactive = boardCanInteract;
   const shellClassName = [
     'app-shell',
+    IS_APP_BUILD ? 'is-app-build' : null,
     isZenMode ? 'is-zen-mode' : null,
     prefs.showEngineEval ? 'has-eval' : 'no-eval',
     prefs.animations ? null : 'animations-disabled'

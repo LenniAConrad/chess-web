@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node ../../scripts/copy-stockfish-assets.mjs && tsc -p tsconfig.app.json && vite build",
+    "build": "node ../../scripts/copy-stockfish-assets.mjs && tsc -p tsconfig.app.json --noEmit && vite build",
+    "build:android": "node ../../scripts/copy-stockfish-assets.mjs && tsc -p tsconfig.app.json --noEmit && VITE_APP_BUILD=1 vite build && node ../../scripts/build-offline-puzzle-pack.mjs --out dist/offline",
     "preview": "vite preview",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc -p tsconfig.app.json --noEmit",

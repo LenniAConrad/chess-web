@@ -11,6 +11,8 @@ import type {
   StartSessionResponse,
   VariationMode
 } from '../types/api.js';
+import * as offlineApi from './offlineApi.js';
+import { IS_APP_BUILD } from './runtime.js';
 
 /**
  * Thin API client used by the React app.
@@ -99,6 +101,13 @@ export function startSession(
   puzzleId?: string,
   source: 'normal' | 'history' = 'normal'
 ): Promise<StartSessionResponse> {
+  if (IS_APP_BUILD) {
+    return offlineApi.startSession(mode, autoNext, puzzleId, source).then((response) => {
+      cacheLoadedSession(response);
+      return response;
+    });
+  }
+
   return requestJson<StartSessionResponse>('/api/v1/session/start', { mode, autoNext, puzzleId, source }).then(
     (response) => {
       cacheLoadedSession(response);
@@ -112,6 +121,10 @@ export function playMove(
   uciMove: string,
   skipSimilarVariations = false
 ): Promise<MoveResponse> {
+  if (IS_APP_BUILD) {
+    return offlineApi.playMove(sessionId, uciMove, skipSimilarVariations);
+  }
+
   return requestJson<MoveResponse>('/api/v1/session/move', { sessionId, uciMove, skipSimilarVariations });
 }
 
@@ -126,7 +139,9 @@ export function loadSession(sessionId: string): Promise<StartSessionResponse> {
     return inFlight;
   }
 
-  const request = requestJson<StartSessionResponse>('/api/v1/session/load', { sessionId })
+  const request = (IS_APP_BUILD
+    ? offlineApi.loadSession(sessionId)
+    : requestJson<StartSessionResponse>('/api/v1/session/load', { sessionId }))
     .then((response) => {
       cacheLoadedSession(response);
       return response;
@@ -141,7 +156,11 @@ export function loadSession(sessionId: string): Promise<StartSessionResponse> {
 }
 
 export function refreshSession(sessionId: string): Promise<StartSessionResponse> {
-  return requestJson<StartSessionResponse>('/api/v1/session/load', { sessionId }).then((response) => {
+  const request = IS_APP_BUILD
+    ? offlineApi.refreshSession(sessionId)
+    : requestJson<StartSessionResponse>('/api/v1/session/load', { sessionId });
+
+  return request.then((response) => {
     cacheLoadedSession(response);
     return response;
   });
@@ -152,6 +171,13 @@ export function restartSession(
   mode: VariationMode,
   autoNext: boolean
 ): Promise<StartSessionResponse> {
+  if (IS_APP_BUILD) {
+    return offlineApi.restartSession(sessionId, mode, autoNext).then((response) => {
+      cacheLoadedSession(response);
+      return response;
+    });
+  }
+
   return requestJson<StartSessionResponse>('/api/v1/session/restart', { sessionId, mode, autoNext }).then(
     (response) => {
       cacheLoadedSession(response);
@@ -161,6 +187,10 @@ export function restartSession(
 }
 
 export function getHint(sessionId: string): Promise<HintResponse> {
+  if (IS_APP_BUILD) {
+    return offlineApi.getHint(sessionId);
+  }
+
   return requestJson<HintResponse>('/api/v1/session/hint', { sessionId });
 }
 
@@ -169,6 +199,10 @@ export function getSessionHistory(
   limit = 24,
   includeCurrent = false
 ): Promise<SessionHistoryResponse> {
+  if (IS_APP_BUILD) {
+    return offlineApi.getSessionHistory(sessionId, limit, includeCurrent);
+  }
+
   return requestJson<SessionHistoryResponse>('/api/v1/session/history', {
     sessionId,
     limit,
@@ -177,14 +211,26 @@ export function getSessionHistory(
 }
 
 export function clearSessionHistory(sessionId: string): Promise<SessionHistoryClearResponse> {
+  if (IS_APP_BUILD) {
+    return offlineApi.clearSessionHistory(sessionId);
+  }
+
   return requestJson<SessionHistoryClearResponse>('/api/v1/session/history/clear', { sessionId });
 }
 
 export function getSessionTree(sessionId: string): Promise<SessionTreeResponse> {
+  if (IS_APP_BUILD) {
+    return offlineApi.getSessionTree(sessionId);
+  }
+
   return requestJson<SessionTreeResponse>('/api/v1/session/tree', { sessionId });
 }
 
 export function getPuzzleCount(): Promise<PuzzleCountResponse> {
+  if (IS_APP_BUILD) {
+    return offlineApi.getPuzzleCount();
+  }
+
   return requestGetJson<PuzzleCountResponse>('/api/v1/puzzles/count');
 }
 
@@ -193,10 +239,18 @@ export function revealSolution(
   source: 'manual' | 'auto' = 'manual',
   skipSimilarVariations = false
 ): Promise<RevealResponse> {
+  if (IS_APP_BUILD) {
+    return offlineApi.revealSolution(sessionId, source, skipSimilarVariations);
+  }
+
   return requestJson<RevealResponse>('/api/v1/session/reveal', { sessionId, source, skipSimilarVariations });
 }
 
 export function skipVariation(sessionId: string, skipSimilarVariations = false): Promise<SkipVariationResponse> {
+  if (IS_APP_BUILD) {
+    return offlineApi.skipVariation(sessionId, skipSimilarVariations);
+  }
+
   return requestJson<SkipVariationResponse>('/api/v1/session/skip-variation', { sessionId, skipSimilarVariations });
 }
 
@@ -205,6 +259,10 @@ export function nextPuzzle(
   mode: VariationMode,
   autoNext: boolean
 ): Promise<NextResponse> {
+  if (IS_APP_BUILD) {
+    return offlineApi.nextPuzzle(sessionId, mode, autoNext);
+  }
+
   return requestJson<NextResponse>('/api/v1/session/next', { sessionId, mode, autoNext });
 }
 
@@ -213,6 +271,13 @@ export function prefetchNextPuzzle(
   mode: VariationMode,
   autoNext: boolean
 ): Promise<StartSessionResponse> {
+  if (IS_APP_BUILD) {
+    return offlineApi.prefetchNextPuzzle(sessionId, mode, autoNext).then((response) => {
+      cacheLoadedSession(response);
+      return response;
+    });
+  }
+
   return requestJson<StartSessionResponse>('/api/v1/session/prefetch-next', { sessionId, mode, autoNext }).then(
     (response) => {
       cacheLoadedSession(response);
