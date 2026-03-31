@@ -19,6 +19,7 @@ const ACTIVE_SESSION_COOKIE = 'active_sid';
 const ACTIVE_SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 const SHARED_PUZZLE_QUERY_PARAM = 'puzzle';
 const INITIAL_LOAD_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000] as const;
+const MOBILE_LAYOUT_MEDIA_QUERY = '(max-width: 900px) and (max-aspect-ratio: 1/1)';
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -382,23 +383,32 @@ export function App() {
       return;
     }
 
-    const visualViewport = window.visualViewport;
+    const mobileLayoutMedia = window.matchMedia(MOBILE_LAYOUT_MEDIA_QUERY);
     const syncViewport = () => {
-      const viewportWidth = visualViewport?.width ?? window.innerWidth;
-      const viewportHeight = visualViewport?.height ?? window.innerHeight;
-      const isPortraitViewport = viewportHeight >= viewportWidth;
-      setIsMobileViewport(viewportWidth <= 900 && isPortraitViewport);
+      setIsMobileViewport(mobileLayoutMedia.matches);
     };
 
     syncViewport();
     window.addEventListener('resize', syncViewport);
     window.addEventListener('orientationchange', syncViewport);
-    visualViewport?.addEventListener('resize', syncViewport);
+    window.addEventListener('pageshow', syncViewport);
+    document.addEventListener('visibilitychange', syncViewport);
+    if (typeof mobileLayoutMedia.addEventListener === 'function') {
+      mobileLayoutMedia.addEventListener('change', syncViewport);
+    } else if (typeof mobileLayoutMedia.addListener === 'function') {
+      mobileLayoutMedia.addListener(syncViewport);
+    }
 
     return () => {
       window.removeEventListener('resize', syncViewport);
       window.removeEventListener('orientationchange', syncViewport);
-      visualViewport?.removeEventListener('resize', syncViewport);
+      window.removeEventListener('pageshow', syncViewport);
+      document.removeEventListener('visibilitychange', syncViewport);
+      if (typeof mobileLayoutMedia.removeEventListener === 'function') {
+        mobileLayoutMedia.removeEventListener('change', syncViewport);
+      } else if (typeof mobileLayoutMedia.removeListener === 'function') {
+        mobileLayoutMedia.removeListener(syncViewport);
+      }
     };
   }, []);
 
