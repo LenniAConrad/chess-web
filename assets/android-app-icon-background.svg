@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Android adaptive icon background">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f5f0e7" />
+      <stop offset="100%" stop-color="#ddd3c3" />
+    </linearGradient>
+    <radialGradient id="shine" cx="28%" cy="20%" r="74%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.42" />
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0.14" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </radialGradient>
+    <radialGradient id="vignette" cx="72%" cy="80%" r="82%">
+      <stop offset="55%" stop-color="#8d775b" stop-opacity="0" />
+      <stop offset="100%" stop-color="#8d775b" stop-opacity="0.22" />
+    </radialGradient>
+    <linearGradient id="lowerShade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8d775b" stop-opacity="0" />
+      <stop offset="100%" stop-color="#8d775b" stop-opacity="0.16" />
+    </linearGradient>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#bg)" />
+  <rect width="256" height="256" fill="url(#shine)" />
+  <rect width="256" height="256" fill="url(#vignette)" />
+  <rect width="256" height="256" fill="url(#lowerShade)" />
+</svg>

@@ -35,7 +35,7 @@
     stroke-width="2"
   />
 
-  <g transform="translate(33 27) scale(4.4)" opacity="0.18">
+  <g transform="translate(132 136) scale(3.3) translate(-22.5 -24)" opacity="0.18">
     <g
       fill="#6d5c48"
       fill-rule="evenodd"
@@ -51,7 +51,7 @@
       <path fill="none" stroke-linejoin="miter" d="M11 14h23"/>
     </g>
   </g>
-  <g transform="translate(29 19) scale(4.4)">
+  <g transform="translate(128 128) scale(3.3) translate(-22.5 -24)">
     <g
       fill="#fff"
       fill-rule="evenodd"

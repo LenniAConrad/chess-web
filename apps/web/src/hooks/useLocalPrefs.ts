@@ -8,6 +8,7 @@ export interface UserPreferences {
   language: LanguageCode;
   backgroundHue: number;
   boardHue: number;
+  controlsHue: number;
   animationSpeed: number;
   autoNext: boolean;
   oneTryMode: boolean;
@@ -30,6 +31,7 @@ const DEFAULT_PREFS: UserPreferences = {
   language: 'en',
   backgroundHue: 0,
   boardHue: 0,
+  controlsHue: 0,
   animationSpeed: 100,
   autoNext: false,
   oneTryMode: false,
@@ -61,6 +63,7 @@ export function useLocalPrefs() {
         language: parsed.language ?? DEFAULT_PREFS.language,
         backgroundHue: typeof parsed.backgroundHue === 'number' ? parsed.backgroundHue : DEFAULT_PREFS.backgroundHue,
         boardHue: typeof parsed.boardHue === 'number' ? parsed.boardHue : DEFAULT_PREFS.boardHue,
+        controlsHue: typeof parsed.controlsHue === 'number' ? parsed.controlsHue : DEFAULT_PREFS.controlsHue,
         animationSpeed:
           typeof parsed.animationSpeed === 'number' ? parsed.animationSpeed : DEFAULT_PREFS.animationSpeed,
         autoNext: parsed.autoNext ?? DEFAULT_PREFS.autoNext,

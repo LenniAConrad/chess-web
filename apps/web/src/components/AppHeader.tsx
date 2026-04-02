@@ -293,6 +293,19 @@ export function AppHeader(props: AppHeaderProps) {
                           }))
                         }
                       />
+                      <RangeSetting
+                        label="Controls hue"
+                        value={prefs.controlsHue}
+                        valueLabel={`${prefs.controlsHue}deg`}
+                        min={-180}
+                        max={180}
+                        onChange={(value) =>
+                          setPrefs((previous) => ({
+                            ...previous,
+                            controlsHue: value
+                          }))
+                        }
+                      />
                     </div>
                   </section>
 

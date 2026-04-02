@@ -855,12 +855,14 @@ export function App() {
   useEffect(() => {
     document.documentElement.style.setProperty('--board-hue-rotate', `${prefs.boardHue}deg`);
     document.documentElement.style.setProperty('--background-hue-rotate', `${prefs.backgroundHue}deg`);
+    document.documentElement.style.setProperty('--controls-hue-rotate', `${prefs.controlsHue}deg`);
 
     return () => {
       document.documentElement.style.removeProperty('--board-hue-rotate');
       document.documentElement.style.removeProperty('--background-hue-rotate');
+      document.documentElement.style.removeProperty('--controls-hue-rotate');
     };
-  }, [prefs.backgroundHue, prefs.boardHue]);
+  }, [prefs.backgroundHue, prefs.boardHue, prefs.controlsHue]);
 
   useEffect(() => {
     document.documentElement.lang = i18n.language;
