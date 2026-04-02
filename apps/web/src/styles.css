@@ -4116,7 +4116,7 @@ button:disabled {
 
   .app-header-settings[open]::before {
     content: '';
-    position: absolute;
+    position: fixed;
     inset: 0;
     background-color: var(--color-bg);
     background-image: linear-gradient(180deg, var(--color-bg-grad-top) 0%, var(--color-bg-grad-bottom) 100%);
@@ -4129,7 +4129,7 @@ button:disabled {
       filter 180ms ease;
     pointer-events: none;
     transform: translateZ(0);
-    z-index: -1;
+    z-index: 0;
   }
 
   .app-header-settings[open]::after {
@@ -4182,7 +4182,7 @@ button:disabled {
   .app-header-settings[open] .settings-content {
     --settings-menu-inline-pad: var(--mobile-menu-inline-pad);
     position: relative;
-    z-index: 1;
+    z-index: 2;
     top: auto;
     right: auto;
     left: auto;
