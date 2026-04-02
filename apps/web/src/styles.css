@@ -3482,6 +3482,12 @@ button:disabled {
     height: auto;
   }
 
+  .app-shell.mobile-landscape-layout .capture-rain-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+  }
+
   body {
     overflow: hidden;
   }
@@ -4602,6 +4608,12 @@ button:disabled {
 
   .mobile-status-panel .rail-review.is-empty {
     display: none;
+  }
+
+  .capture-rain-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
   }
 
   .mobile-controls-panel,
