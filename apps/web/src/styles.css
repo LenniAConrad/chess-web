@@ -3485,7 +3485,7 @@ button:disabled {
   .app-shell.mobile-landscape-layout .capture-rain-layer {
     position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: -1;
   }
 
   body {
@@ -4100,10 +4100,7 @@ button:disabled {
     flex-direction: column;
     border: 0;
     border-radius: 0;
-    background-color: var(--color-bg);
-    background-image: linear-gradient(180deg, var(--color-bg-grad-top) 0%, var(--color-bg-grad-bottom) 100%);
-    background-repeat: no-repeat;
-    background-size: cover;
+    background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     overflow-y: auto;
@@ -4115,6 +4112,24 @@ button:disabled {
     scrollbar-width: none;
     isolation: isolate;
     z-index: 120;
+  }
+
+  .app-header-settings[open]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--color-bg);
+    background-image: linear-gradient(180deg, var(--color-bg-grad-top) 0%, var(--color-bg-grad-bottom) 100%);
+    background-repeat: no-repeat;
+    background-size: cover;
+    filter: hue-rotate(var(--background-hue-rotate));
+    transition:
+      background-color 180ms ease,
+      background-image 180ms ease,
+      filter 180ms ease;
+    pointer-events: none;
+    transform: translateZ(0);
+    z-index: -1;
   }
 
   .app-header-settings[open]::after {
@@ -4613,7 +4628,7 @@ button:disabled {
   .capture-rain-layer {
     position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: -1;
   }
 
   .mobile-controls-panel,
