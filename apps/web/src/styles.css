@@ -3463,13 +3463,8 @@ button:disabled {
     min-height: 100dvh;
     overflow-x: hidden;
     overflow-y: auto;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: auto;
     -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    scroll-snap-type: y mandatory;
-  }
-
-  .app-shell.mobile-landscape-layout.is-app-build {
     scroll-snap-type: y proximity;
   }
 
@@ -3544,7 +3539,6 @@ button:disabled {
     align-content: stretch;
     box-sizing: border-box;
     scroll-snap-align: start;
-    scroll-snap-stop: always;
   }
 
   .app-shell.mobile-landscape-layout .mobile-primary-screen {
@@ -3555,9 +3549,9 @@ button:disabled {
 
   .app-shell.mobile-landscape-layout .mobile-secondary-screen,
   .app-shell.mobile-landscape-layout .mobile-tertiary-screen {
-    height: 100dvh;
     min-height: 100dvh;
-    grid-template-rows: minmax(0, 1fr);
+    height: auto;
+    grid-template-rows: auto;
   }
 
   .app-shell.mobile-landscape-layout .mobile-snap-page-body {
@@ -3809,8 +3803,8 @@ button:disabled {
   }
 
   .app-shell.mobile-landscape-layout .mobile-secondary-page-body {
-    height: 100%;
-    min-height: 100%;
+    height: auto;
+    min-height: 100dvh;
     width: 100%;
     padding:
       calc(var(--page-vertical-space) + 0.3rem)
@@ -3821,8 +3815,7 @@ button:disabled {
     flex-direction: column;
     justify-content: center;
     gap: 0.55rem;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: visible;
   }
 
   .app-shell.mobile-landscape-layout .mobile-secondary-stack {
@@ -3949,19 +3942,17 @@ button:disabled {
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
     align-content: stretch;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .app-shell.mobile-landscape-layout .mobile-tertiary-stack {
     width: 100%;
-    max-height: 100%;
+    max-height: none;
     min-height: 0;
     display: grid;
     align-content: start;
     margin-block: auto;
-    overflow-y: auto;
-    overscroll-behavior-y: auto;
-    scrollbar-gutter: stable;
+    overflow: visible;
   }
 
   .app-shell.mobile-landscape-layout .app-footer {
@@ -4025,13 +4016,8 @@ button:disabled {
     min-height: 100dvh;
     overflow-x: hidden;
     overflow-y: auto;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-y: auto;
     -webkit-overflow-scrolling: touch;
-    scroll-behavior: smooth;
-    scroll-snap-type: y mandatory;
-  }
-
-  .app-shell.is-app-build {
     scroll-snap-type: y proximity;
   }
 
@@ -4276,7 +4262,6 @@ button:disabled {
     align-content: stretch;
     box-sizing: border-box;
     scroll-snap-align: start;
-    scroll-snap-stop: always;
   }
 
   .mobile-primary-screen {
@@ -4287,9 +4272,9 @@ button:disabled {
 
   .mobile-secondary-screen,
   .mobile-tertiary-screen {
-    height: 100dvh;
     min-height: 100dvh;
-    grid-template-rows: minmax(0, 1fr);
+    height: auto;
+    grid-template-rows: auto;
   }
 
   .mobile-snap-page-body {
@@ -4334,8 +4319,8 @@ button:disabled {
   }
 
   .mobile-secondary-page-body {
-    height: 100%;
-    min-height: 100%;
+    height: auto;
+    min-height: 100dvh;
     width: 100%;
     padding:
       calc(var(--page-vertical-space) + 0.55rem)
@@ -4346,8 +4331,7 @@ button:disabled {
     flex-direction: column;
     justify-content: center;
     gap: 0.75rem;
-    overflow-x: hidden;
-    overflow-y: auto;
+    overflow: visible;
   }
 
   .mobile-secondary-stack {
@@ -4368,19 +4352,17 @@ button:disabled {
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
     align-content: stretch;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .mobile-tertiary-stack {
     width: 100%;
-    max-height: 100%;
+    max-height: none;
     min-height: 0;
     display: grid;
     align-content: start;
     margin-block: auto;
-    overflow-y: auto;
-    overscroll-behavior-y: auto;
-    scrollbar-gutter: stable;
+    overflow: visible;
   }
 
   .mobile-tertiary-page-body .mobile-inline-footer {
