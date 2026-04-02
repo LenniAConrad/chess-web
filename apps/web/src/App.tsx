@@ -21,6 +21,7 @@ const SHARED_PUZZLE_QUERY_PARAM = 'puzzle';
 const INITIAL_LOAD_RETRY_DELAYS_MS = [1500, 3000, 5000, 8000] as const;
 const MOBILE_PORTRAIT_LAYOUT_MEDIA_QUERY = '(max-width: 900px) and (max-aspect-ratio: 1/1)';
 const MOBILE_LANDSCAPE_LAYOUT_MEDIA_QUERY = '(max-width: 900px) and (orientation: landscape)';
+const SHORT_DESKTOP_LAYOUT_MEDIA_QUERY = '(min-width: 901px) and (max-height: 860px)';
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const KEYBOARD_SHORTCUT_KEYS = {
@@ -546,6 +547,7 @@ export function App() {
   const [historyPreview, setHistoryPreview] = useState<HistoryPreviewState | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isMobileLandscapeViewport, setIsMobileLandscapeViewport] = useState(false);
+  const [isShortDesktopViewport, setIsShortDesktopViewport] = useState(false);
   const [expandedPanels, setExpandedPanels] = useState<Record<CollapsiblePanelKey, boolean>>(() => ({
     controls: true,
     history: true,
@@ -591,6 +593,7 @@ export function App() {
   const recentHistoryItems = historyItems;
   const isZenMode = prefs.zenMode;
   const isCompactDesktopLayout = isMobileLandscapeViewport && !isZenMode;
+  const isShortDesktopLayout = isShortDesktopViewport && !isZenMode;
   const isMobileSnapViewport = isMobileViewport;
   const isMobileStandardLayout = isMobileViewport && !isZenMode;
   const isMobileSnapLayout = isMobileStandardLayout;
@@ -602,9 +605,11 @@ export function App() {
 
     const portraitLayoutMedia = window.matchMedia(MOBILE_PORTRAIT_LAYOUT_MEDIA_QUERY);
     const landscapeLayoutMedia = window.matchMedia(MOBILE_LANDSCAPE_LAYOUT_MEDIA_QUERY);
+    const shortDesktopLayoutMedia = window.matchMedia(SHORT_DESKTOP_LAYOUT_MEDIA_QUERY);
     const syncViewport = () => {
       setIsMobileViewport(portraitLayoutMedia.matches);
       setIsMobileLandscapeViewport(landscapeLayoutMedia.matches);
+      setIsShortDesktopViewport(shortDesktopLayoutMedia.matches);
     };
 
     syncViewport();
@@ -615,9 +620,11 @@ export function App() {
     if (typeof portraitLayoutMedia.addEventListener === 'function') {
       portraitLayoutMedia.addEventListener('change', syncViewport);
       landscapeLayoutMedia.addEventListener('change', syncViewport);
+      shortDesktopLayoutMedia.addEventListener('change', syncViewport);
     } else if (typeof portraitLayoutMedia.addListener === 'function') {
       portraitLayoutMedia.addListener(syncViewport);
       landscapeLayoutMedia.addListener(syncViewport);
+      shortDesktopLayoutMedia.addListener(syncViewport);
     }
 
     return () => {
@@ -628,9 +635,11 @@ export function App() {
       if (typeof portraitLayoutMedia.removeEventListener === 'function') {
         portraitLayoutMedia.removeEventListener('change', syncViewport);
         landscapeLayoutMedia.removeEventListener('change', syncViewport);
+        shortDesktopLayoutMedia.removeEventListener('change', syncViewport);
       } else if (typeof portraitLayoutMedia.removeListener === 'function') {
         portraitLayoutMedia.removeListener(syncViewport);
         landscapeLayoutMedia.removeListener(syncViewport);
+        shortDesktopLayoutMedia.removeListener(syncViewport);
       }
     };
   }, []);
@@ -2935,6 +2944,7 @@ export function App() {
     IS_APP_BUILD ? 'is-app-build' : null,
     isMobileStandardLayout ? 'mobile-portrait-layout' : null,
     isCompactDesktopLayout ? 'compact-desktop-layout' : null,
+    isShortDesktopLayout ? 'short-desktop-layout' : null,
     isZenMode ? 'is-zen-mode' : null,
     prefs.showEngineEval ? 'has-eval' : 'no-eval',
     prefs.animations ? null : 'animations-disabled'
