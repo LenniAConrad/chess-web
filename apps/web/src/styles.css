@@ -3827,6 +3827,24 @@ button:disabled {
     border-top: 1px solid color-mix(in srgb, var(--color-panel-border) 78%, transparent);
   }
 
+  .app-shell.mobile-landscape-layout .mobile-secondary-panel > #explorer > button.collapsible-panel-toggle {
+    align-items: flex-start;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-secondary-panel > #explorer .collapsible-panel-toggle-copy {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: flex-start;
+    row-gap: 0.18rem;
+  }
+
+  .app-shell.mobile-landscape-layout .mobile-secondary-panel > #explorer .collapsible-panel-toggle-meta {
+    flex: 1 1 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.35;
+  }
+
   .app-shell.mobile-landscape-layout .mobile-secondary-panel .pgn-panel {
     gap: 0.42rem;
   }
