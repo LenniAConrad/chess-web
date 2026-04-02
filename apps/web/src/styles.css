@@ -2248,6 +2248,7 @@ button.history-dot:active:not(:disabled) {
 }
 
 .settings-range-slider,
+.rail-status .status-line,
 button.toggle-chip,
 button.language-option,
 button.pgn-sequence-move,
