@@ -14,6 +14,7 @@ type FrontendI18nSupplementKey =
   | 'forwardOneMove'
   | 'boardHue'
   | 'backgroundHue'
+  | 'controlsHue'
   | 'animationSpeed'
   | 'keyboardShortcuts'
   | 'pgnLine';
@@ -36,6 +37,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Forward one move',
     boardHue: 'Board hue',
     backgroundHue: 'Background hue',
+    controlsHue: 'Controls hue',
     animationSpeed: 'Animation speed',
     keyboardShortcuts: 'Keyboard shortcuts',
     pgnLine: 'PGN line'
@@ -54,6 +56,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Unu movon antaŭen',
     boardHue: 'Nuanco de la tabulo',
     backgroundHue: 'Nuanco de la fono',
+    controlsHue: 'Nuanco de la regiloj',
     animationSpeed: 'Rapido de animacio',
     keyboardShortcuts: 'Klavaraj ŝparvojoj',
     pgnLine: 'PGN-linio'
@@ -72,6 +75,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Einen Zug vorwärts',
     boardHue: 'Brettfarbton',
     backgroundHue: 'Hintergrundfarbton',
+    controlsHue: 'Farbton der Bedienelemente',
     animationSpeed: 'Animationsgeschwindigkeit',
     keyboardShortcuts: 'Tastenkürzel',
     pgnLine: 'PGN-Linie'
@@ -90,6 +94,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: '前进一步',
     boardHue: '棋盘色相',
     backgroundHue: '背景色相',
+    controlsHue: '控件色相',
     animationSpeed: '动画速度',
     keyboardShortcuts: '键盘快捷键',
     pgnLine: 'PGN 着法线'
@@ -108,6 +113,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: '前進一步',
     boardHue: '棋盤色相',
     backgroundHue: '背景色相',
+    controlsHue: '控制項色相',
     animationSpeed: '動畫速度',
     keyboardShortcuts: '鍵盤快捷鍵',
     pgnLine: 'PGN 著法線'
@@ -126,6 +132,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Avanzar un movimiento',
     boardHue: 'Tono del tablero',
     backgroundHue: 'Tono del fondo',
+    controlsHue: 'Tono de los controles',
     animationSpeed: 'Velocidad de animación',
     keyboardShortcuts: 'Atajos de teclado',
     pgnLine: 'Línea PGN'
@@ -144,6 +151,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Avancer d’un coup',
     boardHue: 'Teinte de l’échiquier',
     backgroundHue: 'Teinte d’arrière-plan',
+    controlsHue: 'Teinte des commandes',
     animationSpeed: 'Vitesse d’animation',
     keyboardShortcuts: 'Raccourcis clavier',
     pgnLine: 'Ligne PGN'
@@ -162,6 +170,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'एक चाल आगे',
     boardHue: 'बोर्ड की रंगत',
     backgroundHue: 'पृष्ठभूमि की रंगत',
+    controlsHue: 'नियंत्रणों की रंगत',
     animationSpeed: 'ऐनिमेशन की गति',
     keyboardShortcuts: 'कीबोर्ड शॉर्टकट',
     pgnLine: 'PGN पंक्ति'
@@ -180,6 +189,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Maju satu langkah',
     boardHue: 'Rona papan',
     backgroundHue: 'Rona latar belakang',
+    controlsHue: 'Rona kontrol',
     animationSpeed: 'Kecepatan animasi',
     keyboardShortcuts: 'Pintasan keyboard',
     pgnLine: 'Baris PGN'
@@ -198,6 +208,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Avanza di una mossa',
     boardHue: 'Tinta della scacchiera',
     backgroundHue: 'Tinta dello sfondo',
+    controlsHue: 'Tinta dei controlli',
     animationSpeed: 'Velocità dell’animazione',
     keyboardShortcuts: 'Scorciatoie da tastiera',
     pgnLine: 'Riga PGN'
@@ -216,6 +227,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Eén zet vooruit',
     boardHue: 'Bordtint',
     backgroundHue: 'Achtergrondtint',
+    controlsHue: 'Tint van bedieningselementen',
     animationSpeed: 'Animatiesnelheid',
     keyboardShortcuts: 'Sneltoetsen',
     pgnLine: 'PGN-regel'
@@ -234,6 +246,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Jedno posunięcie do przodu',
     boardHue: 'Odcień szachownicy',
     backgroundHue: 'Odcień tła',
+    controlsHue: 'Odcień elementów sterujących',
     animationSpeed: 'Szybkość animacji',
     keyboardShortcuts: 'Skróty klawiaturowe',
     pgnLine: 'Linia PGN'
@@ -252,6 +265,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Avançar uma jogada',
     boardHue: 'Matiz do tabuleiro',
     backgroundHue: 'Matiz do fundo',
+    controlsHue: 'Matiz dos controles',
     animationSpeed: 'Velocidade da animação',
     keyboardShortcuts: 'Atalhos do teclado',
     pgnLine: 'Linha PGN'
@@ -270,6 +284,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Вперёд на один ход',
     boardHue: 'Оттенок доски',
     backgroundHue: 'Оттенок фона',
+    controlsHue: 'Оттенок элементов управления',
     animationSpeed: 'Скорость анимации',
     keyboardShortcuts: 'Сочетания клавиш',
     pgnLine: 'Линия PGN'
@@ -288,6 +303,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'קדימה מהלך אחד',
     boardHue: 'גוון הלוח',
     backgroundHue: 'גוון הרקע',
+    controlsHue: 'גוון הפקדים',
     animationSpeed: 'מהירות האנימציה',
     keyboardShortcuts: 'קיצורי מקלדת',
     pgnLine: 'שורת PGN'
@@ -306,6 +322,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'التقدم نقلة واحدة',
     boardHue: 'درجة لون الرقعة',
     backgroundHue: 'درجة لون الخلفية',
+    controlsHue: 'درجة لون عناصر التحكم',
     animationSpeed: 'سرعة الرسوم المتحركة',
     keyboardShortcuts: 'اختصارات لوحة المفاتيح',
     pgnLine: 'سطر PGN'
@@ -324,6 +341,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Bir gediş irəli',
     boardHue: 'Taxtanın çaları',
     backgroundHue: 'Fonun çaları',
+    controlsHue: 'İdarəetmələrin çaları',
     animationSpeed: 'Animasiya sürəti',
     keyboardShortcuts: 'Klaviatura qısayolları',
     pgnLine: 'PGN sətri'
@@ -342,6 +360,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'یک حرکت به جلو',
     boardHue: 'ته‌رنگ صفحه',
     backgroundHue: 'ته‌رنگ پس‌زمینه',
+    controlsHue: 'ته‌رنگ کنترل‌ها',
     animationSpeed: 'سرعت پویانمایی',
     keyboardShortcuts: 'میانبرهای صفحه‌کلید',
     pgnLine: 'خط PGN'
@@ -360,6 +379,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Egy lépéssel előre',
     boardHue: 'Táblaárnyalat',
     backgroundHue: 'Háttérárnyalat',
+    controlsHue: 'Vezérlők árnyalata',
     animationSpeed: 'Animációsebesség',
     keyboardShortcuts: 'Billentyűparancsok',
     pgnLine: 'PGN-sor'
@@ -378,6 +398,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: '1手進む',
     boardHue: '盤の色相',
     backgroundHue: '背景の色相',
+    controlsHue: 'コントロールの色相',
     animationSpeed: 'アニメーション速度',
     keyboardShortcuts: 'キーボードショートカット',
     pgnLine: 'PGNライン'
@@ -396,6 +417,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: '한 수 앞으로',
     boardHue: '보드 색조',
     backgroundHue: '배경 색조',
+    controlsHue: '컨트롤 색조',
     animationSpeed: '애니메이션 속도',
     keyboardShortcuts: '키보드 단축키',
     pgnLine: 'PGN 수순'
@@ -414,6 +436,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Bir hamle ileri',
     boardHue: 'Tahta tonu',
     backgroundHue: 'Arka plan tonu',
+    controlsHue: 'Kontrollerin tonu',
     animationSpeed: 'Animasyon hızı',
     keyboardShortcuts: 'Klavye kısayolları',
     pgnLine: 'PGN satırı'
@@ -432,6 +455,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Tiến một nước',
     boardHue: 'Sắc độ bàn cờ',
     backgroundHue: 'Sắc độ nền',
+    controlsHue: 'Sắc độ điều khiển',
     animationSpeed: 'Tốc độ hoạt ảnh',
     keyboardShortcuts: 'Phím tắt bàn phím',
     pgnLine: 'Dòng PGN'
@@ -450,6 +474,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Нэг нүүдэл урагш',
     boardHue: 'Самбарын өнгөний туяа',
     backgroundHue: 'Дэвсгэрийн өнгөний туяа',
+    controlsHue: 'Удирдлагын өнгөний туяа',
     animationSpeed: 'Хөдөлгөөнт дүрсний хурд',
     keyboardShortcuts: 'Гарын товчлол',
     pgnLine: 'PGN мөр'
@@ -468,6 +493,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Uno motu progredi',
     boardHue: 'Color tabulae',
     backgroundHue: 'Color fundi',
+    controlsHue: 'Color moderaminum',
     animationSpeed: 'Celeritas animationis',
     keyboardShortcuts: 'Compendia clavium',
     pgnLine: 'Linea PGN'
@@ -486,6 +512,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Մեկ քայլ առաջ',
     boardHue: 'Տախտակի երանգ',
     backgroundHue: 'Ֆոնի երանգ',
+    controlsHue: 'Կառավարման տարրերի երանգ',
     animationSpeed: 'Անիմացիայի արագություն',
     keyboardShortcuts: 'Ստեղնաշարի կարճատողեր',
     pgnLine: 'PGN տող'
@@ -504,6 +531,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Ét træk frem',
     boardHue: 'Brættets farvetone',
     backgroundHue: 'Baggrundens farvetone',
+    controlsHue: 'Betjeningselementernes farvetone',
     animationSpeed: 'Animationshastighed',
     keyboardShortcuts: 'Tastaturgenveje',
     pgnLine: 'PGN-linje'
@@ -522,6 +550,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Yksi siirto eteenpäin',
     boardHue: 'Laudan sävy',
     backgroundHue: 'Taustan sävy',
+    controlsHue: 'Säätimien sävy',
     animationSpeed: 'Animoinnin nopeus',
     keyboardShortcuts: 'Pikanäppäimet',
     pgnLine: 'PGN-rivi'
@@ -540,6 +569,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Eitt skref fram',
     boardHue: 'Litblær borðsins',
     backgroundHue: 'Litblær bakgrunns',
+    controlsHue: 'Litblær stýringa',
     animationSpeed: 'Hraði hreyfimynda',
     keyboardShortcuts: 'Flýtilyklar',
     pgnLine: 'PGN-lína'
@@ -558,6 +588,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Ett trekk fram',
     boardHue: 'Brettfargetone',
     backgroundHue: 'Bakgrunnsfargetone',
+    controlsHue: 'Kontrollenes fargetone',
     animationSpeed: 'Animasjonshastighet',
     keyboardShortcuts: 'Tastatursnarveier',
     pgnLine: 'PGN-linje'
@@ -576,6 +607,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Ett drag framåt',
     boardHue: 'Brädets nyans',
     backgroundHue: 'Bakgrundens nyans',
+    controlsHue: 'Kontrollernas nyans',
     animationSpeed: 'Animationshastighet',
     keyboardShortcuts: 'Kortkommandon',
     pgnLine: 'PGN-rad'
@@ -594,6 +626,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'На один хід уперед',
     boardHue: 'Відтінок дошки',
     backgroundHue: 'Відтінок тла',
+    controlsHue: 'Відтінок елементів керування',
     animationSpeed: 'Швидкість анімації',
     keyboardShortcuts: 'Клавіатурні скорочення',
     pgnLine: 'Лінія PGN'
@@ -612,6 +645,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Ένα βήμα μπροστά',
     boardHue: 'Απόχρωση σκακιέρας',
     backgroundHue: 'Απόχρωση φόντου',
+    controlsHue: 'Απόχρωση στοιχείων ελέγχου',
     animationSpeed: 'Ταχύτητα κινούμενων σχεδίων',
     keyboardShortcuts: 'Συντομεύσεις πληκτρολογίου',
     pgnLine: 'Γραμμή PGN'
@@ -630,6 +664,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Един ход напред',
     boardHue: 'Нюанс на дъската',
     backgroundHue: 'Нюанс на фона',
+    controlsHue: 'Нюанс на контролите',
     animationSpeed: 'Скорост на анимацията',
     keyboardShortcuts: 'Клавишни комбинации',
     pgnLine: 'PGN линия'
@@ -648,6 +683,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Înainte cu o mutare',
     boardHue: 'Nuanța tablei',
     backgroundHue: 'Nuanța fundalului',
+    controlsHue: 'Nuanța controalelor',
     animationSpeed: 'Viteza animației',
     keyboardShortcuts: 'Comenzi rapide de la tastatură',
     pgnLine: 'Linia PGN'
@@ -666,6 +702,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Један потез напред',
     boardHue: 'Нијанса табле',
     backgroundHue: 'Нијанса позадине',
+    controlsHue: 'Нијанса контрола',
     animationSpeed: 'Брзина анимације',
     keyboardShortcuts: 'Пречице на тастатури',
     pgnLine: 'PGN линија'
@@ -684,6 +721,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Vienu ėjimu pirmyn',
     boardHue: 'Lentos atspalvis',
     backgroundHue: 'Fono atspalvis',
+    controlsHue: 'Valdiklių atspalvis',
     animationSpeed: 'Animacijos greitis',
     keyboardShortcuts: 'Klaviatūros spartieji klavišai',
     pgnLine: 'PGN eilutė'
@@ -702,6 +740,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Vienu gājienu uz priekšu',
     boardHue: 'Dēļa tonis',
     backgroundHue: 'Fona tonis',
+    controlsHue: 'Vadīklu tonis',
     animationSpeed: 'Animācijas ātrums',
     keyboardShortcuts: 'Tastatūras īsceļi',
     pgnLine: 'PGN rinda'
@@ -720,6 +759,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'Üks käik edasi',
     boardHue: 'Laua toon',
     backgroundHue: 'Tausta toon',
+    controlsHue: 'Juhtelementide toon',
     animationSpeed: 'Animatsiooni kiirus',
     keyboardShortcuts: 'Klaviatuuri otseteed',
     pgnLine: 'PGN-rida'
@@ -738,6 +778,7 @@ export const I18N_SUPPLEMENTS = {
     forwardOneMove: 'One move ahead',
     boardHue: 'Deck hue',
     backgroundHue: 'Backdrop hue',
+    controlsHue: 'Riggin\' hue',
     animationSpeed: 'Sea-motion speed',
     keyboardShortcuts: 'Deck keys',
     pgnLine: 'PGN course line'

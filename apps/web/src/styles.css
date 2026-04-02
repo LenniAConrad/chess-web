@@ -15,6 +15,7 @@
   --board-hue-rotate: 0deg;
   --background-hue-rotate: 0deg;
   --controls-hue-rotate: 0deg;
+  --controls-hue-filter: hue-rotate(var(--controls-hue-rotate));
   --color-meta: #2c2c2c;
   --color-status: #121212;
   --color-correct: #4a3927;
@@ -310,17 +311,6 @@ body::before {
     background-image 180ms ease,
     filter 180ms ease;
   transform: translateZ(0);
-}
-
-.app-header-settings,
-.rail-block,
-.zen-controls,
-.app-footer,
-.global-error-toast,
-.history-preview-card,
-.mobile-primary-status-panel {
-  filter: hue-rotate(var(--controls-hue-rotate));
-  transition: filter 180ms ease;
 }
 
 .app-shell {
@@ -2255,6 +2245,17 @@ button.history-dot:active:not(:disabled) {
   outline-offset: 2px;
 }
 
+.settings-range-slider,
+button.toggle-chip,
+button.language-option,
+button.pgn-sequence-move,
+button.pgn-move,
+button.collapsible-panel-toggle,
+button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):not(.collapsible-panel-toggle) {
+  filter: var(--controls-hue-filter);
+  transition: filter 180ms ease;
+}
+
 button.toggle-chip {
   width: 100%;
   display: flex;
@@ -2937,7 +2938,7 @@ button.pgn-sequence-move:active:not(:disabled) {
   background: transparent;
   box-shadow: none;
   transform: none;
-  filter: none;
+  filter: var(--controls-hue-filter);
 }
 
 button.pgn-sequence-move:focus-visible {
@@ -3009,7 +3010,7 @@ button.pgn-move:active:not(:disabled) {
   background: transparent;
   box-shadow: none;
   transform: none;
-  filter: none;
+  filter: var(--controls-hue-filter);
 }
 
 button.pgn-move:focus-visible {
@@ -3156,7 +3157,7 @@ button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-
   box-shadow:
     0 1px 0 var(--color-control-highlight-soft) inset,
     0 6px 12px var(--color-control-shadow-active);
-  filter: saturate(0.98);
+  filter: var(--controls-hue-filter) saturate(0.98);
 }
 
 button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):not(.collapsible-panel-toggle):focus-visible {
@@ -3174,7 +3175,7 @@ button.btn-secondary:hover:not(:disabled) {
 }
 
 button.btn-secondary:active:not(:disabled) {
-  filter: brightness(0.98);
+  filter: var(--controls-hue-filter) brightness(0.98);
 }
 
 button.btn-primary {
@@ -3185,7 +3186,7 @@ button.btn-primary {
 button:not(.toggle-chip):not(.language-option):not(.history-dot):not(.promotion-backdrop):not(.promotion-option):not(.zen-exit-hint):not(.collapsible-panel-toggle):disabled {
   color: var(--color-button-disabled-text);
   box-shadow: 0 1px 0 var(--color-control-highlight-soft) inset;
-  filter: saturate(0.72) contrast(0.94) brightness(0.98);
+  filter: var(--controls-hue-filter) saturate(0.72) contrast(0.94) brightness(0.98);
 }
 
 button.btn-primary:disabled {

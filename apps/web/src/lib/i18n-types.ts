@@ -119,6 +119,7 @@ export interface FrontendI18n {
   pgnPieceSvgs?: string;
   boardHue?: string;
   backgroundHue?: string;
+  controlsHue?: string;
   animations: string;
   animationSpeed?: string;
   sound: string;

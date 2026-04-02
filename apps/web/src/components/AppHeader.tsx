@@ -294,7 +294,7 @@ export function AppHeader(props: AppHeaderProps) {
                         }
                       />
                       <RangeSetting
-                        label="Controls hue"
+                        label={i18n.controlsHue ?? 'Controls hue'}
                         value={prefs.controlsHue}
                         valueLabel={`${prefs.controlsHue}deg`}
                         min={-180}
