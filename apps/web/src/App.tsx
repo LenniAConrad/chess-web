@@ -80,6 +80,152 @@ function pathsMatch(left: number[], right: number[]): boolean {
   return left.every((nodeId, index) => nodeId === right[index]);
 }
 
+type RgbaColor = {
+  r: number;
+  g: number;
+  b: number;
+  a: number;
+};
+
+function parseCssColor(value: string): RgbaColor | null {
+  const normalizedValue = value.trim();
+  const hexMatch = normalizedValue.match(/^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i);
+
+  if (hexMatch) {
+    const hexBody = hexMatch[1];
+    if (!hexBody) {
+      return null;
+    }
+
+    const expandedHex =
+      hexBody.length <= 4
+        ? hexBody
+            .split('')
+            .map((character) => character + character)
+            .join('')
+        : hexBody;
+    const hasAlpha = expandedHex.length === 8;
+
+    return {
+      r: Number.parseInt(expandedHex.slice(0, 2), 16),
+      g: Number.parseInt(expandedHex.slice(2, 4), 16),
+      b: Number.parseInt(expandedHex.slice(4, 6), 16),
+      a: hasAlpha ? Number.parseInt(expandedHex.slice(6, 8), 16) / 255 : 1
+    };
+  }
+
+  const rgbMatch = normalizedValue.match(
+    /^rgba?\(\s*([+\-]?\d*\.?\d+)(?:\s+|,\s*)([+\-]?\d*\.?\d+)(?:\s+|,\s*)([+\-]?\d*\.?\d+)(?:(?:\s*[,/]\s*|\s+)([+\-]?\d*\.?\d+%?))?\s*\)$/i
+  );
+
+  if (!rgbMatch) {
+    return null;
+  }
+
+  const alphaToken = rgbMatch[4];
+  const alphaValue =
+    typeof alphaToken === 'string' && alphaToken.endsWith('%')
+      ? Number.parseFloat(alphaToken) / 100
+      : Number.parseFloat(alphaToken ?? '1');
+
+  return {
+    r: Math.max(0, Math.min(255, Math.round(Number.parseFloat(rgbMatch[1] ?? '0')))),
+    g: Math.max(0, Math.min(255, Math.round(Number.parseFloat(rgbMatch[2] ?? '0')))),
+    b: Math.max(0, Math.min(255, Math.round(Number.parseFloat(rgbMatch[3] ?? '0')))),
+    a: Math.max(0, Math.min(1, alphaValue))
+  };
+}
+
+function rgbToHsl(color: RgbaColor): { h: number; s: number; l: number; a: number } {
+  const red = color.r / 255;
+  const green = color.g / 255;
+  const blue = color.b / 255;
+  const maxChannel = Math.max(red, green, blue);
+  const minChannel = Math.min(red, green, blue);
+  const lightness = (maxChannel + minChannel) / 2;
+
+  if (maxChannel === minChannel) {
+    return { h: 0, s: 0, l: lightness, a: color.a };
+  }
+
+  const delta = maxChannel - minChannel;
+  const saturation =
+    lightness > 0.5 ? delta / (2 - maxChannel - minChannel) : delta / (maxChannel + minChannel);
+  let hue =
+    maxChannel === red
+      ? (green - blue) / delta + (green < blue ? 6 : 0)
+      : maxChannel === green
+        ? (blue - red) / delta + 2
+        : (red - green) / delta + 4;
+  hue /= 6;
+
+  return { h: hue * 360, s: saturation, l: lightness, a: color.a };
+}
+
+function hueToRgb(p: number, q: number, t: number): number {
+  let normalizedT = t;
+
+  if (normalizedT < 0) {
+    normalizedT += 1;
+  }
+
+  if (normalizedT > 1) {
+    normalizedT -= 1;
+  }
+
+  if (normalizedT < 1 / 6) {
+    return p + (q - p) * 6 * normalizedT;
+  }
+
+  if (normalizedT < 1 / 2) {
+    return q;
+  }
+
+  if (normalizedT < 2 / 3) {
+    return p + (q - p) * (2 / 3 - normalizedT) * 6;
+  }
+
+  return p;
+}
+
+function hslToRgb(color: { h: number; s: number; l: number; a: number }): RgbaColor {
+  if (color.s === 0) {
+    const grayChannel = Math.round(color.l * 255);
+    return {
+      r: grayChannel,
+      g: grayChannel,
+      b: grayChannel,
+      a: color.a
+    };
+  }
+
+  const normalizedHue = ((color.h % 360) + 360) % 360 / 360;
+  const q = color.l < 0.5 ? color.l * (1 + color.s) : color.l + color.s - color.l * color.s;
+  const p = 2 * color.l - q;
+
+  return {
+    r: Math.round(hueToRgb(p, q, normalizedHue + 1 / 3) * 255),
+    g: Math.round(hueToRgb(p, q, normalizedHue) * 255),
+    b: Math.round(hueToRgb(p, q, normalizedHue - 1 / 3) * 255),
+    a: color.a
+  };
+}
+
+function rotateCssColorHue(value: string, degrees: number): string | null {
+  const parsedColor = parseCssColor(value);
+  if (!parsedColor) {
+    return null;
+  }
+
+  const hslColor = rgbToHsl(parsedColor);
+  const rotatedColor = hslToRgb({
+    ...hslColor,
+    h: hslColor.h + degrees
+  });
+
+  return `rgba(${rotatedColor.r}, ${rotatedColor.g}, ${rotatedColor.b}, ${rotatedColor.a.toFixed(3)})`;
+}
+
 function normalizeTitleText(value: string): string {
   return value.trim().replace(/\s+/g, ' ');
 }
@@ -849,16 +995,34 @@ export function App() {
   }, [prefs.darkMode]);
 
   useEffect(() => {
-    document.documentElement.style.setProperty('--board-hue-rotate', `${prefs.boardHue}deg`);
-    document.documentElement.style.setProperty('--background-hue-rotate', `${prefs.backgroundHue}deg`);
-    document.documentElement.style.setProperty('--controls-hue-rotate', `${prefs.controlsHue}deg`);
+    const rootElement = document.documentElement;
+    const computedStyles = window.getComputedStyle(rootElement);
+    const backgroundFillColor =
+      rotateCssColorHue(computedStyles.getPropertyValue('--color-bg'), prefs.backgroundHue) ??
+      computedStyles.getPropertyValue('--color-bg').trim();
+    const backgroundFillGradTop =
+      rotateCssColorHue(computedStyles.getPropertyValue('--color-bg-grad-top'), prefs.backgroundHue) ??
+      computedStyles.getPropertyValue('--color-bg-grad-top').trim();
+    const backgroundFillGradBottom =
+      rotateCssColorHue(computedStyles.getPropertyValue('--color-bg-grad-bottom'), prefs.backgroundHue) ??
+      computedStyles.getPropertyValue('--color-bg-grad-bottom').trim();
+
+    rootElement.style.setProperty('--board-hue-rotate', `${prefs.boardHue}deg`);
+    rootElement.style.setProperty('--background-hue-rotate', `${prefs.backgroundHue}deg`);
+    rootElement.style.setProperty('--background-fill-color', backgroundFillColor);
+    rootElement.style.setProperty('--background-fill-grad-top', backgroundFillGradTop);
+    rootElement.style.setProperty('--background-fill-grad-bottom', backgroundFillGradBottom);
+    rootElement.style.setProperty('--controls-hue-rotate', `${prefs.controlsHue}deg`);
 
     return () => {
-      document.documentElement.style.removeProperty('--board-hue-rotate');
-      document.documentElement.style.removeProperty('--background-hue-rotate');
-      document.documentElement.style.removeProperty('--controls-hue-rotate');
+      rootElement.style.removeProperty('--board-hue-rotate');
+      rootElement.style.removeProperty('--background-hue-rotate');
+      rootElement.style.removeProperty('--background-fill-color');
+      rootElement.style.removeProperty('--background-fill-grad-top');
+      rootElement.style.removeProperty('--background-fill-grad-bottom');
+      rootElement.style.removeProperty('--controls-hue-rotate');
     };
-  }, [prefs.backgroundHue, prefs.boardHue, prefs.controlsHue]);
+  }, [prefs.backgroundHue, prefs.boardHue, prefs.controlsHue, prefs.darkMode]);
 
   useEffect(() => {
     document.documentElement.lang = i18n.language;

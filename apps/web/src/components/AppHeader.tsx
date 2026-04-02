@@ -111,6 +111,7 @@ export function AppHeader(props: AppHeaderProps) {
               }}
             >
               <summary className="settings-summary">{i18n.languageLabel}</summary>
+              <div className="settings-mobile-backdrop" aria-hidden="true" />
               <div className="settings-content">
                 <div className="settings-content-body">
                   <section className="settings-section" aria-label={i18n.languageLabel}>
@@ -151,6 +152,7 @@ export function AppHeader(props: AppHeaderProps) {
               }}
             >
               <summary className="settings-summary">{i18n.settings}</summary>
+              <div className="settings-mobile-backdrop" aria-hidden="true" />
               <div className="settings-content">
                 <div className="settings-content-body">
                   <section className="settings-section" aria-labelledby="settings-gameplay">

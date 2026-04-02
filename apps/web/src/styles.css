@@ -14,6 +14,9 @@
   --color-panel-shadow: rgba(0, 0, 0, 0.4);
   --board-hue-rotate: 0deg;
   --background-hue-rotate: 0deg;
+  --background-fill-color: var(--color-bg);
+  --background-fill-grad-top: var(--color-bg-grad-top);
+  --background-fill-grad-bottom: var(--color-bg-grad-bottom);
   --controls-hue-rotate: 0deg;
   --controls-hue-filter: hue-rotate(var(--controls-hue-rotate));
   --color-meta: #2c2c2c;
@@ -286,14 +289,14 @@ body {
 }
 
 html {
-  background-color: var(--color-bg);
+  background-color: var(--background-fill-color);
 }
 
 body {
   overflow: hidden;
   position: relative;
   isolation: isolate;
-  background-color: var(--color-bg);
+  background-color: var(--background-fill-color);
 }
 
 body::before {
@@ -302,15 +305,13 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-color: var(--color-bg);
-  background-image: linear-gradient(180deg, var(--color-bg-grad-top) 0%, var(--color-bg-grad-bottom) 100%);
+  background-color: var(--background-fill-color);
+  background-image: linear-gradient(180deg, var(--background-fill-grad-top) 0%, var(--background-fill-grad-bottom) 100%);
   background-repeat: no-repeat;
   background-size: cover;
-  filter: hue-rotate(var(--background-hue-rotate));
   transition:
     background-color 180ms ease,
-    background-image 180ms ease,
-    filter 180ms ease;
+    background-image 180ms ease;
   transform: translateZ(0);
 }
 
@@ -2682,6 +2683,10 @@ button.collapsible-panel-toggle:focus-visible {
   gap: inherit;
 }
 
+.settings-mobile-backdrop {
+  display: none;
+}
+
 .language-option-grid {
   display: grid;
   gap: 0.45rem;
@@ -4101,7 +4106,13 @@ button:disabled {
     flex-direction: column;
     border: 0;
     border-radius: 0;
-    background-color: var(--color-bg);
+    background-color: var(--background-fill-color);
+    background-image: linear-gradient(180deg, var(--background-fill-grad-top) 0%, var(--background-fill-grad-bottom) 100%);
+    background-repeat: no-repeat;
+    background-size: cover;
+    transition:
+      background-color 180ms ease,
+      background-image 180ms ease;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
     overflow-y: auto;
@@ -4115,35 +4126,8 @@ button:disabled {
     z-index: 120;
   }
 
-  .app-header-settings[open]::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-color: var(--color-bg);
-    background-image: linear-gradient(180deg, var(--color-bg-grad-top) 0%, var(--color-bg-grad-bottom) 100%);
-    background-repeat: no-repeat;
-    background-size: cover;
-    filter: hue-rotate(var(--background-hue-rotate));
-    transition:
-      background-color 180ms ease,
-      background-image 180ms ease,
-      filter 180ms ease;
-    pointer-events: none;
-    transform: translateZ(0);
-    z-index: 0;
-  }
-
-  .app-header-settings[open]::after {
-    content: '';
-    position: absolute;
-    inset:
-      max(0px, calc(var(--mobile-settings-summary-height, 0px) - 1px))
-      0
-      0
-      0;
-    background: transparent;
-    pointer-events: none;
-    z-index: 0;
+  .app-header-settings[open] .settings-mobile-backdrop {
+    display: none;
   }
 
   .app-header-settings[open]::-webkit-scrollbar {
@@ -4165,11 +4149,16 @@ button:disabled {
     border: 0;
     border-bottom: 1px solid color-mix(in srgb, var(--color-panel-border) 78%, transparent);
     border-radius: 0;
-    background: var(--color-panel-bg);
-    backdrop-filter: blur(20px) brightness(1.06);
-    -webkit-backdrop-filter: blur(20px) brightness(1.06);
+    background-color: color-mix(in srgb, var(--background-fill-grad-top) 88%, var(--background-fill-color) 12%);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     color: var(--color-meta);
     isolation: isolate;
+  }
+
+  .app-header-settings[open] .settings-summary::before {
+    content: none;
   }
 
   .app-header-settings[open][data-mobile-scrolled='true'] .settings-summary {
@@ -4230,7 +4219,8 @@ button:disabled {
   .app-header-settings[open] .settings-content-body::before {
     content: '';
     display: block;
-    height: 0;
+    height: var(--settings-menu-inline-pad, 0.9rem);
+    background-color: color-mix(in srgb, var(--background-fill-grad-top) 88%, var(--background-fill-color) 12%);
   }
 
   .app-header-settings[open] .settings-content-body::after {
